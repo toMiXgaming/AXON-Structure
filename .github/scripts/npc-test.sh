@@ -23,7 +23,12 @@ fetch_jenkins() { # plik docelowy, nazwy zadań Jenkinsa do wypróbowania
   done
   return 1
 }
-if ! fetch_jenkins plugins/Citizens.jar Citizens2 Citizens || ! fetch_jenkins plugins/Sentinel.jar Sentinel; then
+JOBS=$(curl -fsSL "https://ci.citizensnpcs.co/api/json?tree=jobs%5Bname%5D" | jq -r '.jobs[].name' 2>/dev/null || true)
+echo "Zadania Jenkinsa: $(echo $JOBS | tr '\n' ' ')"
+CIT_JOBS=$(echo "$JOBS" | grep -iE '^citizens' | grep -viE 'api|test' || true)
+SEN_JOBS=$(echo "$JOBS" | grep -iE '^sentinel' || true)
+# shellcheck disable=SC2086
+if ! fetch_jenkins plugins/Citizens.jar Citizens2 Citizens $CIT_JOBS || ! fetch_jenkins plugins/Sentinel.jar Sentinel $SEN_JOBS; then
   echo "::warning::Nie udało się pobrać Citizens/Sentinela – test strażników pominięty"
   exit 0
 fi
