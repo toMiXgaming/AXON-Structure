@@ -129,7 +129,7 @@ grep -E "AXON|struktur|Gotowe|Auto-generowanie|Teren|skrzyn|Exception|ERROR|WARN
 echo "================ dane.yml ================"
 cat plugins/AXON-Structure/dane.yml || true
 echo "================ regiony WorldGuard ================"
-grep -E "^  [a-z_0-9]+:|pvp|passthrough|x:" plugins/WorldGuard/worlds/world/regions.yml || true
+grep -E "^ +(struktura|dzialka)_[a-z_0-9]+:|pvp|x:" plugins/WorldGuard/worlds/world/regions.yml || true
 
 FAIL=0
 if grep -nE "Exception|Nieprawidłowy stan bloku|nieznany przedmiot|nieznanej klasy|Zła dekoracja|Brak puli|Błąd w pliku" server.log; then
@@ -145,7 +145,7 @@ grep -q "Za blisko działki.*dzialka_test" server.log \
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
 REGIONS=plugins/WorldGuard/worlds/world/regions.yml
-STRUCTS=$(grep -c "^  struktura_" "$REGIONS" || true)
+STRUCTS=$(grep -cE "^ +struktura_[0-9a-f]+:" "$REGIONS" || true)
 INSTANCES=$(grep -cE "^  '?[0-9a-f]{8}'?:$" plugins/AXON-Structure/dane.yml || true)
 if [ "$STRUCTS" -ne "$INSTANCES" ] || [ "$STRUCTS" -lt 1 ]; then
   echo "::error::Regionów struktura_: $STRUCTS, struktur w dane.yml: $INSTANCES"; FAIL=1
