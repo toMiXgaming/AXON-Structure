@@ -44,6 +44,8 @@ import java.util.UUID;
 /**
  * Gracze nie mogą niszczyć ani rozbudowywać struktur. Wolno otwierać skrzynie, drzwi i przyciski oraz
  * zabierać przedmioty z ramek (karty dostępu). PvP nie jest tu w ogóle ruszane.
+ * Priorytet LOWEST: zdarzenie jest anulowane, zanim zobaczą je inne pluginy (np. rdzeń działki AxonPlot,
+ * który z ignoreCancelled nie założy wtedy działki).
  */
 public final class ProtectionListener implements Listener {
 
@@ -74,7 +76,7 @@ public final class ProtectionListener implements Listener {
 
     // --- gracze ---
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
@@ -82,7 +84,7 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
         boolean blocked = denied(event.getPlayer(), event.getBlockPlaced());
         if (!blocked && event instanceof BlockMultiPlaceEvent multi) {
@@ -99,7 +101,7 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBucketEmpty(PlayerBucketEmptyEvent event) {
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
@@ -107,7 +109,7 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBucketFill(PlayerBucketFillEvent event) {
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
@@ -115,7 +117,7 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onSignChange(SignChangeEvent event) {
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
@@ -123,7 +125,7 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onEntityPlace(EntityPlaceEvent event) {
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
@@ -133,7 +135,7 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onInteract(PlayerInteractEvent event) {
         Block block = event.getClickedBlock();
         if (block == null || !denied(event.getPlayer(), block)) {
@@ -169,7 +171,7 @@ public final class ProtectionListener implements Listener {
 
     // --- ramki i obrazy ---
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onHangingBreak(HangingBreakEvent event) {
         Player player = null;
         if (event instanceof HangingBreakByEntityEvent byEntity && byEntity.getRemover() instanceof Player p) {
@@ -183,7 +185,7 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onHangingPlace(HangingPlaceEvent event) {
         if (denied(event.getPlayer(), event.getBlock().getRelative(event.getBlockFace()))) {
             event.setCancelled(true);
@@ -194,7 +196,7 @@ public final class ProtectionListener implements Listener {
     }
 
     /** Wkładanie przedmiotów do ramek i obracanie ich. Zabieranie (uderzenie) zostaje dozwolone. */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInteractEntity(PlayerInteractEntityEvent event) {
         Entity entity = event.getRightClicked();
         if (entity instanceof Hanging && denied(event.getPlayer(), entity.getLocation().getBlock())) {
@@ -204,12 +206,12 @@ public final class ProtectionListener implements Listener {
 
     // --- świat ---
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         removeProtected(event.blockList());
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
         removeProtected(event.blockList());
     }
@@ -218,7 +220,7 @@ public final class ProtectionListener implements Listener {
         blocks.removeIf(block -> protection.protectedAt(block) != null);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         Player player = event.getEntity() instanceof Player p ? p : null;
         if (denied(player, event.getBlock())) {
@@ -226,14 +228,14 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBurn(BlockBurnEvent event) {
         if (protection.protectedAt(event.getBlock()) != null) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onIgnite(BlockIgniteEvent event) {
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
@@ -241,7 +243,7 @@ public final class ProtectionListener implements Listener {
     }
 
     /** Woda i lawa wlewające się z zewnątrz. */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onFlow(BlockFromToEvent event) {
         StructureInstance target = protection.protectedAt(event.getToBlock());
         if (target != null && protection.protectedAt(event.getBlock()) != target) {
@@ -249,14 +251,14 @@ public final class ProtectionListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
         if (pistonTouchesStructure(event.getBlock(), event.getBlocks(), event.getDirection())) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
         if (pistonTouchesStructure(event.getBlock(), event.getBlocks(), event.getDirection())) {
             event.setCancelled(true);
