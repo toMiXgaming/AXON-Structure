@@ -14,10 +14,13 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     // Opcjonalnie: regiony struktur i odstęp od działek AxonPlot.
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.12") {
-        exclude(group = "org.bukkit")
-        exclude(group = "io.papermc.paper")
-    }
+    // Bez zależności przechodnich: ich wersje fastutil gryzą się z paper-api.
+    listOf(
+        "com.sk89q.worldguard:worldguard-core:7.0.12",
+        "com.sk89q.worldguard:worldguard-bukkit:7.0.12",
+        "com.sk89q.worldedit:worldedit-core:7.3.0",
+        "com.sk89q.worldedit:worldedit-bukkit:7.3.0",
+    ).forEach { compileOnly(it) { isTransitive = false } }
 }
 
 java {
