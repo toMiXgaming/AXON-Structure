@@ -30,6 +30,7 @@ public final class StructureExporter {
         for (StructureDefinition definition : STRUCTURES) {
             Blueprint bp = definition.build(new Random(seed))
                     .meta(definition.id(), definition.displayName(), definition.description());
+            Weathering.apply(bp, new Random(seed * 31 + definition.id().hashCode()));
             Path file = out.resolve(definition.id() + StructureFile.EXTENSION);
             try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
                 StructureFile.write(bp, writer);

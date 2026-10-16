@@ -581,7 +581,7 @@ public final class GasStationStructure implements StructureDefinition {
             }
             bp.fill(BX2 - 1, 1, 36, BX2 - 1, 4, 36, "stripped_spruce_log[axis=y]");
             bp.set(BX2 - 1, 2, 38, "barrel[facing=west,open=false]");
-            bp.crate(BX2 - 1, 4, 40, "west", "magazyn");
+            bp.crate(BX2 - 1, 2, 40, "west", "magazyn");
             // beczki i paliwo w magazynie
             bp.crate(23, 1, 37, "north", "magazyn");
             bp.crate(24, 1, 37, "north", "paliwo");
