@@ -524,7 +524,7 @@ public final class CollectiveFarmStructure implements StructureDefinition {
             bp.fill(36, 4, 43, 37, 4, 45, "dark_oak_planks");
             // silos paszowy na nóżkach: lej y8-13, nóżki do y7, poprzeczka y3
             for (int[] leg : new int[][]{{38, 42}, {41, 42}, {38, 46}, {41, 46}}) {
-                bp.fill(leg[0], 1, leg[1], leg[0], 7, leg[1], "polished_andesite_wall");
+                bp.fill(leg[0], 1, leg[1], leg[0], 7, leg[1], "andesite_wall");
             }
             bp.fill(38, 3, 43, 38, 3, 45, "iron_block");
             bp.fill(39, 7, 43, 40, 7, 45, "orange_terracotta");
