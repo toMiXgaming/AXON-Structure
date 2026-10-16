@@ -1,0 +1,229 @@
+# ============================================================
+#  AXON-Structure – konfiguracja
+#  Pliki struktur (*.axs) wrzuć do: plugins/AXON-Structure/struktury/
+#  Po zmianach wpisz: /struktury przeladuj
+#  Kolory w nazwach: &a, &6, &f itd.
+# ============================================================
+
+odswiezanie:
+  # Co ile minut losować skrzynie na nowo.
+  co-ile-minut: 20
+  # Nie odświeżaj struktury, gdy jakiś gracz jest bliżej niż tyle bloków od jej środka (0 = wyłączone).
+  blokada-gdy-gracz-blizej-niz: 32
+  # false = losuj tylko puste i zniszczone skrzynie, pełne zostają; true = zawsze losuj od nowa.
+  zastepuj-pelne: false
+
+stawianie:
+  # Ile bloków stawiać na tick (mniej = mniejsze lagi, dłużej trwa).
+  bloki-na-tick: 4000
+  # Szerokość pasa terenu wokół struktury, który łagodnie przechodzi do jej poziomu (bez klifów i rowów).
+  wygladzanie-krawedzi: 6
+  # Maks. głębokość dosypywania gruntu pod strukturą (łata dziury i jaskinie pod podłogą).
+  maks-fundament: 24
+  # Ile bloków ponad strukturą wycinać (drzewa, pagórki).
+  czyszczenie-nad: 24
+
+ochrona:
+  # Gracze nie mogą niszczyć ani budować w obrębie struktury (cała wysokość świata, też pod ziemią).
+  # Wolno: otwierać skrzynie, drzwi, przyciski i zabierać karty z ramek. PvP działa normalnie.
+  # Admini z uprawnieniem axonstructure.bypass (domyślnie OP) mogą wszystko.
+  wlaczona: true
+  # Ile kratek wokół obrysu struktury też jest chronione.
+  margines: 2
+  # Minimalny odstęp (w kratkach) między strukturą a działką AxonPlot. Wymaga WorldGuarda.
+  # Działa w obie strony: struktura nie powstanie przy działce, a działki nie da się założyć przy strukturze
+  # (po stronie AxonPlot: placement.structure-buffer-blocks, ustaw tę samą wartość).
+  odstep-od-dzialek: 50
+  # Promień działki na najwyższym poziomie (AxonPlot: levels.*.radius). Działki rosną, więc liczy się największy.
+  promien-dzialki: 25
+  komunikat: "&cTej struktury nie można niszczyć ani rozbudowywać."
+  # Flagi regionu WorldGuard struktura_<id>. Niszczenie blokuje sam plugin, więc passthrough zostaje
+  # na allow (inaczej WorldGuard zablokowałby też otwieranie skrzyń), a pvp na allow włącza walkę.
+  flagi-worldguard:
+    pvp: allow
+    passthrough: allow
+
+auto-generowanie:
+  wlaczone: true
+  # Światy, w których struktury pojawiają się same.
+  swiaty:
+    - world
+  # Szansa (w %) na próbę postawienia przy każdym NOWO wygenerowanym chunku.
+  szansa-procent: 0.5
+  # Minimalna odległość (w blokach) między dwiema strukturami.
+  min-odleglosc-miedzy: 1000
+  # Minimalna odległość od spawnu świata.
+  min-odleglosc-od-spawnu: 300
+  # Maks. różnica wysokości terenu pod strukturą. Większa = struktura stanie też na pagórkach.
+  maks-roznica-wysokosci: 6
+  # Maks. udział wody/lawy/lodu pod strukturą w %.
+  maks-woda-procent: 3
+  # Które struktury i jak często (wagi). Puste {} = wszystkie wczytane po równo.
+  # Przykład:
+  #   struktury:
+  #     stacja: 3
+  #     magazyn: 1
+  struktury: {}
+
+# ------------------------------------------------------------
+#  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.
+#  Pula losuje klasę skrzyni według wag. "brak" = w tym miejscu nic się nie pojawi.
+# ------------------------------------------------------------
+pule:
+  paliwo:
+    beczka-paliwa: 65
+    beczka: 20
+    brak: 15
+  plac:
+    beczka: 65
+    beczka-paliwa: 10
+    brak: 25
+  lada:
+    skrzynka-jedzenie: 70
+    brazowa: 15
+    brak: 15
+  karta:
+    zielona-karta: 85
+    brak: 15
+  sklep:
+    skrzynka-jedzenie: 40
+    brazowa: 35
+    brak: 25
+  lodowki:
+    skrzynka-medyczna: 45
+    skrzynka-jedzenie: 35
+    brak: 20
+  toalety:
+    skrzynka-medyczna: 45
+    skrzynka-jedzenie: 30
+    brak: 25
+  zaplecze:
+    brazowa: 45
+    skrzynka-medyczna: 20
+    skrzynka-jedzenie: 15
+    brak: 20
+  magazyn-regal:
+    brazowa: 70
+    narzedziowa: 15
+    brak: 15
+  magazyn:
+    beczka: 60
+    brazowa: 15
+    brak: 25
+  dach:
+    brazowa: 45
+    narzedziowa: 35
+    brak: 20
+
+# ------------------------------------------------------------
+#  KLASY SKRZYŃ
+#  blok: skrzynia | beczka | ramka (ramka = przedmiot w ramce, np. karta dostępu)
+#  dekoracja: blok stawiany na wieku (np. czerwona świeczka na beczce paliwa), "" = brak
+#  min-przedmiotow: gdy nic nie wylosuje się z szans, dobierz tyle losowych pozycji
+#  loot: każda pozycja losowana osobno
+#    przedmiot: nazwa z Minecrafta (np. iron_ingot)
+#    ilosc: "4-14" albo "1"
+#    szansa: w % (0-100)
+#    nazwa / opis: opcjonalna nazwa i opis przedmiotu
+# ------------------------------------------------------------
+klasy:
+  beczka:
+    nazwa: "&6Beczka"
+    blok: beczka
+    min-przedmiotow: 1
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "4-14", szansa: 100, nazwa: "&fZłom"}
+      - {przedmiot: copper_ingot, ilosc: "1-4", szansa: 50}
+      - {przedmiot: iron_ingot, ilosc: "1-2", szansa: 30}
+      - {przedmiot: chain, ilosc: "1-2", szansa: 20, nazwa: "&fRura metalowa"}
+      - {przedmiot: redstone, ilosc: "1-4", szansa: 25}
+      - {przedmiot: gunpowder, ilosc: "1-2", szansa: 15}
+      - {przedmiot: string, ilosc: "1-3", szansa: 20, nazwa: "&fLina"}
+
+  beczka-paliwa:
+    nazwa: "&cBeczka paliwa"
+    blok: beczka
+    dekoracja: "red_candle[candles=1,lit=false]"
+    min-przedmiotow: 1
+    loot:
+      - {przedmiot: coal, ilosc: "4-12", szansa: 100, nazwa: "&fPaliwo niskiej jakości"}
+      - {przedmiot: charcoal, ilosc: "2-6", szansa: 50}
+      - {przedmiot: iron_nugget, ilosc: "2-6", szansa: 40, nazwa: "&fZłom"}
+      - {przedmiot: lava_bucket, ilosc: "1", szansa: 8, nazwa: "&fRopa naftowa"}
+      - {przedmiot: blaze_powder, ilosc: "1", szansa: 5}
+
+  brazowa:
+    nazwa: "&6Brązowa skrzynia"
+    blok: skrzynia
+    min-przedmiotow: 2
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "6-20", szansa: 100, nazwa: "&fZłom"}
+      - {przedmiot: iron_ingot, ilosc: "1-4", szansa: 50}
+      - {przedmiot: gold_nugget, ilosc: "2-8", szansa: 30}
+      - {przedmiot: redstone, ilosc: "2-8", szansa: 30}
+      - {przedmiot: torch, ilosc: "2-8", szansa: 30}
+      - {przedmiot: arrow, ilosc: "4-12", szansa: 30}
+      - {przedmiot: chain, ilosc: "1-3", szansa: 20, nazwa: "&fRura metalowa"}
+      - {przedmiot: bow, ilosc: "1", szansa: 10}
+      - {przedmiot: stone_axe, ilosc: "1", szansa: 12}
+      - {przedmiot: iron_pickaxe, ilosc: "1", szansa: 8}
+      - {przedmiot: leather_chestplate, ilosc: "1", szansa: 10}
+      - {przedmiot: iron_sword, ilosc: "1", szansa: 6}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 5}
+
+  skrzynka-jedzenie:
+    nazwa: "&aSkrzynka z jedzeniem"
+    blok: beczka
+    min-przedmiotow: 1
+    loot:
+      - {przedmiot: bread, ilosc: "1-3", szansa: 60}
+      - {przedmiot: apple, ilosc: "1-4", szansa: 50}
+      - {przedmiot: baked_potato, ilosc: "1-3", szansa: 40}
+      - {przedmiot: carrot, ilosc: "1-4", szansa: 40}
+      - {przedmiot: dried_kelp, ilosc: "3-8", szansa: 30, nazwa: "&fSuszone wodorosty"}
+      - {przedmiot: cookie, ilosc: "2-6", szansa: 30}
+      - {przedmiot: mushroom_stew, ilosc: "1", szansa: 15, nazwa: "&fPuszka gulaszu"}
+      - {przedmiot: honey_bottle, ilosc: "1", szansa: 10}
+      - {przedmiot: golden_carrot, ilosc: "1-2", szansa: 8}
+
+  skrzynka-medyczna:
+    nazwa: "&bSkrzynka medyczna"
+    blok: beczka
+    min-przedmiotow: 1
+    loot:
+      - {przedmiot: paper, ilosc: "1-4", szansa: 60, nazwa: "&fBandaż"}
+      - {przedmiot: honey_bottle, ilosc: "1-2", szansa: 40, nazwa: "&fSyrop"}
+      - {przedmiot: string, ilosc: "1-3", szansa: 30, nazwa: "&fSzmata"}
+      - {przedmiot: milk_bucket, ilosc: "1", szansa: 25}
+      - {przedmiot: glistering_melon_slice, ilosc: "1-2", szansa: 25, nazwa: "&fStrzykawka medyczna"}
+      - {przedmiot: suspicious_stew, ilosc: "1", szansa: 15}
+      - {przedmiot: golden_apple, ilosc: "1", szansa: 12, nazwa: "&fApteczka"}
+
+  narzedziowa:
+    nazwa: "&eSkrzynka narzędziowa"
+    blok: skrzynia
+    min-przedmiotow: 2
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "8-24", szansa: 100, nazwa: "&fZłom"}
+      - {przedmiot: iron_ingot, ilosc: "2-5", szansa: 70}
+      - {przedmiot: redstone, ilosc: "2-6", szansa: 40}
+      - {przedmiot: chain, ilosc: "2-4", szansa: 30, nazwa: "&fRura metalowa"}
+      - {przedmiot: iron_pickaxe, ilosc: "1", szansa: 25}
+      - {przedmiot: iron_axe, ilosc: "1", szansa: 25}
+      - {przedmiot: iron_shovel, ilosc: "1", szansa: 20}
+      - {przedmiot: shears, ilosc: "1", szansa: 20}
+      - {przedmiot: flint_and_steel, ilosc: "1", szansa: 20}
+      - {przedmiot: compass, ilosc: "1", szansa: 10}
+      - {przedmiot: spyglass, ilosc: "1", szansa: 10}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 8}
+
+  zielona-karta:
+    nazwa: "&aZielona karta dostępu"
+    blok: ramka
+    loot:
+      - przedmiot: paper
+        ilosc: "1"
+        szansa: 100
+        nazwa: "&aZielona karta dostępu"
+        opis:
+          - "&7Poziom dostępu: 1"
