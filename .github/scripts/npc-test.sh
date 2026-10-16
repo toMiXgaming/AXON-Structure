@@ -10,15 +10,20 @@ cp build/libs/AXON-Structure-*.jar "$DIR/plugins/"
 cp build/struktury/jednostka.axs build/struktury/szpital.axs "$DIR/plugins/AXON-Structure/struktury/"
 cd "$DIR"
 
-fetch_jenkins() { # job, plik docelowy
-  local json path
-  json=$(curl -fsS "https://ci.citizensnpcs.co/job/$1/lastSuccessfulBuild/api/json?tree=artifacts%5BrelativePath%5D") || return 1
-  path=$(echo "$json" | jq -r '[.artifacts[].relativePath | select(endswith(".jar")) | select(test("sources|javadoc|api") | not)][0]')
-  [ -n "$path" ] && [ "$path" != "null" ] || return 1
-  echo "$1: $path"
-  curl -fsSL -o "$2" "https://ci.citizensnpcs.co/job/$1/lastSuccessfulBuild/artifact/$path"
+fetch_jenkins() { # plik docelowy, nazwy zadań Jenkinsa do wypróbowania
+  local out="$1" job json path
+  shift
+  for job in "$@"; do
+    json=$(curl -fsSL "https://ci.citizensnpcs.co/job/$job/lastSuccessfulBuild/api/json") || { echo "$job: brak ($?)"; continue; }
+    path=$(echo "$json" | jq -r '[.artifacts[].relativePath | select(endswith(".jar")) | select(test("sources|javadoc") | not)][0]')
+    if [ -n "$path" ] && [ "$path" != "null" ]; then
+      echo "$job: $path"
+      curl -fsSL -o "$out" "https://ci.citizensnpcs.co/job/$job/lastSuccessfulBuild/artifact/$path" && return 0
+    fi
+  done
+  return 1
 }
-if ! fetch_jenkins Citizens2 plugins/Citizens.jar || ! fetch_jenkins Sentinel plugins/Sentinel.jar; then
+if ! fetch_jenkins plugins/Citizens.jar Citizens2 Citizens || ! fetch_jenkins plugins/Sentinel.jar Sentinel; then
   echo "::warning::Nie udało się pobrać Citizens/Sentinela – test strażników pominięty"
   exit 0
 fi
