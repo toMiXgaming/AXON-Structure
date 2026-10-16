@@ -267,7 +267,7 @@ public final class CollectiveFarmStructure implements StructureDefinition {
             bp.set(37, 1, 8, "spruce_slab[type=top]");
             bp.set(38, 1, 8, "spruce_slab[type=top]");
             bp.set(37, 2, 8, "lantern[hanging=false]");
-            bp.set(39, 1, 9, "spruce_stairs[facing=west,half=bottom]");
+            bp.set(39, 1, 8, "spruce_stairs[facing=west,half=bottom]");
             bp.set(x1 + 1, 2, 9, "tripwire_hook[facing=east,attached=false,powered=false]");
             bp.crate(37, 1, 10, "east", "parter");
             // szlaban w pozycji pionowej

@@ -81,6 +81,14 @@ cmd "forceload add -293 -334"
 sleep 3
 cmd "execute if block -293 90 -334 minecraft:polished_andesite run say JW-GRUNT-OK"
 cmd "execute if block -318 71 -267 minecraft:ladder run say JW-SCHRON-OK"
+# Szpital ma 9 warstw podziemia: narożnik głównego bloku na y 90, schody do piwnicy na y 86.
+cmd "struktury wklej szpital world 300 90 0 0"
+wait_gotowe 7 300
+cmd "forceload add 275 -5"
+cmd "forceload add 277 -1"
+sleep 3
+cmd "execute if block 275 90 -5 minecraft:smooth_stone run say SZPITAL-GRUNT-OK"
+cmd "execute if block 277 86 -1 minecraft:stone_brick_stairs run say SZPITAL-PIWNICA-OK"
 # Wybuch TNT nad środkiem stacji nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
 CX=$(awk '/srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
 CZ=$(awk '/srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
@@ -119,13 +127,15 @@ if grep -nE "Exception|Nieprawidłowy stan bloku|nieznany przedmiot|nieznanej kl
   echo "::error::W logu serwera są błędy"; FAIL=1
 fi
 GOT=$(grep -c "Gotowe!" server.log || true)
-if [ "$GOT" -lt 6 ]; then
-  echo "::error::Oczekiwano 6 postawień z komend, jest $GOT"; FAIL=1
+if [ "$GOT" -lt 7 ]; then
+  echo "::error::Oczekiwano 7 postawień z komend, jest $GOT"; FAIL=1
 fi
 grep -qF "Server] GRUNT-OK" server.log || { echo "::error::Kopalnia: grunt nie wypadł na poziomie wklejenia"; FAIL=1; }
 grep -qF "Server] PODZIEMIE-OK" server.log || { echo "::error::Kopalnia: brak drabiny w szybie pod ziemią"; FAIL=1; }
 grep -qF "Server] JW-GRUNT-OK" server.log || { echo "::error::Jednostka: grunt nie wypadł na poziomie wklejenia"; FAIL=1; }
 grep -qF "Server] JW-SCHRON-OK" server.log || { echo "::error::Jednostka: brak drabiny na poziomie 2 schronu"; FAIL=1; }
+grep -qF "Server] SZPITAL-GRUNT-OK" server.log || { echo "::error::Szpital: grunt nie wypadł na poziomie wklejenia"; FAIL=1; }
+grep -qF "Server] SZPITAL-PIWNICA-OK" server.log || { echo "::error::Szpital: brak schodów do piwnicy"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }

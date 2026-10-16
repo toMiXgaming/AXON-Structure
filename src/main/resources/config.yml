@@ -242,6 +242,31 @@ pule:
   # skarbiec na dnie schronu (tylko przez szyb wentylacyjny)
   skarbiec:
     rzadka-skrzynia: 100
+  # --- szpital Pod Lipami (beczki: plac; sale i gabinety: parter, izba-chorych; kuchnia: lada) ---
+  # apteka szpitalna (tylko kanałem wentylacyjnym z dachu pawilonu)
+  apteka:
+    lepsza-skrzynia: 45
+    skrzynka-medyczna: 45
+    brak: 10
+  # blok operacyjny (tylko łącznikiem z 1 piętra)
+  blok-operacyjny:
+    lepsza-skrzynia: 55
+    skrzynka-medyczna: 30
+    brak: 15
+  # gabinet dyrektora na 4 piętrze (szyb windy albo właz z dachu)
+  dyrekcja:
+    lepsza-skrzynia: 75
+    brazowa: 10
+    brak: 15
+  # kostnica w piwnicy
+  kostnica:
+    lepsza-skrzynia: 60
+    skrzynka-medyczna: 20
+    brak: 20
+  # lądowisko na dachu
+  ladowisko:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
