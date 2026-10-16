@@ -2,6 +2,7 @@ package pl.axon.structure.world;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import pl.axon.structure.core.Box;
 import pl.axon.structure.core.Placement;
 import pl.axon.structure.core.StructureInstance;
 
@@ -43,8 +44,13 @@ public final class InstanceStore {
             }
             Placement placement = new Placement(s.getString("swiat", "world"),
                     s.getInt("x"), s.getInt("y"), s.getInt("z"), s.getInt("obrot"));
-            instances.put(id, new StructureInstance(id, s.getString("struktura", "?"), placement,
-                    s.getInt("srodek-x"), s.getInt("srodek-z"), s.getBoolean("auto"), s.getLong("odswiezono")));
+            StructureInstance instance = new StructureInstance(id, s.getString("struktura", "?"), placement,
+                    s.getInt("srodek-x"), s.getInt("srodek-z"), s.getBoolean("auto"), s.getLong("odswiezono"));
+            List<Integer> area = s.getIntegerList("obrys");
+            if (area.size() == 4) {
+                instance.footprint(new Box(area.get(0), area.get(1), area.get(2), area.get(3)));
+            }
+            instances.put(id, instance);
         }
     }
 
@@ -63,6 +69,10 @@ public final class InstanceStore {
             yaml.set(path + "srodek-z", instance.centerZ());
             yaml.set(path + "auto", instance.automatic());
             yaml.set(path + "odswiezono", instance.lastRefresh());
+            Box box = instance.footprint();
+            if (box != null) {
+                yaml.set(path + "obrys", List.of(box.minX(), box.minZ(), box.maxX(), box.maxZ()));
+            }
         }
         try {
             yaml.save(file);

@@ -24,7 +24,7 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "klasy", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -44,6 +44,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "cofnij" -> undo(sender);
             case "odswiez" -> refresh(sender);
             case "najblizsza" -> nearest(sender);
+            case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
             case "przeladuj" -> {
                 plugin.reload();
@@ -64,6 +65,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " cofnij §7– cofa twoje ostatnie postawienie");
         sender.sendMessage("§e/" + label + " odswiez §7– od razu losuje skrzynie w najbliższej strukturze");
         sender.sendMessage("§e/" + label + " najblizsza §7– gdzie jest najbliższa postawiona struktura");
+        sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
         sender.sendMessage("§e/" + label + " przeladuj §7– wczytuje config i pliki struktur od nowa");
         sender.sendMessage("§7Z konsoli: §ewklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]§7, "
@@ -209,9 +211,30 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         }
         Location l = ((Player) sender).getLocation();
         int distance = (int) Math.sqrt(instance.distanceSquared(l.getX(), l.getZ()));
-        sender.sendMessage("§aNajbliższa: §e" + instance.structureId() + "§a na §f" + instance.centerX() + " "
+        sender.sendMessage("§aNajbliższa: §e" + instance.structureId() + " §7(id " + instance.id() + ")§a na §f" + instance.centerX() + " "
                 + instance.placement().originY() + " " + instance.centerZ() + "§a (" + distance + " bloków"
                 + (instance.automatic() ? ", wygenerowana automatycznie" : "") + ")");
+    }
+
+    private void forget(CommandSender sender, String[] args) {
+        StructureInstance instance;
+        if (args.length >= 2) {
+            instance = plugin.store().get(args[1]);
+            if (instance == null) {
+                sender.sendMessage("§cNie ma struktury o id §e" + args[1] + "§c.");
+                return;
+            }
+        } else {
+            instance = nearestTo(sender);
+            if (instance == null) {
+                return;
+            }
+        }
+        plugin.crates().clear(instance);
+        plugin.protection().onRemoved(instance);
+        plugin.store().remove(instance.id());
+        sender.sendMessage("§aZapomniano §e" + instance.structureId() + "§a (id " + instance.id()
+                + "). Bloki zostały, ale nie są już chronione, a skrzynie się nie odnawiają.");
     }
 
     private StructureInstance nearestTo(CommandSender sender) {
@@ -265,6 +288,10 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("wklej") || args[0].equalsIgnoreCase("generuj"))) {
             for (Blueprint bp : plugin.library().all()) {
                 options.add(bp.id());
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("usun")) {
+            for (StructureInstance instance : plugin.store().all()) {
+                options.add(instance.id());
             }
         } else if (args.length == 3 && (args[0].equalsIgnoreCase("wklej") || args[0].equalsIgnoreCase("generuj"))) {
             for (World world : Bukkit.getWorlds()) {

@@ -98,7 +98,7 @@ public final class LootConfig {
     }
 
     @SuppressWarnings("deprecation")
-    private static String color(String text) {
+    public static String color(String text) {
         return ChatColor.translateAlternateColorCodes('&', text);
     }
 

@@ -12,8 +12,10 @@ import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.axon.structure.StructureLibrary;
 import pl.axon.structure.core.Blueprint;
+import pl.axon.structure.core.Box;
 import pl.axon.structure.core.Placement;
 import pl.axon.structure.core.StructureInstance;
+import pl.axon.structure.protect.ProtectionService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,15 +55,18 @@ public final class AutoGenerator implements Listener {
     private final StructureLibrary library;
     private final InstanceStore store;
     private final PasteService paster;
+    private final ProtectionService protection;
     private final Random random = new Random();
     private Settings settings;
     private boolean attemptInProgress;
 
-    public AutoGenerator(JavaPlugin plugin, StructureLibrary library, InstanceStore store, PasteService paster) {
+    public AutoGenerator(JavaPlugin plugin, StructureLibrary library, InstanceStore store, PasteService paster,
+                         ProtectionService protection) {
         this.plugin = plugin;
         this.library = library;
         this.store = store;
         this.paster = paster;
+        this.protection = protection;
     }
 
     public void configure(Settings settings) {
@@ -105,6 +110,16 @@ public final class AutoGenerator implements Listener {
     public void tryPlace(World world, Blueprint bp, int centerX, int centerZ, int steps, boolean checkTerrain,
                          CommandSender feedback, java.util.UUID undoOwner, Consumer<Boolean> done) {
         Placement draft = Placement.anchored(world.getName(), centerX, 0, centerZ, bp.width() / 2, bp.depth() / 2, steps);
+        // Sprawdzane przed ładowaniem chunków, żeby nie generować terenu na próżno.
+        String plot = protection.plotConflict(world, Box.of(bp, draft));
+        if (plot != null) {
+            if (feedback != null) {
+                feedback.sendMessage("§cZa blisko działki §e" + plot + "§c (wymagany odstęp: §e"
+                        + protection.settings().plotDistance() + "§c kratek).");
+            }
+            done.accept(false);
+            return;
+        }
         int margin = paster.settings().smoothing();
         int[] a = draft.toWorld(-margin, 0, -margin);
         int[] b = draft.toWorld(bp.width() - 1 + margin, 0, bp.depth() - 1 + margin);

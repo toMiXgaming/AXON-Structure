@@ -19,6 +19,7 @@ Plugin na serwer **Paper 1.21.4** (Java 21) do stawiania struktur w stylu monume
 | `/struktury cofnij` | cofa twoje ostatnie postawienie (pamięta 5) |
 | `/struktury odswiez` | od razu losuje skrzynie w najbliższej strukturze |
 | `/struktury najblizsza` | pokazuje najbliższą postawioną strukturę |
+| `/struktury usun [id]` | zapomina strukturę: zdejmuje ochronę i skrzynie, bloki zostają |
 | `/struktury klasy` | klasy skrzyń i pule z szansami |
 | `/struktury przeladuj` | wczytuje config i pliki struktur od nowa |
 
@@ -40,6 +41,14 @@ Przy każdym stawianiu plugin:
 - wygładza pas terenu wokół (`wygladzanie-krawedzi`) – teren łagodnie przechodzi do poziomu struktury, materiałem z okolicy (trawa, piasek, …).
 
 Auto-generowanie stawia strukturę tylko tam, gdzie pod nią jest mało wody (`maks-woda-procent`) i teren jest w miarę równy (`maks-roznica-wysokosci`), w odstępie co najmniej `min-odleglosc-miedzy` bloków od innych struktur i `min-odleglosc-od-spawnu` od spawnu.
+
+## Ochrona i działki AxonPlot
+
+- Gracze nie mogą niszczyć ani budować w obrębie struktury (obrys + `ochrona.margines`, cała wysokość świata). Nie działają też wybuchy, ogień, tłoki ani wylewanie wody i lawy. Wolno otwierać skrzynie, drzwi i przyciski oraz zabierać karty z ramek. Uprawnienie `axonstructure.bypass` (domyślnie OP) pomija ochronę.
+- PvP działa: region WorldGuard `struktura_<id>` ma flagę `pvp: allow` (flagi ustawisz w `ochrona.flagi-worldguard`).
+- Struktura nie stanie bliżej niż `ochrona.odstep-od-dzialek` kratek od działki (regiony `dzialka_*`), licząc działkę w jej największym rozmiarze (`ochrona.promien-dzialki`). Dotyczy auto-generowania i komend.
+- W drugą stronę pilnuje AxonPlot: nie da się założyć działki bliżej niż `placement.structure-buffer-blocks` od regionu `struktura_*`.
+- Odstęp od działek wymaga WorldGuarda. Bez niego ochrona przed niszczeniem dalej działa.
 
 ## Format pliku `.axs`
 

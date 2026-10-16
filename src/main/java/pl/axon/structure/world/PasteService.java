@@ -13,10 +13,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import pl.axon.structure.core.Blueprint;
+import pl.axon.structure.core.Box;
 import pl.axon.structure.core.Placement;
 import pl.axon.structure.core.Rotation;
 import pl.axon.structure.core.StructureInstance;
 import pl.axon.structure.loot.CrateService;
+import pl.axon.structure.protect.ProtectionService;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -69,15 +71,17 @@ public final class PasteService {
     private final JavaPlugin plugin;
     private final InstanceStore store;
     private final CrateService crates;
+    private final ProtectionService protection;
     private final Map<UUID, Deque<PasteRecord>> history = new HashMap<>();
     private final Map<String, BlockData> dataCache = new HashMap<>();
     private Settings settings;
     private boolean busy;
 
-    public PasteService(JavaPlugin plugin, InstanceStore store, CrateService crates) {
+    public PasteService(JavaPlugin plugin, InstanceStore store, CrateService crates, ProtectionService protection) {
         this.plugin = plugin;
         this.store = store;
         this.crates = crates;
+        this.protection = protection;
     }
 
     public void configure(Settings settings) {
@@ -110,6 +114,12 @@ public final class PasteService {
         if (baseY - settings.maxFoundation() < world.getMinHeight()
                 || baseY + bp.height() + settings.clearAbove() > world.getMaxHeight()) {
             send(feedback, "§cZa mało miejsca w pionie na tej wysokości.");
+            return false;
+        }
+        String plot = protection.plotConflict(world, Box.of(bp, placement));
+        if (plot != null) {
+            send(feedback, "§cZa blisko działki §e" + plot + "§c (wymagany odstęp: §e"
+                    + protection.settings().plotDistance() + "§c kratek).");
             return false;
         }
 
@@ -189,8 +199,10 @@ public final class PasteService {
         String id = UUID.randomUUID().toString().substring(0, 8);
         StructureInstance instance = new StructureInstance(id, bp.id(), placement, center[0], center[2],
                 automatic, System.currentTimeMillis());
+        instance.footprint(Box.of(bp, placement));
         record.instanceId = id;
         store.add(instance);
+        protection.onPlaced(instance);
         record.cratesPlaced = crates.refresh(instance, true);
         store.save();
         return instance;
@@ -207,6 +219,7 @@ public final class PasteService {
             StructureInstance instance = store.get(record.instanceId);
             if (instance != null) {
                 crates.clear(instance);
+                protection.onRemoved(instance);
                 store.remove(instance.id());
             }
         }

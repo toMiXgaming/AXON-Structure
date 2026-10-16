@@ -10,6 +10,7 @@ public final class StructureInstance {
     private final int centerZ;
     private final boolean automatic;
     private long lastRefresh;
+    private Box footprint;
 
     public StructureInstance(String id, String structureId, Placement placement, int centerX, int centerZ,
                              boolean automatic, long lastRefresh) {
@@ -56,6 +57,15 @@ public final class StructureInstance {
 
     public void lastRefresh(long time) {
         this.lastRefresh = time;
+    }
+
+    /** Obrys struktury bez marginesu ochrony; null dla starych wpisów, dopóki nie zostanie wyliczony. */
+    public Box footprint() {
+        return footprint;
+    }
+
+    public void footprint(Box footprint) {
+        this.footprint = footprint;
     }
 
     public double distanceSquared(double x, double z) {

@@ -7,6 +7,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
+import pl.axon.structure.protect.ProtectionListener;
+import pl.axon.structure.protect.ProtectionService;
 import pl.axon.structure.world.AutoGenerator;
 import pl.axon.structure.world.InstanceStore;
 import pl.axon.structure.world.PasteService;
@@ -24,6 +26,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private CrateService crates;
     private PasteService paster;
     private AutoGenerator autoGenerator;
+    private ProtectionService protection;
 
     @Override
     public void onEnable() {
@@ -31,13 +34,17 @@ public final class AxonStructurePlugin extends JavaPlugin {
         library = new StructureLibrary(new File(getDataFolder(), "struktury"), getLogger());
         store = new InstanceStore(new File(getDataFolder(), "dane.yml"), getLogger());
         crates = new CrateService(this, library, store);
-        paster = new PasteService(this, store, crates);
-        autoGenerator = new AutoGenerator(this, library, store, paster);
+        protection = new ProtectionService(this, library, store);
+        paster = new PasteService(this, store, crates, protection);
+        autoGenerator = new AutoGenerator(this, library, store, paster, protection);
 
         reload();
         store.load();
+        protection.hookWorldGuard();
+        protection.syncAll();
         crates.start();
         getServer().getPluginManager().registerEvents(autoGenerator, this);
+        getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
 
         StrukturyCommand command = new StrukturyCommand(this);
         PluginCommand pluginCommand = getCommand("struktury");
@@ -64,6 +71,25 @@ public final class AxonStructurePlugin extends JavaPlugin {
         reloadConfig();
         FileConfiguration config = getConfig();
         library.reload();
+
+        Map<String, String> flags = new LinkedHashMap<>();
+        ConfigurationSection flagSection = config.getConfigurationSection("ochrona.flagi-worldguard");
+        if (flagSection != null) {
+            for (String key : flagSection.getKeys(false)) {
+                flags.put(key.toLowerCase(Locale.ROOT), String.valueOf(flagSection.get(key)));
+            }
+        }
+        boolean firstLoad = protection.settings() == null;
+        protection.configure(new ProtectionService.Settings(
+                config.getBoolean("ochrona.wlaczona", true),
+                Math.max(0, config.getInt("ochrona.margines", 2)),
+                Math.max(0, config.getInt("ochrona.odstep-od-dzialek", 50)),
+                Math.max(0, config.getInt("ochrona.promien-dzialki", 25)),
+                config.getString("ochrona.komunikat", "&cTej struktury nie można niszczyć ani rozbudowywać."),
+                flags));
+        if (!firstLoad) {
+            protection.syncAll();
+        }
 
         crates.configure(LootConfig.load(config, getLogger()), new CrateService.Settings(
                 Math.max(1, config.getLong("odswiezanie.co-ile-minut", 20)) * 60_000L,
@@ -108,6 +134,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public PasteService paster() {
         return paster;
+    }
+
+    public ProtectionService protection() {
+        return protection;
     }
 
     public AutoGenerator autoGenerator() {

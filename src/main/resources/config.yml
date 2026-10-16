@@ -23,6 +23,26 @@ stawianie:
   # Ile bloków ponad strukturą wycinać (drzewa, pagórki).
   czyszczenie-nad: 24
 
+ochrona:
+  # Gracze nie mogą niszczyć ani budować w obrębie struktury (cała wysokość świata, też pod ziemią).
+  # Wolno: otwierać skrzynie, drzwi, przyciski i zabierać karty z ramek. PvP działa normalnie.
+  # Admini z uprawnieniem axonstructure.bypass (domyślnie OP) mogą wszystko.
+  wlaczona: true
+  # Ile kratek wokół obrysu struktury też jest chronione.
+  margines: 2
+  # Minimalny odstęp (w kratkach) między strukturą a działką AxonPlot. Wymaga WorldGuarda.
+  # Działa w obie strony: struktura nie powstanie przy działce, a działki nie da się założyć przy strukturze
+  # (po stronie AxonPlot: placement.structure-buffer-blocks, ustaw tę samą wartość).
+  odstep-od-dzialek: 50
+  # Promień działki na najwyższym poziomie (AxonPlot: levels.*.radius). Działki rosną, więc liczy się największy.
+  promien-dzialki: 25
+  komunikat: "&cTej struktury nie można niszczyć ani rozbudowywać."
+  # Flagi regionu WorldGuard struktura_<id>. Niszczenie blokuje sam plugin, więc passthrough zostaje
+  # na allow (inaczej WorldGuard zablokowałby też otwieranie skrzyń), a pvp na allow włącza walkę.
+  flagi-worldguard:
+    pvp: allow
+    passthrough: allow
+
 auto-generowanie:
   wlaczone: true
   # Światy, w których struktury pojawiają się same.
