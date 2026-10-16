@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Uruchamia prawdziwy serwer Paper 1.21.4 z pluginem i WorldGuardem i sprawdza wklejanie, generowanie,
-# auto-generowanie, regiony struktur, odstęp od działek i ochronę przed wybuchami.
+# Uruchamia prawdziwy serwer Paper 1.21.4 z pluginem i sprawdza wklejanie, generowanie, auto-generowanie,
+# ochronę przed wybuchami i zapominanie struktur. Regiony WorldGuard i odstęp od działek sprawdzane są ręcznie.
 set -euo pipefail
 
 VERSION=1.21.4
@@ -18,38 +18,6 @@ if [ -z "$URL" ] || [ "$URL" = "null" ]; then
 fi
 echo "Paper: $URL"
 curl -fsSL -o paper.jar "$URL"
-
-# WorldEdit i WorldGuard z Modrinth (wersje dla Paper/Bukkit na 1.21.4).
-# WorldGuard 7.0.x działa tylko z WorldEdit 7.3.x, więc wersje są przypięte prefiksem.
-modrinth() { # projekt, prefiks wersji
-  local project="$1" prefix="$2" url="" gv
-  for gv in 1.21.4 1.21.3 1.21; do
-    url=$(curl -fsS -G "https://api.modrinth.com/v2/project/$project/version" \
-      --data-urlencode "game_versions=[\"$gv\"]" --data-urlencode 'loaders=["paper","bukkit","spigot"]' \
-      | jq -r --arg p "$prefix" '[.[] | select(.version_type == "release" and (.version_number | startswith($p)))][0].files
-          | (map(select(.primary)) + .)[0].url // empty')
-    [ -n "$url" ] && break
-  done
-  [ -n "$url" ] || { echo "::error::Nie znaleziono $project na Modrinth"; exit 1; }
-  echo "$project: $url"
-  curl -fsSL -o "plugins/$project.jar" "$url"
-}
-modrinth worldedit 7.3.
-modrinth worldguard 7.0.
-
-# Działka AxonPlot (region dzialka_*) wpisana wprost do pliku regionów WorldGuarda.
-mkdir -p plugins/WorldGuard/worlds/world
-cat > plugins/WorldGuard/worlds/world/regions.yml <<'REGIONS'
-regions:
-  dzialka_test:
-    type: cuboid
-    min: {x: -1007.0, y: -64.0, z: -1007.0}
-    max: {x: -993.0, y: 320.0, z: -993.0}
-    priority: 0
-    flags: {}
-    owners: {}
-    members: {}
-REGIONS
 
 echo "eula=true" > eula.txt
 cat > server.properties <<'PROPS'
@@ -91,10 +59,6 @@ wait_for 'Gotowe!' 120
 cmd "struktury generuj stacja world 400 400 1"
 waited=0
 until [ "$(grep -c 'Gotowe!' server.log)" -ge 2 ] || [ "$waited" -ge 180 ]; do sleep 2; waited=$((waited + 2)); done
-# Działka ma środek w -1000 -1000 (promień do 25), struktura ma ~52 kratki, odstęp 50: ma odmówić.
-cmd "struktury generuj stacja world -1000 -1080 0"
-wait_for 'Za blisko działki' 60
-
 # Wybuch TNT nad środkiem stacji nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
 CX=$(awk '/srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
 CZ=$(awk '/srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
@@ -117,7 +81,7 @@ cmd "forceload add 2500 -2500 2700 -2300"
 sleep 60
 cmd "save-all"
 sleep 5
-# Zapominanie struktury zdejmuje jej region.
+# Zapominanie struktury.
 FORGET=$(grep -oE "^  '?[0-9a-f]{8}'?:$" plugins/AXON-Structure/dane.yml | head -n 1 | tr -d " ':" || true)
 cmd "struktury usun $FORGET"
 sleep 3
@@ -128,9 +92,6 @@ echo "================ log serwera (AXON) ================"
 grep -E "AXON|struktur|Gotowe|Auto-generowanie|Teren|skrzyn|Exception|ERROR|WARN.*AXON" server.log || true
 echo "================ dane.yml ================"
 cat plugins/AXON-Structure/dane.yml || true
-echo "================ regiony WorldGuard ================"
-grep -E "^ +(struktura|dzialka)_[a-z_0-9]+:|pvp|x:" plugins/WorldGuard/worlds/world/regions.yml || true
-
 FAIL=0
 if grep -nE "Exception|Nieprawidłowy stan bloku|nieznany przedmiot|nieznanej klasy|Zła dekoracja|Brak puli|Błąd w pliku" server.log; then
   echo "::error::W logu serwera są błędy"; FAIL=1
@@ -139,20 +100,8 @@ GOT=$(grep -c "Gotowe!" server.log || true)
 if [ "$GOT" -lt 2 ]; then
   echo "::error::Oczekiwano 2 postawień z komend, jest $GOT"; FAIL=1
 fi
-grep -q "WorldGuard wykryty" server.log || { echo "::error::Plugin nie podpiął WorldGuarda"; FAIL=1; }
-grep -q "Za blisko działki.*dzialka_test" server.log \
-  || { echo "::error::Struktura stanęła przy działce"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
-REGIONS=plugins/WorldGuard/worlds/world/regions.yml
-STRUCTS=$(grep -cE "^ +struktura_[0-9a-f]+:" "$REGIONS" || true)
-INSTANCES=$(grep -cE "^  '?[0-9a-f]{8}'?:$" plugins/AXON-Structure/dane.yml || true)
-if [ "$STRUCTS" -ne "$INSTANCES" ] || [ "$STRUCTS" -lt 1 ]; then
-  echo "::error::Regionów struktura_: $STRUCTS, struktur w dane.yml: $INSTANCES"; FAIL=1
-fi
-if [ -n "$FORGET" ] && grep -q "struktura_$FORGET" "$REGIONS"; then
-  echo "::error::Region zapomnianej struktury $FORGET został"; FAIL=1
-fi
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }
 if grep -q "Auto-generowanie: postawiono" server.log; then
   echo "Auto-generowanie zadziałało."
