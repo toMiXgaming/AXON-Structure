@@ -2,6 +2,7 @@ name: Build
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
@@ -14,8 +15,18 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew build --no-daemon
+      - run: ./gradlew build generujStruktury --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: AXON-Structure
-          path: build/libs/*.jar
+          path: |
+            build/libs/*.jar
+            build/struktury/*.axs
+      - name: Test na prawdziwym serwerze Paper
+        run: .github/scripts/smoke-test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-server-log
+          path: smoke-server/server.log
+          if-no-files-found: ignore

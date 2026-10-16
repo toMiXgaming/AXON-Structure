@@ -1,4 +1,6 @@
-package pl.axon.structure.core;
+package pl.axon.structure.generator;
+
+import pl.axon.structure.core.Blueprint;
 
 import java.util.Random;
 

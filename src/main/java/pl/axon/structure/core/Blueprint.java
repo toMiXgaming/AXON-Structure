@@ -1,7 +1,5 @@
 package pl.axon.structure.core;
 
-import org.bukkit.inventory.ItemStack;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,33 +11,63 @@ import java.util.Map;
  * Układ lokalny: x rośnie w prawo (wschód), z rośnie w głąb struktury (południe),
  * y = 0 to warstwa gruntu. Front struktury jest po stronie z = 0 (północ).
  * Każda pozycja w obrębie prostopadłościanu, która nie została ustawiona, zostanie wyczyszczona do powietrza.
+ * <p>
+ * Klasa nie zależy od API Bukkita, więc korzysta z niej też generator plików struktur.
  */
 public final class Blueprint {
+
+    public static final String AIR = "minecraft:air";
 
     public record Pos(int x, int y, int z) {
     }
 
-    public record ContainerSpec(Pos pos, LootType loot) {
+    public enum SpawnKind {
+        /** Skrzynia albo beczka – blok zależy od wylosowanej klasy. */
+        CRATE,
+        /** Ramka z przedmiotem, np. karta dostępu. */
+        FRAME
+    }
+
+    /** Miejsce, w którym przy odświeżaniu losowana jest skrzynia z podanej puli. */
+    public record SpawnPoint(Pos pos, SpawnKind kind, String facing, String pool) {
     }
 
     public record SignSpec(Pos pos, String[] lines) {
     }
 
-    public record ItemFrameSpec(Pos pos, String facing, ItemStack item, ContainerSpec fallback) {
-    }
-
+    private String id = "struktura";
+    private String name = "Struktura";
+    private String description = "";
     private final int width;
     private final int height;
     private final int depth;
     private final Map<Pos, String> blocks = new HashMap<>();
-    private final List<ContainerSpec> containers = new ArrayList<>();
+    private final List<SpawnPoint> spawnPoints = new ArrayList<>();
     private final List<SignSpec> signs = new ArrayList<>();
-    private final List<ItemFrameSpec> itemFrames = new ArrayList<>();
 
     public Blueprint(int width, int height, int depth) {
         this.width = width;
         this.height = height;
         this.depth = depth;
+    }
+
+    public String id() {
+        return id;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public String description() {
+        return description;
+    }
+
+    public Blueprint meta(String id, String name, String description) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        return this;
     }
 
     public int width() {
@@ -62,7 +90,12 @@ public final class Blueprint {
         if (!inBounds(x, y, z)) {
             return;
         }
-        blocks.put(new Pos(x, y, z), normalize(state));
+        String normalized = normalize(state);
+        if (normalized.equals(AIR)) {
+            blocks.remove(new Pos(x, y, z));
+        } else {
+            blocks.put(new Pos(x, y, z), normalized);
+        }
     }
 
     public void fill(int x1, int y1, int z1, int x2, int y2, int z2, String state) {
@@ -87,16 +120,23 @@ public final class Blueprint {
 
     /** Zwraca stan bloku albo {@code minecraft:air}, jeśli pozycja nie została ustawiona. */
     public String get(int x, int y, int z) {
-        return blocks.getOrDefault(new Pos(x, y, z), "minecraft:air");
+        return blocks.getOrDefault(new Pos(x, y, z), AIR);
     }
 
     public boolean isAir(int x, int y, int z) {
-        return get(x, y, z).equals("minecraft:air");
+        return get(x, y, z).equals(AIR);
     }
 
-    public void container(int x, int y, int z, String state, LootType loot) {
-        set(x, y, z, state);
-        containers.add(new ContainerSpec(new Pos(x, y, z), loot));
+    /** Miejsce na skrzynię. Sam blok zostaje pusty – stawia go odświeżanie skrzyń. */
+    public void crate(int x, int y, int z, String facing, String pool) {
+        set(x, y, z, AIR);
+        spawnPoints.removeIf(p -> p.pos().equals(new Pos(x, y, z)));
+        spawnPoints.add(new SpawnPoint(new Pos(x, y, z), SpawnKind.CRATE, facing, pool));
+    }
+
+    /** Miejsce na ramkę z przedmiotem przyczepioną do bloku po stronie przeciwnej do {@code facing}. */
+    public void frame(int x, int y, int z, String facing, String pool) {
+        spawnPoints.add(new SpawnPoint(new Pos(x, y, z), SpawnKind.FRAME, facing, pool));
     }
 
     public void sign(int x, int y, int z, String state, String... lines) {
@@ -108,23 +148,16 @@ public final class Blueprint {
         signs.add(new SignSpec(new Pos(x, y, z), padded));
     }
 
-    /**
-     * Ramka z przedmiotem. Jeśli serwer nie pozwoli jej postawić, przedmiot trafi do kontenera {@code fallback}.
-     */
-    public void itemFrame(int x, int y, int z, String facing, ItemStack item, ContainerSpec fallback) {
-        itemFrames.add(new ItemFrameSpec(new Pos(x, y, z), facing, item, fallback));
+    public Map<Pos, String> blocks() {
+        return blocks;
     }
 
-    public List<ContainerSpec> containers() {
-        return containers;
+    public List<SpawnPoint> spawnPoints() {
+        return spawnPoints;
     }
 
     public List<SignSpec> signs() {
         return signs;
-    }
-
-    public List<ItemFrameSpec> itemFrames() {
-        return itemFrames;
     }
 
     static String normalize(String state) {

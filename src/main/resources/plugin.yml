@@ -7,7 +7,7 @@ author: toMiXgaming
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej <nazwa>|cofnij]
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|klasy|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
 permissions:

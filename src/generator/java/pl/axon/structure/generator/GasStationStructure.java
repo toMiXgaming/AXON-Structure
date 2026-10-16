@@ -1,14 +1,8 @@
-package pl.axon.structure.structures;
+package pl.axon.structure.generator;
 
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import pl.axon.structure.core.Blueprint;
-import pl.axon.structure.core.LootType;
 import pl.axon.structure.core.Palette;
-import pl.axon.structure.core.StructureDefinition;
 
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -51,7 +45,7 @@ public final class GasStationStructure implements StructureDefinition {
 
     @Override
     public String description() {
-        return "Oxum's Gas Station, Tier 0, " + WIDTH + "×" + DEPTH + " bloków, recykler na zapleczu";
+        return "Oxum's Gas Station, Tier 0, recykler na zapleczu";
     }
 
     @Override
@@ -238,15 +232,11 @@ public final class GasStationStructure implements StructureDefinition {
             pump(22, false);
             pump(30, true);
             // beczki obok dystrybutorów
-            bp.container(16, 1, 8, "barrel[facing=up,open=false]", LootType.FUEL_BARREL);
-            bp.set(16, 2, 8, "red_candle[candles=1,lit=false]");
-            bp.container(24, 1, 12, "barrel[facing=up,open=false]", LootType.FUEL_BARREL);
-            bp.set(24, 2, 12, "red_candle[candles=2,lit=false]");
-            bp.container(12, 1, 12, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
-            bp.container(27, 1, 8, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
-            if (chance(0.6)) {
-                bp.container(33, 1, 12, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
-            }
+            bp.crate(16, 1, 8, "north", "paliwo");
+            bp.crate(24, 1, 12, "north", "paliwo");
+            bp.crate(12, 1, 12, "north", "plac");
+            bp.crate(27, 1, 8, "north", "plac");
+            bp.crate(33, 1, 12, "north", "plac");
         }
 
         private void pump(int x, boolean toppled) {
@@ -296,7 +286,7 @@ public final class GasStationStructure implements StructureDefinition {
             bp.set(5, 2, 6, body);
             bp.fill(3, 2, 7, 3, 2, 9, body);
             bp.fill(5, 2, 7, 5, 2, 9, body);
-            bp.container(4, 2, 7, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
+            bp.crate(4, 2, 7, "north", "plac");
             bp.set(4, 2, 9, "spruce_trapdoor[facing=north,half=bottom,open=true]");
             // skrzynie ustawione w schodki: kabina (3) -> 4 -> 5 -> dach wiaty (6)
             bp.fill(6, 1, 5, 6, 4, 5, crates);
@@ -451,10 +441,8 @@ public final class GasStationStructure implements StructureDefinition {
             bp.set(11, 2, 27, "smithing_table"); // kasa fiskalna
             bp.set(11, 2, 29, "lantern[hanging=false]");
             // zielona karta leży na ladzie, skrzynka z jedzeniem tuż obok lady
-            Blueprint.ContainerSpec foodNearCounter =
-                    new Blueprint.ContainerSpec(new Blueprint.Pos(10, 1, 23), LootType.FOOD_CRATE);
-            bp.container(10, 1, 23, "barrel[facing=up,open=false]", LootType.FOOD_CRATE);
-            bp.itemFrame(11, 2, 24, "up", greenKeycard(), foodNearCounter);
+            bp.crate(10, 1, 23, "north", "lada");
+            bp.frame(11, 2, 24, "up", "karta");
             // telefon na ścianie za ladą
             bp.set(BX1 + 1, 2, 25, "tripwire_hook[facing=east,attached=false,powered=false]");
             bp.set(BX1 + 1, 2, 26, "stone_button[face=wall,facing=east,powered=false]");
@@ -468,10 +456,10 @@ public final class GasStationStructure implements StructureDefinition {
             fallenShelf(25, 24, 32);
             shelfRow(30, 24, 32);
             // skrzynki w alejkach
-            bp.container(18, 1, 28, "barrel[facing=up,open=false]", LootType.FOOD_CRATE);
-            bp.container(23, 1, 30, "chest[facing=west,type=single]", LootType.BROWN_CRATE);
-            bp.container(28, 1, 26, "barrel[facing=up,open=false]", LootType.FOOD_CRATE);
-            bp.container(33, 1, 23, "chest[facing=east,type=single]", LootType.BROWN_CRATE);
+            bp.crate(18, 1, 28, "north", "sklep");
+            bp.crate(23, 1, 30, "west", "sklep");
+            bp.crate(28, 1, 26, "north", "sklep");
+            bp.crate(33, 1, 23, "east", "sklep");
 
             // lodówki wzdłuż prawej ściany
             for (int z = 22; z <= 33; z++) {
@@ -483,8 +471,8 @@ public final class GasStationStructure implements StructureDefinition {
                 }
                 bp.set(x, 4, z, "smooth_quartz_slab[type=bottom]");
             }
-            bp.container(BX2 - 2, 1, 25, "barrel[facing=up,open=false]", LootType.MEDICAL_CRATE);
-            bp.container(BX2 - 2, 1, 31, "barrel[facing=up,open=false]", LootType.FOOD_CRATE);
+            bp.crate(BX2 - 2, 1, 25, "west", "lodowki");
+            bp.crate(BX2 - 2, 1, 31, "west", "lodowki");
 
             // oświetlenie i gruz
             for (int x = 12; x <= 34; x += 7) {
@@ -521,22 +509,6 @@ public final class GasStationStructure implements StructureDefinition {
             }
         }
 
-        private ItemStack greenKeycard() {
-            ItemStack card = new ItemStack(Material.PAPER);
-            ItemMeta meta = card.getItemMeta();
-            if (meta != null) {
-                applyName(meta, "§aZielona karta dostępu", List.of("§7Poziom dostępu: 1", "§8Oxum's Gas Station"));
-                card.setItemMeta(meta);
-            }
-            return card;
-        }
-
-        @SuppressWarnings("deprecation")
-        private static void applyName(ItemMeta meta, String name, List<String> lore) {
-            meta.setDisplayName(name);
-            meta.setLore(lore);
-        }
-
         // ------------------------------------------------------------------ zaplecze: korytarz, toalety, drabina
 
         private void backRooms() {
@@ -559,7 +531,7 @@ public final class GasStationStructure implements StructureDefinition {
             door(12, 1, 38, "birch_door", "south", "right", true);
             door(17, 1, 38, "spruce_door", "south", "left", true);
             bp.sign(10, 3, 37, "oak_wall_sign[facing=north]", "WC", "", "", "");
-            bp.container(BX1 + 1, 1, 36, "barrel[facing=up,open=false]", LootType.MEDICAL_CRATE);
+            bp.crate(BX1 + 1, 1, 36, "north", "toalety");
             bp.set(15, 6, 36, "lantern[hanging=true]");
 
             // toalety
@@ -573,8 +545,8 @@ public final class GasStationStructure implements StructureDefinition {
                     }
                 }
             }
-            bp.container(7, 1, 40, "barrel[facing=up,open=false]", LootType.MEDICAL_CRATE);
-            bp.container(13, 1, 40, "barrel[facing=up,open=false]", LootType.FOOD_CRATE);
+            bp.crate(7, 1, 40, "north", "toalety");
+            bp.crate(13, 1, 40, "north", "toalety");
             bp.set(11, 5, 41, "cobweb");
 
             // pokój z drabiną na dach
@@ -582,7 +554,7 @@ public final class GasStationStructure implements StructureDefinition {
                 bp.set(18, y, BZ2 - 1, "ladder[facing=north]");
             }
             bp.set(18, ROOF_Y + 1, BZ2 - 1, "iron_trapdoor[facing=north,half=bottom,open=true]");
-            bp.container(15, 1, 43, "chest[facing=east,type=single]", LootType.BROWN_CRATE);
+            bp.crate(15, 1, 43, "east", "zaplecze");
             bp.set(20, 1, 43, "scaffolding[bottom=false,distance=0]");
             bp.set(20, 1, 42, "barrel[facing=up,open=false]");
             bp.set(17, 6, 41, "lantern[hanging=true]");
@@ -596,14 +568,12 @@ public final class GasStationStructure implements StructureDefinition {
             // regały magazynowe po obu stronach recyklera
             rack(23, 26, 43);
             rack(32, 36, 43);
-            bp.container(24, 2, 43, "chest[facing=north,type=single]", LootType.BROWN_CRATE);
+            bp.crate(24, 2, 43, "north", "magazyn-regal");
             bp.set(25, 2, 43, "barrel[facing=north,open=false]");
             bp.set(24, 4, 43, "decorated_pot[facing=north]");
             bp.set(33, 2, 43, "barrel[facing=north,open=false]");
             bp.set(35, 4, 43, "barrel[facing=north,open=false]");
-            if (chance(0.5)) {
-                bp.container(34, 2, 43, "chest[facing=north,type=single]", LootType.BROWN_CRATE);
-            }
+            bp.crate(34, 2, 43, "north", "magazyn-regal");
             // regał wzdłuż prawej ściany
             for (int z = 37; z <= 41; z++) {
                 bp.set(BX2 - 1, 1, z, "spruce_slab[type=top]");
@@ -611,14 +581,13 @@ public final class GasStationStructure implements StructureDefinition {
             }
             bp.fill(BX2 - 1, 1, 36, BX2 - 1, 4, 36, "stripped_spruce_log[axis=y]");
             bp.set(BX2 - 1, 2, 38, "barrel[facing=west,open=false]");
-            bp.container(BX2 - 1, 4, 40, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
+            bp.crate(BX2 - 1, 4, 40, "west", "magazyn");
             // beczki i paliwo w magazynie
-            bp.container(23, 1, 37, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
-            bp.container(24, 1, 37, "barrel[facing=up,open=false]", LootType.FUEL_BARREL);
-            bp.set(24, 2, 37, "red_candle[candles=1,lit=false]");
+            bp.crate(23, 1, 37, "north", "magazyn");
+            bp.crate(24, 1, 37, "north", "paliwo");
             bp.fill(31, 1, 37, 32, 1, 38, "spruce_slab[type=bottom]"); // paleta
             bp.set(31, 2, 37, "barrel[facing=up,open=false]");
-            bp.container(32, 2, 38, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
+            bp.crate(32, 2, 38, "north", "magazyn");
             for (int x = 24; x <= 36; x += 6) {
                 bp.set(x, 6, 39, "chain[axis=y]");
                 bp.set(x, 5, 39, "lantern[hanging=true]");
@@ -671,11 +640,9 @@ public final class GasStationStructure implements StructureDefinition {
                 bp.set(x, ROOF_Y + 1, 43, "chain[axis=x]");
             }
             // 1-2 skrzynie na dachu
-            bp.container(33, ROOF_Y + 1, 40, "chest[facing=north,type=single]", LootType.BROWN_CRATE);
-            bp.container(12, ROOF_Y + 1, 25, "chest[facing=south,type=single]", LootType.TOOL_BOX);
-            if (chance(0.5)) {
-                bp.container(25, ROOF_Y + 1, 31, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
-            }
+            bp.crate(33, ROOF_Y + 1, 40, "north", "dach");
+            bp.crate(12, ROOF_Y + 1, 25, "south", "dach");
+            bp.crate(25, ROOF_Y + 1, 31, "north", "dach");
             // osłona snajperska z worków (wełna) przy przedniej krawędzi
             bp.set(16, ROOF_Y + 1, 21, "brown_wool");
             bp.set(17, ROOF_Y + 1, 21, "brown_wool");
@@ -767,11 +734,8 @@ public final class GasStationStructure implements StructureDefinition {
             bp.set(36, 1, 47, "black_wool");
             bp.set(36, 1, 46, "black_carpet");
             bp.set(31, 1, 48, "composter[level=0]");
-            bp.container(28, 1, 47, "barrel[facing=up,open=false]", LootType.SCRAP_BARREL);
-            if (chance(0.5)) {
-                bp.container(37, 1, 49, "barrel[facing=up,open=false]", LootType.FUEL_BARREL);
-                bp.set(37, 2, 49, "red_candle[candles=1,lit=false]");
-            }
+            bp.crate(28, 1, 47, "north", "plac");
+            bp.crate(37, 1, 49, "north", "paliwo");
             // stara siatka ogrodzenia
             for (int x = 2; x <= 42; x++) {
                 if (chance(0.75)) {
@@ -800,7 +764,7 @@ public final class GasStationStructure implements StructureDefinition {
             }
             bp.set(3, 2, 41, "spruce_slab[type=bottom]");
             bp.set(3, 3, 41, "barrel[facing=up,open=false]");
-            bp.container(2, 2, 42, "barrel[facing=up,open=false]", LootType.FOOD_CRATE);
+            bp.crate(2, 2, 42, "north", "zaplecze");
         }
 
         // ------------------------------------------------------------------ zniszczenia

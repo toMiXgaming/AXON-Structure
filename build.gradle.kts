@@ -31,3 +31,17 @@ tasks.processResources {
         expand(props)
     }
 }
+
+// Generator plików struktur (.axs). Nie trafia do jara pluginu.
+val generator: SourceSet by sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+    runtimeClasspath += sourceSets.main.get().output
+}
+
+tasks.register<JavaExec>("generujStruktury") {
+    group = "axon"
+    description = "Zapisuje struktury zdefiniowane w kodzie do build/struktury/*.axs"
+    classpath = generator.runtimeClasspath
+    mainClass.set("pl.axon.structure.generator.StructureExporter")
+    args(layout.buildDirectory.dir("struktury").get().asFile.path)
+}
