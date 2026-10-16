@@ -114,6 +114,32 @@ pule:
     brazowa: 45
     narzedziowa: 35
     brak: 20
+  # --- gospodarstwo Agro-Pol (beczki na podwórzu i przy bece paliwowej: pule plac i paliwo) ---
+  # parter domu
+  parter:
+    mala-skrzynka: 50
+    skrzynka-jedzenie: 25
+    skrzynka-medyczna: 10
+    brak: 15
+  # klepisko stodoły
+  klepisko:
+    mala-skrzynka: 55
+    narzedziowa: 15
+    brak: 30
+  # strych stodoły (parkour po kombajnie)
+  strych:
+    lepsza-skrzynia: 70
+    brazowa: 15
+    brak: 15
+  # piętro domu (przez szopę i balkon)
+  pietro:
+    lepsza-skrzynia: 70
+    skrzynka-medyczna: 15
+    brak: 15
+  # szczyt silosu – pojedyncza rzadka skrzynia
+  silos:
+    rzadka-skrzynia: 90
+    lepsza-skrzynia: 10
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
@@ -216,6 +242,57 @@ klasy:
       - {przedmiot: compass, ilosc: "1", szansa: 10}
       - {przedmiot: spyglass, ilosc: "1", szansa: 10}
       - {przedmiot: crossbow, ilosc: "1", szansa: 8}
+
+  mala-skrzynka:
+    nazwa: "&7Mała drewniana skrzynka"
+    blok: skrzynia
+    min-przedmiotow: 1
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "3-10", szansa: 100, nazwa: "&fZłom"}
+      - {przedmiot: wheat, ilosc: "2-6", szansa: 40}
+      - {przedmiot: bread, ilosc: "1-2", szansa: 30}
+      - {przedmiot: leather, ilosc: "1-3", szansa: 25}
+      - {przedmiot: string, ilosc: "1-3", szansa: 25, nazwa: "&fLina"}
+      - {przedmiot: torch, ilosc: "2-6", szansa: 25}
+      - {przedmiot: flint, ilosc: "1-3", szansa: 20}
+      - {przedmiot: coal, ilosc: "1-4", szansa: 20}
+      - {przedmiot: stone_axe, ilosc: "1", szansa: 8}
+      - {przedmiot: shears, ilosc: "1", szansa: 5}
+
+  lepsza-skrzynia:
+    nazwa: "&9Lepsza skrzynia"
+    blok: skrzynia
+    min-przedmiotow: 2
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "10-24", szansa: 100, nazwa: "&fZłom"}
+      - {przedmiot: iron_ingot, ilosc: "2-6", szansa: 70}
+      - {przedmiot: gold_ingot, ilosc: "1-3", szansa: 30}
+      - {przedmiot: arrow, ilosc: "6-16", szansa: 40}
+      - {przedmiot: gunpowder, ilosc: "2-4", szansa: 20}
+      - {przedmiot: bow, ilosc: "1", szansa: 15}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 10}
+      - {przedmiot: iron_sword, ilosc: "1", szansa: 12}
+      - {przedmiot: chainmail_chestplate, ilosc: "1", szansa: 10}
+      - {przedmiot: iron_helmet, ilosc: "1", szansa: 10}
+      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 6}
+      - {przedmiot: golden_apple, ilosc: "1", szansa: 8, nazwa: "&fApteczka"}
+
+  rzadka-skrzynia:
+    nazwa: "&5Rzadka skrzynia"
+    blok: skrzynia
+    min-przedmiotow: 3
+    loot:
+      - {przedmiot: iron_ingot, ilosc: "4-10", szansa: 100}
+      - {przedmiot: diamond, ilosc: "1-3", szansa: 50}
+      - {przedmiot: golden_apple, ilosc: "1-2", szansa: 30, nazwa: "&fApteczka"}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_leggings, ilosc: "1", szansa: 25}
+      - {przedmiot: gunpowder, ilosc: "3-8", szansa: 30}
+      - {przedmiot: spyglass, ilosc: "1", szansa: 25, nazwa: "&fLornetka"}
+      - {przedmiot: ender_pearl, ilosc: "1-2", szansa: 20}
+      - {przedmiot: emerald, ilosc: "1-3", szansa: 20}
+      - {przedmiot: diamond_sword, ilosc: "1", szansa: 8}
 
   zielona-karta:
     nazwa: "&aZielona karta dostępu"

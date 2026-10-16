@@ -54,7 +54,16 @@ Auto-generowanie stawia strukturę tylko tam, gdzie pod nią jest mało wody (`m
 
 Tekstowy: nagłówek (`id`, `nazwa`, `opis`, `rozmiar`), paleta bloków, warstwy (`y z: indeks*ile ...`), a na końcu sekcje `skrzynie:` i `ramki:` (`x y z kierunek pula`) oraz `napisy:`. Szczegóły w `StructureFile.java`.
 
-Struktury opisane w kodzie (`src/generator`) zapisuje do plików:
+Struktury opisane w kodzie (`src/generator`):
+
+| Plik | Struktura | Pule skrzyń |
+| --- | --- | --- |
+| `stacja.axs` | Opuszczona stacja benzynowa (Oxum's Gas) | `paliwo`, `plac`, `lada`, `karta`, `sklep`, `lodowki`, `toalety`, `zaplecze`, `magazyn-regal`, `magazyn`, `dach` |
+| `gospodarstwo.axs` | Opuszczone gospodarstwo Agro-Pol (PGR) | `plac`, `paliwo`, `parter`, `klepisko`, `strych`, `pietro`, `silos` |
+
+W gospodarstwie lepsze skrzynie wymagają parkouru: strych stodoły – heder kombajnu, maska, kabina, sterta siana, krawędź strychu; piętro domu – stos drewna, dach szopy na węgiel, balkon; rzadka skrzynia leży na szczycie silosu (drabina w klatce).
+
+Zapisuje je do plików:
 
 ```bash
 ./gradlew generujStruktury   # -> build/struktury/*.axs
