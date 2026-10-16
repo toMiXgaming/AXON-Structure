@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Strażnicy NPC: serwer Paper z Citizens i Sentinelem (najnowsze buildy z ci.citizensnpcs.co), wklejenie jednostki
+# Strażnicy NPC: serwer Paper z Citizens i Sentinelem (Modrinth, Jenkins Citizens albo ich Maven), wklejenie jednostki
 # i szpitala, postawienie strażników komendą i sprawdzenie, że stoją. Gdy nie da się pobrać Citizens/Sentinela,
 # test jest pomijany (ostrzeżenie), bo to zewnętrzne pluginy.
 set -euo pipefail
@@ -10,25 +10,51 @@ cp build/libs/AXON-Structure-*.jar "$DIR/plugins/"
 cp build/struktury/jednostka.axs build/struktury/szpital.axs "$DIR/plugins/AXON-Structure/struktury/"
 cd "$DIR"
 
-fetch_jenkins() { # plik docelowy, nazwy zadań Jenkinsa do wypróbowania
-  local out="$1" job json path
+UA="Mozilla/5.0 (X11; Linux x86_64) AXON-Structure-CI"
+fetch_modrinth() { # plik docelowy, slugi projektów na Modrinth
+  local out="$1" slug url
   shift
-  for job in "$@"; do
-    json=$(curl -fsSL "https://ci.citizensnpcs.co/job/$job/lastSuccessfulBuild/api/json") || { echo "$job: brak ($?)"; continue; }
-    path=$(echo "$json" | jq -r '[.artifacts[].relativePath | select(endswith(".jar")) | select(test("sources|javadoc") | not)][0]')
-    if [ -n "$path" ] && [ "$path" != "null" ]; then
-      echo "$job: $path"
-      curl -fsSL -o "$out" "https://ci.citizensnpcs.co/job/$job/lastSuccessfulBuild/artifact/$path" && return 0
+  for slug in "$@"; do
+    url=$(curl -fsSL -A "$UA" "https://api.modrinth.com/v2/project/$slug/version?game_versions=%5B%221.21.4%22%5D" \
+      | jq -r '[.[] | select(.loaders | index("paper") or index("spigot") or index("bukkit"))][0].files[0].url' 2>/dev/null) \
+      || { echo "modrinth $slug: brak"; continue; }
+    if [ -n "$url" ] && [ "$url" != "null" ]; then
+      echo "modrinth $slug: $url"
+      curl -fsSL -A "$UA" -o "$out" "$url" && return 0
+    else
+      echo "modrinth $slug: brak wersji na 1.21.4"
     fi
   done
   return 1
 }
-JOBS=$(curl -fsSL "https://ci.citizensnpcs.co/api/json?tree=jobs%5Bname%5D" | jq -r '.jobs[].name' 2>/dev/null || true)
-echo "Zadania Jenkinsa: $(echo $JOBS | tr '\n' ' ')"
-CIT_JOBS=$(echo "$JOBS" | grep -iE '^citizens' | grep -viE 'api|test' || true)
-SEN_JOBS=$(echo "$JOBS" | grep -iE '^sentinel' || true)
-# shellcheck disable=SC2086
-if ! fetch_jenkins plugins/Citizens.jar citizens2 Citizens2 Citizens $CIT_JOBS || ! fetch_jenkins plugins/Sentinel.jar sentinel Sentinel $SEN_JOBS; then
+fetch_jenkins() { # plik docelowy, nazwy zadań Jenkinsa do wypróbowania
+  local out="$1" job json path
+  shift
+  for job in "$@"; do
+    json=$(curl -fsSL -A "$UA" "https://ci.citizensnpcs.co/job/$job/lastSuccessfulBuild/api/json") || { echo "jenkins $job: brak"; continue; }
+    path=$(echo "$json" | jq -r '[.artifacts[].relativePath | select(endswith(".jar")) | select(test("sources|javadoc") | not)][0]')
+    if [ -n "$path" ] && [ "$path" != "null" ]; then
+      echo "jenkins $job: $path"
+      curl -fsSL -A "$UA" -o "$out" "https://ci.citizensnpcs.co/job/$job/lastSuccessfulBuild/artifact/$path" && return 0
+    fi
+  done
+  return 1
+}
+fetch_sentinel_maven() { # Sentinel jest też w repozytorium Mavena Citizens (sam plugin, bez cieniowania)
+  local base="https://maven.citizensnpcs.co/repo/org/mcmonkey/sentinel" ver snap file
+  ver=$(curl -fsSL -A "$UA" "$base/maven-metadata.xml" | grep -oP '(?<=<latest>)[^<]+') || { echo "maven sentinel: brak"; return 1; }
+  if [[ "$ver" == *SNAPSHOT ]]; then
+    snap=$(curl -fsSL -A "$UA" "$base/$ver/maven-metadata.xml" | grep -oP '(?<=<value>)[^<]+' | head -n 1) || return 1
+    file="sentinel-$snap.jar"
+  else
+    file="sentinel-$ver.jar"
+  fi
+  echo "maven sentinel: $ver/$file"
+  curl -fsSL -A "$UA" -o "$1" "$base/$ver/$file"
+}
+get_citizens() { fetch_modrinth "$1" citizens citizens2 || fetch_jenkins "$1" citizens2 Citizens2 Citizens; }
+get_sentinel() { fetch_modrinth "$1" sentinel || fetch_jenkins "$1" sentinel Sentinel || fetch_sentinel_maven "$1"; }
+if ! get_citizens plugins/Citizens.jar || ! get_sentinel plugins/Sentinel.jar; then
   echo "::warning::Nie udało się pobrać Citizens/Sentinela – test strażników pominięty"
   exit 0
 fi
