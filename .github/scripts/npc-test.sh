@@ -52,8 +52,12 @@ fetch_sentinel_maven() { # Sentinel jest też w repozytorium Mavena Citizens (sa
   echo "maven sentinel: $ver/$file"
   curl -fsSL -A "$UA" -o "$1" "$base/$ver/$file"
 }
-get_citizens() { fetch_modrinth "$1" citizens citizens2 || fetch_jenkins "$1" citizens2 Citizens2 Citizens; }
-get_sentinel() { fetch_modrinth "$1" sentinel || fetch_jenkins "$1" sentinel Sentinel || fetch_sentinel_maven "$1"; }
+modrinth_ids() { # identyfikatory projektów z wyszukiwarki Modrinth (slugi bywają inne niż nazwa)
+  curl -fsSL -A "$UA" "https://api.modrinth.com/v2/search?query=$1&limit=5" \
+    | jq -r '.hits[] | "\(.project_id) \(.title)"' | tee /dev/stderr | grep -iE " $1\b" | cut -d' ' -f1 || true
+}
+get_citizens() { fetch_modrinth "$1" citizens citizens2 $(modrinth_ids citizens) || fetch_jenkins "$1" citizens2 Citizens2 Citizens; }
+get_sentinel() { fetch_modrinth "$1" sentinel $(modrinth_ids sentinel) || fetch_jenkins "$1" sentinel Sentinel || fetch_sentinel_maven "$1"; }
 if ! get_citizens plugins/Citizens.jar || ! get_sentinel plugins/Sentinel.jar; then
   echo "::warning::Nie udało się pobrać Citizens/Sentinela – test strażników pominięty"
   exit 0
