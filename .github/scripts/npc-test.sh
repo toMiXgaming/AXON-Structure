@@ -28,7 +28,7 @@ echo "Zadania Jenkinsa: $(echo $JOBS | tr '\n' ' ')"
 CIT_JOBS=$(echo "$JOBS" | grep -iE '^citizens' | grep -viE 'api|test' || true)
 SEN_JOBS=$(echo "$JOBS" | grep -iE '^sentinel' || true)
 # shellcheck disable=SC2086
-if ! fetch_jenkins plugins/Citizens.jar Citizens2 Citizens $CIT_JOBS || ! fetch_jenkins plugins/Sentinel.jar Sentinel $SEN_JOBS; then
+if ! fetch_jenkins plugins/Citizens.jar citizens2 Citizens2 Citizens $CIT_JOBS || ! fetch_jenkins plugins/Sentinel.jar sentinel Sentinel $SEN_JOBS; then
   echo "::warning::Nie udało się pobrać Citizens/Sentinela – test strażników pominięty"
   exit 0
 fi
