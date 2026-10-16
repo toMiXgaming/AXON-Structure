@@ -102,9 +102,11 @@ public final class MineStructure implements StructureDefinition {
         private final Palette steel;
         private final Palette sheet;
         private final Palette rubble;
+        private final Furniture f;
 
         Builder(Random rnd) {
             this.rnd = rnd;
+            f = new Furniture(bp, G, rnd);
             grass = new Palette(rnd)
                     .add("grass_block", 12).add("coarse_dirt", 3).add("dirt", 2).add("podzol", 1);
             dust = new Palette(rnd)
@@ -324,6 +326,7 @@ public final class MineStructure implements StructureDefinition {
             set(48, 1, 10, "spruce_slab[type=top]");
             set(x2 - 1, 3, 10, "lever[face=wall,facing=west,powered=false]");
             crate(47, 1, 8, "east", "parter");
+            f.lamp(49, 2, 10);
             sign(47, 3, 6, "spruce_wall_sign[facing=north]", "SZCZĘŚĆ", "BOŻE", "", "");
             // szlaban w pozycji pionowej
             fill(52, 1, 6, 52, 4, 6, "stripped_birch_log[axis=y]");
@@ -447,10 +450,15 @@ public final class MineStructure implements StructureDefinition {
             }
             crate(8, 1, CZ1 + 1, "west", "parter");
             crate(5, 1, CZ2 - 1, "north", "parter");
-            // ławki w cechowni
+            crate(8, 1, 24, "west", "zaplecze");
+            // ławki w cechowni przed pulpitem, lampa pod stropem
             for (int x = 12; x <= 16; x += 2) {
-                fill(x, 1, 15, x, 1, 17, "spruce_slab[type=bottom]");
+                f.bench(x, 1, 15, 3, false, "west", "spruce");
             }
+            set(14, 1, CZ1 + 1, "lectern[facing=south,has_book=false,powered=false]");
+            f.hangingLamp(14, 4, 20);
+            crate(17, 1, CZ1 + 1, "west", "parter");
+            crate(11, 1, CZ2 - 1, "north", "parter");
 
             // całe schody na piętro wzdłuż południowej ściany
             for (int i = 0; i < 4; i++) {
@@ -488,6 +496,11 @@ public final class MineStructure implements StructureDefinition {
             crate(CX1 + 1, floor + 1, 24, "east", "parter");
             set(CX1 + 1, floor + 2, 17, "air");
             set(CX1 + 1, floor + 2, 24, "air");
+            // umywalki i ubikacja pod wschodnią ścianą łaźni
+            f.sink(CX2 - 1, floor + 1, 15, "east");
+            f.sink(CX2 - 1, floor + 1, 16, "east");
+            f.toilet(CX2 - 1, floor + 1, CZ2 - 1, "south");
+            crate(CX2 - 1, floor + 1, CZ2 - 3, "west", "toalety");
             for (int i = 0; i < 25; i++) {
                 int x = CX1 + 1 + rnd.nextInt(CX2 - CX1 - 1);
                 int z = CZ1 + 1 + rnd.nextInt(CZ2 - CZ1 - 1);
@@ -535,8 +548,15 @@ public final class MineStructure implements StructureDefinition {
             // tablica sygnałowa i ławka
             set(42, 2, NZ2 - 1, "lever[face=wall,facing=north,powered=false]");
             set(41, 2, NZ2 - 1, "stone_button[face=wall,facing=north,powered=false]");
-            fill(30, 1, 42, 32, 1, 42, "spruce_slab[type=bottom]");
+            f.bench(30, 1, 42, 3, true, "south", "spruce");
             crate(30, 1, 32, "east", "plac");
+            crate(43, 1, 32, "west", "parter");
+            crate(29, 1, 43, "east", "plac");
+            // obozowisko dzikiego lokatora w kącie przy tablicy sygnałowej
+            f.camp(41, 1, 41, "east");
+            sign(43, 2, 43, "spruce_wall_sign[facing=north]", "MÓJ KĄT", "WYPAD", "", "");
+            // ktoś nie trafił w przejście przy barierce
+            f.skeleton(36, 1, 41, "east");
             for (int i = 0; i < 20; i++) {
                 int x = NX1 + 1 + rnd.nextInt(NX2 - NX1 - 1);
                 int z = NZ1 + 1 + rnd.nextInt(NZ2 - NZ1 - 1);
@@ -631,6 +651,12 @@ public final class MineStructure implements StructureDefinition {
             sign(39, UY + 2, hz1, "oak_wall_sign[facing=south]", "DO SZYBU", "→", "", "");
             crate(47, UY, hz1, "south", "podszybie");
             crate(40, UY, hz2, "north", "podszybie");
+            // ławka pod tablicą, więcej lamp pod stropem hali i w klatce szybowej
+            f.bench(41, UY, hz1, 4, true, "north", "spruce");
+            f.hangingLamp(40, UY + 3, 34);
+            f.hangingLamp(47, UY + 3, 39);
+            f.hangingLamp(36, UY + 3, 37);
+            breakRoom();
 
             // chodnik na wschód: x 49-72, z 35-37, stopy y -10..-8
             carve(hx2 + 1, UY, 35, 72, UY + 2, 37);
@@ -646,6 +672,23 @@ public final class MineStructure implements StructureDefinition {
             set(57, UY + 2, 36, "oak_log[axis=z]");
             set(54, UY, 36, "cauldron");
             set(66, UY, 36, "cauldron");
+            // lampy pod stropem chodnika (nad głową, między odrzwiami)
+            for (int x : new int[]{51, 55, 63, 69}) {
+                f.hangingLamp(x, UY + 2, 36);
+            }
+            for (int x : new int[]{50, 59, 67}) {
+                set(x, UY + 2, chance(0.5) ? 35 : 37, "cobweb");
+            }
+            // zabarykadowany boczny chodnik z zawałem i szkielet przed barykadą
+            fill(70, UY, 38, 71, UY + 1, 41, "air");
+            fill(70, UY, 40, 71, UY + 1, 41, rubble);
+            set(70, UY, 38, "crafting_table");
+            set(70, UY + 1, 38, "oak_fence");
+            set(71, UY, 38, "oak_fence");
+            set(71, UY + 1, 38, "spruce_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]");
+            set(70, UY + 1, 39, "cobweb");
+            sign(70, UY, 37, "oak_wall_sign[facing=north]", "ZAWAŁ", "NIE WCHODZIĆ", "TAM ZOSTAŁ", "HENIEK");
+            f.skeleton(71, UY, 37, "east");
 
             // przekop na północ do składu materiałów wybuchowych
             carve(59, UY, 29, 61, UY + 2, 34);
@@ -656,11 +699,16 @@ public final class MineStructure implements StructureDefinition {
             lining(57, 23, 63, 27, UY + 2);
             fill(59, UY, 28, 61, UY + 2, 28, "iron_bars");
             fill(61, UY, 28, 61, UY + 1, 28, "air");
+            // regały z laskami dynamitu (czerwone świece) i skrzynka zapalników
             for (int x = 57; x <= 63; x += 2) {
                 set(x, UY, 23, "spruce_planks");
-                set(x, UY + 1, 23, chance(0.5) ? "red_wool" : "spruce_slab[type=bottom]");
+                set(x, UY + 1, 23, chance(0.6) ? "red_candle[candles=" + (3 + rnd.nextInt(2)) + ",lit=false,waterlogged=false]"
+                        : "spruce_slab[type=bottom]");
             }
-            set(63, UY, 25, "red_wool");
+            set(63, UY, 25, "red_candle[candles=4,lit=false,waterlogged=false]");
+            f.hangingLamp(60, UY + 2, 25);
+            f.hangingLamp(60, UY + 2, 33);
+            crate(63, UY, 27, "west", "magazyn");
             set(57, UY, 26, "spruce_planks");
             set(60, UY + 2, 28, "iron_block");
             sign(60, UY + 2, 29, "oak_wall_sign[facing=south]", "MATERIAŁY", "WYBUCHOWE", "WSTĘP", "WZBRONIONY");
@@ -683,7 +731,37 @@ public final class MineStructure implements StructureDefinition {
                 set(77, UY, z, "lightning_rod[facing=south]");
             }
             set(75, UY + 4, 36, "lantern[hanging=true,waterlogged=false]");
+            f.hangingLamp(74, UY + 4, 40);
+            f.hangingLamp(77, UY + 4, 32);
             crate(74, UY, 32, "east", "podszybie");
+            crate(78, UY, 31, "west", "zaplecze");
+            set(73, UY, 40, "crafting_table");
+            set(73, UY, 41, "grindstone[face=floor,facing=east]");
+            sign(73, UY + 2, 38, "oak_wall_sign[facing=east]", "POMPY STOJĄ", "WODA IDZIE", "SPADAJ", "GÓRĄ");
+        }
+
+        /**
+         * Kanciapa sztygara za halą podszybia (x 41-48 / z 42-46): szafki, stół z krzesłami, ławka, zlew,
+         * zapalona lampa. Ślepa, jedno wejście z hali.
+         */
+        private void breakRoom() {
+            carve(41, UY, 42, 48, UY + 2, 46);
+            lining(41, 42, 48, 46, UY + 2);
+            fill(44, UY, 41, 44, UY + 1, 41, "air");
+            for (int z = 42; z <= 44; z++) {
+                f.wardrobe(41, UY, z, "east", "spruce");
+            }
+            f.desk(46, UY, 44, 47, 44, "spruce");
+            f.chair(46, UY, 43, "north", "spruce");
+            f.chair(47, UY, 45, "south", "spruce");
+            set(46, UY + 1, 44, "lantern[hanging=false,waterlogged=false]");
+            set(47, UY + 1, 44, "flower_pot");
+            f.bench(43, UY, 46, 3, true, "south", "spruce");
+            f.sink(48, UY, 46, "east");
+            f.hangingLamp(44, UY + 2, 44);
+            crate(48, UY, 42, "west", "lada");
+            crate(41, UY, 46, "east", "zaplecze");
+            sign(45, UY + 1, 42, "spruce_wall_sign[facing=south]", "KTO ZŻARŁ", "MI KANAPKI", "Z SZAFKI?!", "- ZBYSZEK");
         }
 
         private void carve(int x1, int y1, int z1, int x2, int y2, int z2) {
@@ -906,6 +984,13 @@ public final class MineStructure implements StructureDefinition {
             set(63, 10, MZ1 + 1, "lever[face=floor,facing=south,powered=true]");
             set(64, 10, MZ1 + 1, "observer[facing=south,powered=false]");
             crate(60, 10, MZ1 + 1, "south", "maszynownia");
+            // warsztat konserwatorów pod wschodnią ścianą, pulpit z dziennikiem zmian
+            set(MX2 - 1, 1, 40, "crafting_table");
+            set(MX2 - 1, 1, 41, "anvil[facing=north]");
+            set(MX2 - 1, 1, 42, "grindstone[face=floor,facing=west]");
+            crate(MX2 - 1, 1, MZ2 - 1, "north", "zaplecze");
+            set(66, 1, MZ1 + 1, "lectern[facing=south,has_book=false,powered=false]");
+            crate(MX2 - 1, 1, MZ1 + 1, "west", "parter");
             for (int i = 0; i < 15; i++) {
                 int x = MX1 + 1 + rnd.nextInt(MX2 - MX1 - 1);
                 int z = MZ1 + 1 + rnd.nextInt(MZ2 - MZ1 - 1);
@@ -981,6 +1066,10 @@ public final class MineStructure implements StructureDefinition {
             crate(RX2 - 1, 13, RZ2 - 1, "west", "strych");
             set(62, 13, 10, "grindstone[face=floor,facing=north]");
             fill(63, 13, 18, 64, 13, 18, "cauldron");
+            crate(RX2 - 1, 7, RZ2 - 1, "west", "magazyn");
+            crate(RX1 + 1, 1, RZ1 + 1, "east", "magazyn");
+            set(RX1 + 1, 1, RZ1 + 3, "crafting_table");
+            sign(RX2 - 1, 2, 16, "oak_wall_sign[facing=west]", "WĘGIEL SIĘ", "SKOŃCZYŁ.", "NADZIEJA", "TEŻ");
 
             // rampa załadunkowa i zewnętrzny taśmociąg (1 blok, bez barierek)
             for (int x = 66; x <= 71; x++) {
@@ -1088,6 +1177,10 @@ public final class MineStructure implements StructureDefinition {
             set(16, 3, 62, "cobweb");
             crate(13, 1, 63, "east", "sztolnia");
             crate(19, 1, 62, "west", "sztolnia");
+            crate(20, 1, 52, "west", "plac");
+            // lampy pod stropem chodnika i komory
+            f.hangingLamp(16, 3, 53);
+            f.hangingLamp(15, 3, 63);
             // obudowa wejścia
             fill(14, 1, 49, 14, 3, 49, "oak_log[axis=y]");
             fill(18, 1, 49, 18, 3, 49, "oak_log[axis=y]");
