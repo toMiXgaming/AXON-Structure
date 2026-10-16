@@ -1,0 +1,16 @@
+name: AXON-Structure
+version: '${version}'
+main: pl.axon.structure.AxonStructurePlugin
+api-version: '1.21'
+description: Struktury w stylu Rusta wklejane jedną komendą.
+author: toMiXgaming
+commands:
+  struktury:
+    description: Wklejanie struktur w stylu Rusta.
+    usage: /struktury [lista|wklej <nazwa>|cofnij]
+    aliases: [axs]
+    permission: axonstructure.use
+permissions:
+  axonstructure.use:
+    description: Pozwala używać komendy /struktury.
+    default: op
