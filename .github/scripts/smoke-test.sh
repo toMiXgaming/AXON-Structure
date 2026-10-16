@@ -20,20 +20,22 @@ echo "Paper: $URL"
 curl -fsSL -o paper.jar "$URL"
 
 # WorldEdit i WorldGuard z Modrinth (wersje dla Paper/Bukkit na 1.21.4).
-modrinth() { # projekt
-  local project="$1" url="" gv
+# WorldGuard 7.0.x działa tylko z WorldEdit 7.3.x, więc wersje są przypięte prefiksem.
+modrinth() { # projekt, prefiks wersji
+  local project="$1" prefix="$2" url="" gv
   for gv in 1.21.4 1.21.3 1.21; do
     url=$(curl -fsS -G "https://api.modrinth.com/v2/project/$project/version" \
       --data-urlencode "game_versions=[\"$gv\"]" --data-urlencode 'loaders=["paper","bukkit","spigot"]' \
-      | jq -r '[.[] | select(.version_type == "release")][0].files | (map(select(.primary)) + .)[0].url // empty')
+      | jq -r --arg p "$prefix" '[.[] | select(.version_type == "release" and (.version_number | startswith($p)))][0].files
+          | (map(select(.primary)) + .)[0].url // empty')
     [ -n "$url" ] && break
   done
   [ -n "$url" ] || { echo "::error::Nie znaleziono $project na Modrinth"; exit 1; }
   echo "$project: $url"
   curl -fsSL -o "plugins/$project.jar" "$url"
 }
-modrinth worldedit
-modrinth worldguard
+modrinth worldedit 7.3.
+modrinth worldguard 7.0.
 
 # Działka AxonPlot (region dzialka_*) wpisana wprost do pliku regionów WorldGuarda.
 mkdir -p plugins/WorldGuard/worlds/world
@@ -74,7 +76,8 @@ wait_for() { # wzorzec, limit sekund
   until grep -q "$pattern" server.log; do
     sleep 2; waited=$((waited + 2))
     if [ "$waited" -ge "$limit" ] || ! kill -0 "$PID" 2>/dev/null; then
-      echo "::error::Nie doczekano się: $pattern"; tail -n 80 server.log; return 1
+      echo "::error::Nie doczekano się: $pattern"
+      grep -nE -A3 "ERROR|Could not load|Exception" server.log | head -n 60; tail -n 60 server.log; return 1
     fi
   done
 }
