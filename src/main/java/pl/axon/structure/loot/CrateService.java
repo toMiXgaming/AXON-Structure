@@ -42,6 +42,7 @@ public final class CrateService {
     private LootConfig loot;
     private Settings settings;
     private BukkitTask task;
+    private String dropPool = "";
 
     public CrateService(JavaPlugin plugin, StructureLibrary library, InstanceStore store) {
         this.plugin = plugin;
@@ -63,6 +64,11 @@ public final class CrateService {
                 }
             }
         }
+    }
+
+    /** Pula oznaczająca miejsca zrzutów: tych punktów nie losujemy przy odświeżaniu, obsługuje je {@link AirdropService}. */
+    public void dropPool(String pool) {
+        this.dropPool = pool == null ? "" : pool;
     }
 
     public LootConfig loot() {
@@ -134,6 +140,9 @@ public final class CrateService {
         Placement placement = instance.placement();
         int placed = 0;
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+            if (point.pool().equalsIgnoreCase(dropPool)) {
+                continue;
+            }
             int[] w = placement.toWorld(point.pos().x(), point.pos().y(), point.pos().z());
             if (!world.isChunkLoaded(w[0] >> 4, w[2] >> 4)) {
                 continue;
@@ -158,6 +167,9 @@ public final class CrateService {
             return;
         }
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+            if (point.pool().equalsIgnoreCase(dropPool)) {
+                continue;
+            }
             int[] w = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
             if (point.kind() == Blueprint.SpawnKind.FRAME) {
                 removeFrames(world, w);

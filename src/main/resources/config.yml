@@ -65,6 +65,27 @@ auto-generowanie:
   #     magazyn: 1
   struktury: {}
 
+zrzuty:
+  # Co losowy czas nad jedną z postawionych struktur spada na spadochronie skrzynia z rzadkim lootem.
+  # Miejsca zrzutów są w plikach struktur (lądowisko jednostki, dach szpitala). Komenda: /struktury zrzut
+  wlaczone: true
+  # Odstęp między zrzutami: losowo od-do minut.
+  co-ile-minut-od: 45
+  co-ile-minut-do: 90
+  # Zrzut tylko, gdy online jest co najmniej tylu graczy.
+  min-graczy: 2
+  # Pula lootu (sekcja pule:) i zarazem nazwa miejsc zrzutu w plikach .axs.
+  pula: zrzut
+  # Po ilu minutach nieopróżniona skrzynia znika.
+  znika-po-minutach: 15
+  wysokosc-spadania: 40
+  czas-spadania-sekund: 10
+  nazwa-skrzyni: "&4&lZrzut zaopatrzenia"
+  # {nazwa} = nazwa struktury, {x} {y} {z} = współrzędne, {minuty} = znika-po-minutach. "" = bez komunikatu.
+  komunikat: "&4&l[ZRZUT] &fNad strukturą &e{nazwa} &fspada skrzynia z zaopatrzeniem! &7({x}, {y}, {z})"
+  komunikat-wyladowal: "&4&l[ZRZUT] &fSkrzynia wylądowała. Zniknie za &e{minuty} min&f."
+  komunikat-zniknal: "&4&l[ZRZUT] &7Nikt nie zabrał zrzutu, skrzynia zniknęła."
+
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.
 #  Pula losuje klasę skrzyni według wag. "brak" = w tym miejscu nic się nie pojawi.
@@ -267,6 +288,10 @@ pule:
   ladowisko:
     rzadka-skrzynia: 85
     lepsza-skrzynia: 15
+  # zrzut zaopatrzenia (sekcja zrzuty: wskazuje tę pulę)
+  zrzut:
+    rzadka-skrzynia: 75
+    skrzynia-broni: 25
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ

@@ -8,7 +8,7 @@ softdepend: [WorldGuard]
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|przeladuj]
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|zrzut|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
 permissions:

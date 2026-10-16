@@ -1592,6 +1592,8 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             }
             crate(50, 1, 108, "east", "plac");
             crate(66, 1, 94, "west", "plac");
+            // miejsce zrzutu zaopatrzenia (losowane przez plugin, nie przy odświeżaniu skrzyń)
+            crate(58, 1, 104, "north", "zrzut");
         }
 
         /** Łukowy hangar x 76-92 / z 94-118 ze śmigłowcem bez wirnika i szybem windy do schronu. */

@@ -1258,6 +1258,8 @@ public final class HospitalStructure implements StructureDefinition {
             crate(64, 21, 52, "north", "parter");
             // dach – lądowisko
             crate(66, 26, 50, "north", "ladowisko");
+            // miejsce zrzutu zaopatrzenia na środku litery H
+            crate(66, 26, 47, "north", "zrzut");
             // pawilon: apteka (kanał wentylacyjny z dachu), przychodnia, blok operacyjny (łącznik)
             crate(86, 1, 35, "south", "apteka");
             crate(92, 1, 36, "south", "izba-chorych");

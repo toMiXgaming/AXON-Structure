@@ -5,6 +5,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.axon.structure.command.StrukturyCommand;
+import pl.axon.structure.loot.AirdropService;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
 import pl.axon.structure.protect.ProtectionListener;
@@ -24,6 +25,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private StructureLibrary library;
     private InstanceStore store;
     private CrateService crates;
+    private AirdropService airdrops;
     private PasteService paster;
     private AutoGenerator autoGenerator;
     private ProtectionService protection;
@@ -34,6 +36,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         library = new StructureLibrary(new File(getDataFolder(), "struktury"), getLogger());
         store = new InstanceStore(new File(getDataFolder(), "dane.yml"), getLogger());
         crates = new CrateService(this, library, store);
+        airdrops = new AirdropService(this, library, store, crates);
         protection = new ProtectionService(this, library, store);
         paster = new PasteService(this, store, crates, protection);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
@@ -43,6 +46,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         protection.hookWorldGuard();
         protection.syncAll();
         crates.start();
+        airdrops.start();
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
 
@@ -58,6 +62,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (airdrops != null) {
+            airdrops.stop();
+        }
         if (crates != null) {
             crates.stop();
         }
@@ -96,6 +103,20 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 config.getInt("odswiezanie.blokada-gdy-gracz-blizej-niz", 32),
                 config.getBoolean("odswiezanie.zastepuj-pelne", false)));
 
+        airdrops.configure(new AirdropService.Settings(
+                config.getBoolean("zrzuty.wlaczone", true),
+                config.getInt("zrzuty.co-ile-minut-od", 45),
+                config.getInt("zrzuty.co-ile-minut-do", 90),
+                Math.max(0, config.getInt("zrzuty.min-graczy", 2)),
+                config.getString("zrzuty.pula", "zrzut").toLowerCase(Locale.ROOT),
+                config.getInt("zrzuty.znika-po-minutach", 15),
+                config.getInt("zrzuty.wysokosc-spadania", 40),
+                config.getInt("zrzuty.czas-spadania-sekund", 10),
+                config.getString("zrzuty.nazwa-skrzyni", "&4&lZrzut zaopatrzenia"),
+                config.getString("zrzuty.komunikat", ""),
+                config.getString("zrzuty.komunikat-wyladowal", ""),
+                config.getString("zrzuty.komunikat-zniknal", "")));
+
         paster.configure(new PasteService.Settings(
                 Math.max(100, config.getInt("stawianie.bloki-na-tick", 4000)),
                 Math.max(0, config.getInt("stawianie.wygladzanie-krawedzi", 6)),
@@ -130,6 +151,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public CrateService crates() {
         return crates;
+    }
+
+    public AirdropService airdrops() {
+        return airdrops;
     }
 
     public PasteService paster() {

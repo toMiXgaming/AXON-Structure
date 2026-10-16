@@ -89,6 +89,9 @@ cmd "forceload add 277 -1"
 sleep 3
 cmd "execute if block 275 90 -5 minecraft:smooth_stone run say SZPITAL-GRUNT-OK"
 cmd "execute if block 277 86 -1 minecraft:stone_brick_stairs run say SZPITAL-PIWNICA-OK"
+# Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
+cmd "struktury zrzut"
+sleep 14
 # Wybuch TNT nad środkiem stacji nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
 CX=$(awk '/srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
 CZ=$(awk '/srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
@@ -138,6 +141,7 @@ grep -qF "Server] SZPITAL-GRUNT-OK" server.log || { echo "::error::Szpital: grun
 grep -qF "Server] SZPITAL-PIWNICA-OK" server.log || { echo "::error::Szpital: brak schodów do piwnicy"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
+grep -q "Zrzut wylądował" server.log || { echo "::error::Zrzut zaopatrzenia nie wylądował"; FAIL=1; }
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }
 if grep -q "Auto-generowanie: postawiono" server.log; then
   echo "Auto-generowanie zadziałało."
