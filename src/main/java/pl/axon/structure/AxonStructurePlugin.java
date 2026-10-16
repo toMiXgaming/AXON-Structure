@@ -8,6 +8,7 @@ import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.loot.AirdropService;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
+import pl.axon.structure.npc.GuardService;
 import pl.axon.structure.protect.ProtectionListener;
 import pl.axon.structure.protect.ProtectionService;
 import pl.axon.structure.world.AutoGenerator;
@@ -26,6 +27,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private InstanceStore store;
     private CrateService crates;
     private AirdropService airdrops;
+    private GuardService guards;
     private PasteService paster;
     private AutoGenerator autoGenerator;
     private ProtectionService protection;
@@ -37,6 +39,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         store = new InstanceStore(new File(getDataFolder(), "dane.yml"), getLogger());
         crates = new CrateService(this, library, store);
         airdrops = new AirdropService(this, library, store, crates);
+        guards = new GuardService(this, library, store, crates);
         protection = new ProtectionService(this, library, store);
         paster = new PasteService(this, store, crates, protection);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
@@ -47,6 +50,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
         protection.syncAll();
         crates.start();
         airdrops.start();
+        guards.start();
+        getServer().getPluginManager().registerEvents(guards, this);
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
 
@@ -62,6 +67,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (guards != null) {
+            guards.stop();
+        }
         if (airdrops != null) {
             airdrops.stop();
         }
@@ -119,6 +127,35 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 config.getString("zrzuty.komunikat-wyladowal", ""),
                 config.getString("zrzuty.komunikat-zniknal", "")));
 
+        Map<String, GuardService.Kit> kits = new LinkedHashMap<>();
+        ConfigurationSection kitSection = config.getConfigurationSection("straznicy.zestawy");
+        if (kitSection != null) {
+            for (String key : kitSection.getKeys(false)) {
+                ConfigurationSection k = kitSection.getConfigurationSection(key);
+                if (k == null) {
+                    continue;
+                }
+                String id = key.toLowerCase(Locale.ROOT);
+                kits.put(id, new GuardService.Kit(id,
+                        k.getString("nazwa", key),
+                        k.getString("skin-tekstura", ""),
+                        k.getString("skin-podpis", ""),
+                        k.getString("skin-gracza", ""),
+                        k.getString("bron", "crossbow"),
+                        k.getStringList("zbroja"),
+                        k.getDouble("zycie", 20),
+                        k.getDouble("obrazenia", -1),
+                        k.getDouble("zasieg", 20),
+                        k.getDouble("celnosc", 0),
+                        k.getString("loot", "")));
+            }
+        }
+        guards.configure(new GuardService.Settings(
+                config.getBoolean("straznicy.wlaczeni", true),
+                Math.max(16, config.getInt("straznicy.promien-aktywacji", 64)),
+                Math.max(1, config.getInt("straznicy.odradzanie-minut", 10)),
+                kits));
+
         paster.configure(new PasteService.Settings(
                 Math.max(100, config.getInt("stawianie.bloki-na-tick", 4000)),
                 Math.max(0, config.getInt("stawianie.wygladzanie-krawedzi", 6)),
@@ -162,6 +199,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
             getLogger().warning("Zła strefa czasowa '" + id + "', używam strefy serwera.");
             return java.time.ZoneId.systemDefault();
         }
+    }
+
+    public GuardService guards() {
+        return guards;
     }
 
     public AirdropService airdrops() {

@@ -140,7 +140,7 @@ public final class CrateService {
         Placement placement = instance.placement();
         int placed = 0;
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
-            if (point.pool().equalsIgnoreCase(dropPool)) {
+            if (point.pool().equalsIgnoreCase(dropPool) || point.pool().toLowerCase(Locale.ROOT).startsWith("npc-")) {
                 continue;
             }
             int[] w = placement.toWorld(point.pos().x(), point.pos().y(), point.pos().z());
@@ -167,7 +167,7 @@ public final class CrateService {
             return;
         }
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
-            if (point.pool().equalsIgnoreCase(dropPool)) {
+            if (point.pool().equalsIgnoreCase(dropPool) || point.pool().toLowerCase(Locale.ROOT).startsWith("npc-")) {
                 continue;
             }
             int[] w = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());

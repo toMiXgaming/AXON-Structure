@@ -24,7 +24,7 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "zrzut", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "zrzut", "straznicy", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -46,6 +46,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "najblizsza" -> nearest(sender);
             case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
+            case "straznicy" -> guards(sender, args);
             case "zrzut" -> sender.sendMessage(plugin.airdrops().isActive() || args.length < 2 || !args[1].equalsIgnoreCase("info")
                     ? plugin.airdrops().trigger(sender)
                     : "§eNastępny zrzut: §f" + plugin.airdrops().nextInfo() + "§e.");
@@ -71,6 +72,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
         sender.sendMessage("§e/" + label + " zrzut [info] §7– zrzuca skrzynię z zaopatrzeniem teraz (info: o której następny)");
+        sender.sendMessage("§e/" + label + " straznicy [postaw] §7– strażnicy NPC (postaw: od razu we wczytanych strukturach)");
         sender.sendMessage("§e/" + label + " przeladuj §7– wczytuje config i pliki struktur od nowa");
         sender.sendMessage("§7Z konsoli: §ewklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]§7, "
                 + "§egeneruj <nazwa> <świat> <x> <z> [obrót 0-3]");
@@ -237,10 +239,27 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             }
         }
         plugin.crates().clear(instance);
+        plugin.guards().forget(instance.id());
         plugin.protection().onRemoved(instance);
         plugin.store().remove(instance.id());
         sender.sendMessage("§aZapomniano §e" + instance.structureId() + "§a (id " + instance.id()
                 + "). Bloki zostały, ale nie są już chronione, a skrzynie się nie odnawiają.");
+    }
+
+    private void guards(CommandSender sender, String[] args) {
+        if (!plugin.guards().available()) {
+            sender.sendMessage("§cStrażnicy wymagają pluginów Citizens i Sentinel (ci.citizensnpcs.co). "
+                    + "Bez nich miejsca strażników zostają puste.");
+            return;
+        }
+        if (args.length >= 2 && args[1].equalsIgnoreCase("postaw")) {
+            int placed = plugin.guards().spawnAllLoaded();
+            sender.sendMessage("§aStrażnicy: postawiono " + placed + ".");
+            plugin.getLogger().info("Strażnicy: postawiono " + placed);
+            return;
+        }
+        sender.sendMessage("§eStrażnicy: §f" + plugin.guards().activeCount() + " §estoi, miejsc w postawionych strukturach: §f"
+                + plugin.guards().guardPoints() + "§e. Pojawiają się, gdy gracz podejdzie do struktury.");
     }
 
     private StructureInstance nearestTo(CommandSender sender) {

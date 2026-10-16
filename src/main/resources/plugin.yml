@@ -4,11 +4,11 @@ main: pl.axon.structure.AxonStructurePlugin
 api-version: '1.21'
 description: Struktury w stylu Rusta wklejane jedną komendą.
 author: toMiXgaming
-softdepend: [WorldGuard]
+softdepend: [WorldGuard, Citizens, Sentinel, QualityArmory]
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|zrzut|przeladuj]
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|zrzut|straznicy|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
 permissions:

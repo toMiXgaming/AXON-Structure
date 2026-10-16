@@ -508,6 +508,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(56, 1, 23, 58, 1, 25, "stone_brick_slab[type=bottom]");
             fill(57, 2, 24, 57, 15, 24, "iron_bars");
             set(57, 16, 24, "lightning_rod[facing=up]");
+            // strażnicy na placu apelowym
+            crate(60, 1, 30, "south", "npc-zolnierz");
+            crate(64, 1, 36, "west", "npc-zolnierz");
             // pomnik T-34 na cokole (z trybuny da się wskoczyć na cokół)
             fill(46, 1, 38, 52, 2, 44, "polished_andesite");
             for (int x = 47; x <= 51; x++) {
@@ -1594,6 +1597,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(66, 1, 94, "west", "plac");
             // miejsce zrzutu zaopatrzenia (losowane przez plugin, nie przy odświeżaniu skrzyń)
             crate(58, 1, 104, "north", "zrzut");
+            // strażnicy (NPC z pluginu Citizens/Sentinel, jeśli jest na serwerze)
+            crate(62, 1, 107, "north", "npc-zolnierz");
+            crate(54, 1, 100, "south", "npc-zolnierz");
         }
 
         /** Łukowy hangar x 76-92 / z 94-118 ze śmigłowcem bez wirnika i szybem windy do schronu. */

@@ -90,6 +90,49 @@ zrzuty:
   komunikat-wyladowal: "&4&l[ZRZUT] &fSkrzynia wylądowała. Zniknie za &e{minuty} min&f."
   komunikat-zniknal: "&4&l[ZRZUT] &7Nikt nie zabrał zrzutu, skrzynia zniknęła."
 
+straznicy:
+  # Strażnicy NPC w strukturach (żołnierze w jednostce, szabrownicy w szpitalu). Wymagają pluginów Citizens
+  # i Sentinel (darmowe: ci.citizensnpcs.co). Broń z QualityArmory: "qa:<nazwa broni z QA>"; gdy QA jej nie zna,
+  # strażnik dostaje kuszę. Bez Citizens i Sentinela miejsca strażników zostają puste.
+  # Komenda: /struktury straznicy (ilu stoi), /struktury straznicy postaw (od razu, bez czekania na graczy).
+  wlaczeni: true
+  # Strażnicy pojawiają się, gdy gracz podejdzie bliżej niż tyle bloków do środka struktury,
+  # i znikają, gdy nikogo nie ma w 1,5 × tej odległości (nie obciążają serwera, gdy nikt nie gra w okolicy).
+  promien-aktywacji: 64
+  # Po ilu minutach zabity strażnik wraca na swoje miejsce.
+  odradzanie-minut: 10
+  zestawy:
+    zolnierz:
+      nazwa: "&2Żołnierz"
+      # Skin z mineskin.org: "Texture Value" i "Texture Signature". Albo skin-gracza: nick gracza z takim skinem.
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:ak47"
+      # hełm, napierśnik, spodnie, buty
+      zbroja: [iron_helmet, chainmail_chestplate, chainmail_leggings, iron_boots]
+      zycie: 30
+      # -1 = obrażenia broni
+      obrazenia: -1
+      # z jakiej odległości widzi i strzela
+      zasieg: 28
+      # rozrzut strzałów: 0 = idealnie celny, im więcej, tym częściej pudłuje
+      celnosc: 2.5
+      # klasa skrzyni (sekcja klasy:), z której losuje się loot po zabiciu; "" = nic
+      loot: lepsza-skrzynia
+    szabrownik:
+      nazwa: "&6Szabrownik"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:remington"
+      zbroja: [leather_helmet, leather_chestplate, air, leather_boots]
+      zycie: 24
+      obrazenia: -1
+      zasieg: 20
+      celnosc: 4
+      loot: mala-skrzynka
+
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.
 #  Pula losuje klasę skrzyni według wag. "brak" = w tym miejscu nic się nie pojawi.
