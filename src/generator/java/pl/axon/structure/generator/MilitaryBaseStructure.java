@@ -73,9 +73,11 @@ public final class MilitaryBaseStructure implements StructureDefinition {
         private final Palette army;
         private final Palette rubble;
         private final Palette rock;
+        private final Furniture f;
 
         Builder(Random rnd) {
             this.rnd = rnd;
+            f = new Furniture(bp, G, rnd);
             grass = new Palette(rnd)
                     .add("grass_block", 12).add("coarse_dirt", 3).add("dirt", 2).add("podzol", 1);
             asphalt = new Palette(rnd)
@@ -172,6 +174,16 @@ public final class MilitaryBaseStructure implements StructureDefinition {
         private boolean isCrate(int x, int y, int z) {
             Blueprint.Pos pos = new Blueprint.Pos(x, y + G, z);
             return bp.spawnPoints().stream().anyMatch(p -> p.pos().equals(pos));
+        }
+
+        /** Piętrowa prycza: dwa prawdziwe łóżka jedno nad drugim, nogi w (x, z), wezgłowie w stronę {@code facing}. */
+        private void bunk(int x, int y, int z, String facing, String color) {
+            f.bed(x, y, z, facing, color);
+            f.bed(x, y + 1, z, facing, color);
+        }
+
+        private String armyBed() {
+            return new String[]{"green", "green", "brown", "gray"}[rnd.nextInt(4)];
         }
 
         private boolean chance(double p) {
@@ -427,22 +439,30 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(84, 1, 8, 86, 1, 8, "dark_oak_slab[type=top]");
             set(84, 2, 8, "lever[face=floor,facing=south,powered=false]");
             set(87, 3, 8, "lantern[hanging=false,waterlogged=false]");
+            f.chair(85, 1, 9, "south", "spruce");
+            f.lamp(86, 2, 8);
             crate(83, 1, 9, "east", "parter");
+            crate(87, 1, 10, "west", "parter");
             // pokój odpraw: stół i krzesła
             fill(91, 1, 9, 95, 1, 10, "dark_oak_slab[type=top]");
             for (int x = 91; x <= 95; x += 2) {
                 set(x, 1, 8, stairs("spruce", "north"));
                 set(x, 1, 11, stairs("spruce", "south"));
             }
-            // pokój warty: prycze
-            for (int x = 87; x <= 89; x++) {
-                set(x, 1, 17, "white_wool");
-                set(x, 2, 17, "spruce_slab[type=bottom]");
-            }
+            f.lamp(93, 2, 10);
+            crate(97, 1, 11, "west", "parter");
+            // pokój warty: piętrowe prycze i stolik
+            bunk(87, 1, 17, "east", "green");
+            bunk(89, 1, 17, "east", "green");
+            f.table(83, 1, 15, "spruce");
+            f.chair(84, 1, 15, "east", "spruce");
             crate(84, 1, 17, "east", "parter");
-            // cela A
-            set(92, 1, 17, "white_wool");
+            // cela A: prycza; cela B (zamknięta): kibel i ktoś, kogo zapomnieli wypuścić
+            f.bed(93, 1, 17, "west", "white");
             crate(94, 1, 17, "north", "parter");
+            f.toilet(96, 1, 17, "south");
+            f.skeleton(97, 1, 16, "south");
+            sign(90, 3, 13, "spruce_wall_sign[facing=south]", "KLUCZE OD CEL", "WYRZUCIŁEM", "DO STUDNI", "– KAPRAL");
             cobwebs(x1 + 1, z1 + 1, x2 - 1, z2 - 1, 4, 10);
         }
 
@@ -516,6 +536,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(47, 1, 25, "east", "plac");
             crate(58, 1, 26, "north", "plac");
             crate(66, 1, 20, "west", "plac");
+            crate(64, 1, 44, "north", "plac");
         }
 
         private void headquarters() {
@@ -577,6 +598,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             set(87, 2, 26, "glass");
             set(88, 1, 26, "spruce_planks");
             set(88, 2, 26, "glass");
+            set(103, 1, 28, "lectern[facing=west,has_book=false,powered=false]");
+            crate(91, 1, 25, "east", "parter");
+            crate(89, 1, 37, "north", "parter");
             // schody na piętro w holu
             for (int i = 0; i < 4; i++) {
                 for (int x = 85; x <= 86; x++) {
@@ -596,14 +620,29 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(91, 6, 32, x2 - 1, 9, 32, plaster);
             fill(99, 6, 26, 102, 6, 27, "dark_oak_slab[type=top]");
             set(100, 6, 29, stairs("dark_oak", "north"));
+            f.lamp(99, 7, 26);
+            set(102, 7, 26, "potted_fern");
+            f.bookshelf(97, 6, 30, 97, 31, 2, "east");
+            for (int x = 99; x <= 101; x++) {
+                for (int z = 30; z <= 31; z++) {
+                    set(x, 6, z, "red_carpet");
+                }
+            }
             crate(102, 6, 30, "west", "sztab");
+            // sekretariat: biurko z krzesłem i regał z segregatorami
             fill(92, 6, 29, 94, 6, 29, "spruce_slab[type=top]");
+            f.chair(93, 6, 30, "south", "spruce");
+            f.lamp(94, 7, 29);
+            f.bookshelf(91, 6, 31, 92, 31, 2, "north");
             crate(92, 6, 26, "east", "parter");
+            // archiwum
             for (int x = 99; x <= 103; x++) {
                 set(x, 6, 37, "bookshelf");
                 set(x, 7, 37, "bookshelf");
             }
+            f.bookshelf(98, 6, 33, 101, 33, 2, "south");
             crate(102, 6, 34, "west", "parter");
+            crate(91, 6, 37, "east", "parter");
             // zawalony fragment stropu archiwum nad kancelarią i gruz pod nim
             fill(94, 5, 35, 97, 5, 36, "air");
             fill(98, 1, 36, 98, 1, 36, rubble);
@@ -676,34 +715,61 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 fill(30, 16, z1 + 3, 31, 18, z1 + 4, "iron_block");
                 fill(34, 16, z2 - 3, 34, 19, z2 - 3, "iron_bars");
             }
-            // sale żołnierskie: prycze i szafki
-            for (int h : new int[]{0, 5, 10}) {
-                for (int rx : new int[]{16, 23, 30}) {
-                    for (int zr : new int[]{z1 + 1, z2 - 1}) {
-                        if (rx == 16 && zr == z1 + 1 && h > 0) {
-                            continue;
-                        }
-                        for (int x = rx; x <= rx + 3; x += 3) {
-                            set(x, h + 1, zr, "white_wool");
-                            set(x, h + 2, zr, "spruce_slab[type=bottom]");
-                        }
-                    }
-                }
-                for (int rx : new int[]{20, 27, 36}) {
-                    set(rx, h + 1, z2 - 1, "spruce_planks");
-                    set(rx, h + 2, z2 - 1, "spruce_trapdoor[facing=north,half=top,open=true,powered=false,waterlogged=false]");
-                }
-            }
             crate(18, 1, z2 - 1, "north", "parter");
             crate(25, 6, z2 - 1, "north", "parter");
             crate(34, 11, z1 + 1, "south", "parter");
             crate(17, 11, z2 - 1, "north", "parter");
-            if (!south) {
-                // umywalnia na piętrze
-                for (int x = 30; x <= 37; x += 2) {
-                    set(x, 6, z2 - 1, "cauldron");
-                    set(x, 8, z2 - 1, "lightning_rod[facing=down]");
+            // sale żołnierskie: piętrowe prycze wezgłowiem do ściany zewnętrznej, szafki, skrzynka w kącie;
+            // na piętrach pierwsza północna sala to kancelaria kompanii
+            int[][] rooms = {{16, 21}, {23, 28}, {30, 37}};
+            int[][] bunkXs = {{16, 18, 21}, {23, 25, 28}, {30, 32, 34, 37}};
+            int[] lockers = {20, 27, 36};
+            for (int h : new int[]{0, 5, 10}) {
+                for (int r = 0; r < rooms.length; r++) {
+                    for (boolean north : new boolean[]{true, false}) {
+                        int head = north ? z1 + 1 : z2 - 1;
+                        int foot = north ? z1 + 2 : z2 - 2;
+                        int lane = north ? wallN - 1 : wallS + 1;
+                        boolean office = r == 0 && north && h > 0;
+                        boolean washroom = !south && h == 5 && r == 2 && !north;
+                        boolean dayroom = south && h == 0 && !north;
+                        boolean link = h == 5 && r == 1 && south == north;
+                        if (washroom || dayroom) {
+                            continue;
+                        }
+                        if (office) {
+                            f.desk(19, h + 1, head, 21, head, "spruce");
+                            f.chair(20, h + 1, foot, "south", "spruce");
+                            f.lamp(21, h + 2, head);
+                            f.bookshelf(16, h + 1, head, 17, head, 2, "south");
+                        } else {
+                            String color = armyBed();
+                            for (int x : bunkXs[r]) {
+                                if (link && x >= 24 && x <= 26 || isCrate(x, h + 1, head) || isCrate(x, h + 1, foot)) {
+                                    continue;
+                                }
+                                bunk(x, h + 1, foot, north ? "north" : "south", color);
+                            }
+                            if (!north) {
+                                f.wardrobe(lockers[r], h + 1, head, "north", "spruce");
+                            }
+                        }
+                        if ((h / 5 + r + (north ? 0 : 1)) % 2 == 0) {
+                            crate(office ? 16 : rooms[r][1], h + 1, lane, north ? "south" : "north", "parter");
+                        }
+                    }
                 }
+            }
+            if (!south) {
+                // umywalnia na piętrze: umywalki, dwa kible, prysznice pod sufitem
+                for (int x = 30; x <= 34; x += 2) {
+                    f.sink(x, 6, z2 - 1, "south");
+                    set(x, 8, z2 - 2, "lightning_rod[facing=down]");
+                }
+                f.toilet(37, 6, z2 - 1, "east");
+                f.toilet(37, 6, z2 - 3, "east");
+                crate(30, 6, wallS + 1, "south", "toalety");
+                sign(20, 3, zs + 6, "spruce_wall_sign[facing=south]", "KTO ZAJUMAŁ", "MOJE BUTY", "TEN NIECH", "UWAŻA");
             } else {
                 // świetlica na parterze (bez ścianki między dwiema salami)
                 fill(22, 1, wallS + 1, 22, 4, z2 - 1, "air");
@@ -715,7 +781,14 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                     set(x, 2, wallS + 2, "green_carpet");
                     set(x, 2, wallS + 3, "green_carpet");
                 }
-                fill(19, 1, z2 - 2, 20, 1, z2 - 2, "spruce_slab[type=bottom]");
+                f.chair(21, 1, wallS + 2, "west", "spruce");
+                f.chair(25, 1, wallS + 3, "east", "spruce");
+                f.chair(23, 1, wallS + 1, "north", "spruce");
+                // kanapa przed telewizorem i regał
+                f.bench(16, 1, wallS + 2, 3, true, "north", "spruce");
+                f.bookshelf(27, 1, z2 - 1, 28, z2 - 1, 2, "north");
+                f.hangingLamp(23, 4, wallS + 2);
+                crate(28, 1, wallS + 1, "south", "parter");
                 // magazynek mundurowy
                 fill(30, 1, wallS + 1, 37, 2, z2 - 1, "air");
                 for (int x = 31; x <= 37; x += 2) {
@@ -750,6 +823,10 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             // przejście przez północne sale bloku B i południowe bloku A
             fill(24, 6, 18, 26, 7, 21, "air");
             fill(24, 6, 31, 26, 7, 34, "air");
+            // barykada: jedno przejście z trzech zastawione, obok ktoś, kto jej bronił
+            set(24, 6, 22, "crafting_table");
+            set(24, 7, 22, "spruce_fence");
+            f.skeleton(24, 6, 23, "south");
         }
 
         private void canteen() {
@@ -773,26 +850,38 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(128, 1, 15, 128, 2, 15, "air");
             windowsX(z1, 110, 124, 3, 2, 3);
             windowsX(z2, 110, 124, 3, 2, 3);
-            // stoły z ławami
+            // długie stoły z ławami z obu stron, na stołach świeczki i lampy
             for (int z = 11; z <= 19; z += 4) {
                 fill(111, 1, z, 122, 1, z, "dark_oak_slab[type=top]");
-                for (int x = 111; x <= 122; x += 2) {
-                    set(x, 1, z - 1, "spruce_slab[type=bottom]");
-                    set(x, 1, z + 1, "spruce_slab[type=bottom]");
-                }
+                f.bench(111, 1, z - 1, 5, true, "north", "spruce");
+                f.bench(117, 1, z - 1, 6, true, "north", "spruce");
+                f.bench(111, 1, z + 1, 6, true, "south", "spruce");
+                f.bench(118, 1, z + 1, 5, true, "south", "spruce");
+                f.lamp(112 + rnd.nextInt(9), 2, z);
             }
-            // kuchnia z kotłami
+            f.hangingLamp(116, 5, 13);
+            f.hangingLamp(116, 5, 17);
+            crate(124, 1, 10, "west", "lada");
+            crate(124, 1, 20, "west", "parter");
+            sign(109, 3, 11, "spruce_wall_sign[facing=east]", "MIELONKA", "TRZECI ROK", "Z RZĘDU", "");
+            // kuchnia: kuchenki z okapami i zlewy
             for (int x = 127; x <= 130; x++) {
-                set(x, 1, 10, x % 2 == 0 ? "cauldron" : "smoker[facing=south,lit=false]");
+                if (x % 2 == 0) {
+                    f.sink(x, 1, 10, "north");
+                } else {
+                    f.stove(x, 1, 10, "south");
+                }
             }
             fill(127, 1, 13, 130, 1, 13, "smooth_stone_slab[type=top]");
             crate(131, 1, 12, "west", "lada");
+            crate(126, 1, 10, "east", "lada");
             // chłodnia z hakami
             for (int x = 127; x <= 130; x += 3) {
                 fill(x, 4, 18, x, 5, 18, "chain[axis=y]");
             }
             fill(126, 1, 20, 131, 1, 20, "packed_ice");
             crate(131, 1, 17, "west", "lada");
+            crate(126, 1, 18, "east", "zaplecze");
             crate(110, 1, 20, "east", "parter");
             cobwebs(x1 + 1, z1 + 1, x2 - 1, z2 - 1, 5, 8);
         }
@@ -827,21 +916,26 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             windowsX(z2, 110, 124, 3, 2, 3);
             windowsX(z1, 110, 124, 3, 3);
             // gabinet, apteka z ladą, sala z łóżkami, izolatka
-            set(110, 1, 32, "white_wool");
-            set(111, 1, 32, "white_wool");
+            f.bed(111, 1, 32, "west", "white");
+            f.desk(113, 1, 29, 114, 29, "birch");
+            f.chair(113, 1, 30, "south", "birch");
+            f.lamp(114, 2, 29);
             crate(110, 1, 30, "east", "izba-chorych");
             fill(117, 1, 31, 124, 1, 31, "quartz_slab[type=top]");
+            f.lamp(120, 2, 31);
             set(124, 1, 32, "brewing_stand[has_bottle_0=false,has_bottle_1=false,has_bottle_2=false]");
             crate(118, 1, 29, "south", "izba-chorych");
             crate(123, 1, 29, "south", "izba-chorych");
             for (int x = 110; x <= 119; x += 3) {
-                set(x, 1, 41, "white_wool");
-                set(x, 1, 40, "white_carpet");
-                set(x, 1, 37, "white_wool");
-                set(x, 1, 38, "white_carpet");
+                f.bed(x, 1, 40, "south", "white");
+                f.bed(x, 1, 38, "north", "white");
             }
-            set(124, 1, 41, "white_wool");
+            crate(115, 1, 41, "north", "izba-chorych");
+            crate(117, 1, 37, "south", "parter");
+            f.bed(124, 1, 40, "south", "white");
             set(124, 2, 39, "iron_bars");
+            f.skeleton(122, 1, 41, "north");
+            sign(116, 3, 35, "spruce_wall_sign[facing=south]", "LEKÓW BRAK", "LEKARZA BRAK", "NADZIEI BRAK", "");
             cobwebs(x1 + 1, z1 + 1, x2 - 1, z2 - 1, 5, 6);
         }
 
@@ -886,7 +980,11 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             uaz(8, 59, false);
             fill(24, 1, 57, 28, 1, 57, "spruce_slab[type=top]");
             set(25, 2, 57, "grindstone[face=floor,facing=south]");
+            set(29, 1, 57, "crafting_table");
             crate(24, 1, 58, "east", "klepisko");
+            crate(13, 1, 57, "west", "klepisko");
+            crate(37, 1, 57, "west", "klepisko");
+            crate(45, 1, 57, "west", "klepisko");
             for (int z = 58; z <= 62; z += 2) {
                 set(31, 1, z, "blackstone_wall");
                 set(31, 2, z, "blackstone_wall");
@@ -1034,6 +1132,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             }
             set(65, 5, 79, "chain[axis=y]");
             crate(67, 4, 80, "west", "dzwig");
+            crate(70, 1, 71, "north", "plac");
             for (int x = 51; x <= 70; x++) {
                 for (int z = 74; z <= 88; z++) {
                     if (isAir(x, 1, z) && get(x, 0, z).contains("grass")) {
@@ -1089,6 +1188,10 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             set(56, 1, 57, "grindstone[face=floor,facing=south]");
             fill(58, 1, 57, 64, 1, 57, "spruce_slab[type=top]");
             crate(66, 1, 57, "west", "klepisko");
+            set(58, 1, 69, "crafting_table");
+            set(59, 1, 69, "loom[facing=north]");
+            crate(51, 1, 63, "east", "klepisko");
+            crate(67, 1, 68, "west", "zaplecze");
             for (int x = x1 + 1; x < x2; x++) {
                 set(x, 6, z1 + 1, "iron_block");
                 set(x, 6, z2 - 1, "iron_block");
@@ -1131,6 +1234,8 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(80, 1, 57, "east", "paliwo");
             crate(94, 1, 67, "west", "paliwo");
             crate(98, 1, 60, "west", "klepisko");
+            f.desk(98, 1, 58, 98, 58, "spruce");
+            f.lamp(98, 2, 58);
         }
 
         /** Kotłownia z drabiną na dach, rura ciepłownicza do pomostu przy kominie, klamry urwane w połowie. */
@@ -1171,6 +1276,11 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             }
             crate(110, 1, 68, "east", "parter");
             crate(124, 1, 68, "west", "parter");
+            // kącik palaczy
+            f.table(109, 1, 62, "spruce");
+            f.chair(109, 1, 61, "north", "spruce");
+            crate(109, 1, 57, "south", "zaplecze");
+            crate(103, 1, 71, "north", "plac");
             // hałda węgla pod zachodnią ścianą
             for (int x = 101; x < x1; x++) {
                 for (int z = 57; z <= 67; z++) {
@@ -1250,6 +1360,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(84, 1, 79, "south", "lada");
             crate(96, 1, 83, "north", "lada");
             crate(90, 1, 87, "north", "parter");
+            crate(82, 1, 75, "south", "magazyn");
+            crate(99, 1, 79, "west", "lada");
+            crate(82, 1, 86, "east", "magazyn");
             cobwebs(x1 + 1, z1 + 1, x2 - 1, z2 - 1, 6, 8);
         }
 
@@ -1311,6 +1424,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(134, 7, 78, "west", "strych");
             crate(113, 7, 84, "east", "strych");
             crate(110, 1, 86, "east", "parter");
+            crate(137, 1, 75, "west", "magazyn");
+            crate(137, 1, 87, "west", "magazyn");
+            crate(118, 1, 81, "north", "magazyn");
             cobwebs(x1 + 1, z1 + 1, x2 - 1, z2 - 1, 9, 10);
         }
 
@@ -1527,6 +1643,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 set(89, 1, z, "iron_bars");
             }
             set(89, 1, 111, "air");
+            // obozowisko dzikich lokatorów w tylnym kącie hangaru
+            f.camp(79, 1, 114, "north");
+            crate(78, 1, 117, "east", "zaplecze");
         }
 
         /** Wieża kontroli lotów x 46-53 / z 114-121: schody do połowy, dalej drabina z balkonu. */
@@ -1641,6 +1760,8 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(100, 1, 110, 100, 2, 110, "air");
             set(98, 2, 108, "glass_pane");
             crate(97, 1, 111, "east", "parter");
+            f.desk(97, 1, 109, 98, 109, "spruce");
+            f.lamp(97, 2, 109);
         }
 
         /**
@@ -1767,6 +1888,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             for (int[] t : trees) {
                 tree(t[0], t[1]);
             }
+            crate(99, 1, 121, "north", "plac");
         }
 
         private void tree(int x, int z) {
@@ -1838,6 +1960,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 }
             }
             fill(41, 1, 110, 44, 3, 112, "air");
+            f.hangingLamp(46, -3, 112);
             // śluza z dwiema parami pancernych drzwi
             room(51, L1, 110, 56, L1 + 2, 112);
             for (int sx : new int[]{52, 55}) {
@@ -1845,6 +1968,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 door(sx, L1, 110, "iron_door", "east", "left", true);
                 door(sx, L1, 111, "iron_door", "east", "right", true);
             }
+            f.hangingLamp(53, L1 + 2, 111);
             // korytarz poziomu 1
             room(57, L1, 110, 88, L1 + 2, 112);
             for (int x = 57; x <= 88; x++) {
@@ -1875,6 +1999,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 }
             }
             fill(60, L2, 109, 60, L2 + 1, 109, "air");
+            set(63, L1, 106, "lantern[hanging=false,waterlogged=false]");
+            set(63, L2, 107, "lantern[hanging=false,waterlogged=false]");
+            f.skeleton(62, L2, 101, "north");
             // sala dowodzenia
             room(65, L1, 98, 75, L1 + 3, 108);
             fill(70, L1, 109, 70, L1 + 1, 109, "air");
@@ -1890,6 +2017,10 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             set(74, L1, 104, "note_block");
             set(74, L1 + 1, 104, "lightning_rod[facing=up]");
             set(70, L1 + 3, 103, "lantern[hanging=true,waterlogged=false]");
+            f.hangingLamp(67, L1 + 3, 100);
+            f.hangingLamp(73, L1 + 3, 106);
+            f.chair(68, L1, 99, "south", "spruce");
+            f.chair(72, L1, 99, "south", "spruce");
             crate(66, L1, 100, "east", "schron-1");
             crate(74, L1, 107, "west", "schron-1");
             // pokój szyfranta
@@ -1898,14 +2029,20 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(78, L1, 101, 80, L1, 101, "dark_oak_slab[type=top]");
             set(79, L1, 102, stairs("dark_oak", "north"));
             crate(82, L1, 101, "west", "schron-1");
+            f.lamp(78, L1 + 1, 101);
+            f.hangingLamp(80, L1 + 2, 105);
+            f.bookshelf(83, L1, 103, 83, 105, 2, "west");
+            crate(78, L1, 107, "east", "zaplecze");
             // kwatery
             room(60, L1, 114, 72, L1 + 2, 122);
             fill(66, L1, 113, 66, L1 + 1, 113, "air");
             for (int x = 61; x <= 71; x += 2) {
-                set(x, L1, 122, "white_wool");
-                set(x, L1 + 2, 122, "white_wool");
-                set(x, L1 + 1, 122, "air");
+                bunk(x, L1, 121, "south", armyBed());
             }
+            f.table(68, L1, 116, "spruce");
+            f.chair(67, L1, 116, "west", "spruce");
+            f.hangingLamp(63, L1 + 2, 117);
+            f.hangingLamp(69, L1 + 2, 119);
             crate(61, L1, 116, "east", "parter");
             crate(71, L1, 118, "west", "parter");
             // maszynownia z agregatem i szybem wentylacyjnym do skarbca
@@ -1922,6 +2059,8 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 set(84, y, 121, "ladder[facing=west,waterlogged=false]");
             }
             set(84, L1 + 3, 121, "lantern[hanging=true,waterlogged=false]");
+            f.hangingLamp(80, L1 + 3, 115);
+            crate(76, L1, 121, "east", "zaplecze");
             // szyb windy z hangaru do końca korytarza
             fill(86, L1 + 3, 110, 88, 0, 112, "air");
             for (int y = L1 + 3; y <= -1; y++) {
@@ -1943,6 +2082,10 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 set(x, L2 + 2, 112, "chain[axis=x]");
             }
             set(65, L2 + 2, 111, "lantern[hanging=true,waterlogged=false]");
+            f.hangingLamp(74, L2 + 2, 111);
+            f.hangingLamp(83, L2 + 2, 111);
+            crate(90, L2, 110, "west", "zaplecze");
+            sign(59, L2 + 1, 110, "spruce_wall_sign[facing=south]", "ZAWRÓĆ", "PÓKI", "JESZCZE", "MOŻESZ");
             room(65, L2, 98, 75, L2 + 2, 108);
             fill(65, L2, 109, 75, L2 + 2, 109, "iron_bars");
             fill(70, L2, 109, 70, L2 + 1, 109, "air");
@@ -1953,6 +2096,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(66, L2, 99, "south", "zbrojownia");
             crate(70, L2, 99, "south", "zbrojownia");
             crate(74, L2, 99, "south", "zbrojownia");
+            f.hangingLamp(70, L2 + 2, 106);
             room(75, L2, 114, 84, L2 + 3, 122);
             fill(84, L2, 121, 84, L1 - 1, 121, "air");
             for (int y = L2; y <= L1 - 1; y++) {
@@ -1966,6 +2110,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(78, L2, 118, 80, L2, 118, "yellow_terracotta");
             crate(76, L2, 121, "east", "skarbiec");
             crate(76, L2, 115, "east", "skarbiec");
+            f.hangingLamp(80, L2 + 3, 116);
             // zalany tunel kablowy do szybu awaryjnego
             room(87, L2, 113, 89, L2 + 2, 122);
             for (int z = 114; z <= 121; z++) {
