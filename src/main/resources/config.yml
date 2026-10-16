@@ -186,6 +186,62 @@ pule:
   wieza-szybowa:
     rzadka-skrzynia: 90
     lepsza-skrzynia: 10
+  # --- jednostka wojskowa (beczki: plac, paliwo; koszary, kantyna, magazyny: parter, lada, klepisko;
+  #     strych garaży i regały magazynu sprzętu: strych; wieża desantowa na torze przeszkód: wieza) ---
+  # izba chorych – szafki z lekami
+  izba-chorych:
+    skrzynka-medyczna: 70
+    mala-skrzynka: 10
+    brak: 20
+  # gabinet dowódcy i kancelaria tajna w sztabie
+  sztab:
+    lepsza-skrzynia: 55
+    skrzynia-broni: 15
+    brazowa: 15
+    brak: 15
+  # cztery wieże wartownicze w rogach ogrodzenia
+  wieze-wartownicze:
+    skrzynia-broni: 45
+    lepsza-skrzynia: 35
+    brak: 20
+  # wrak Mi-8 na lądowisku
+  wrak:
+    skrzynia-broni: 40
+    skrzynka-medyczna: 30
+    narzedziowa: 15
+    brak: 15
+  # kosz dźwigu nad placem
+  dzwig:
+    lepsza-skrzynia: 70
+    narzedziowa: 15
+    brak: 15
+  # schron, poziom 1 – sala dowodzenia i pokój szyfranta
+  schron-1:
+    lepsza-skrzynia: 50
+    skrzynia-broni: 25
+    skrzynka-medyczna: 10
+    brak: 15
+  # bunkry magazynu uzbrojenia za siatką
+  magazyn-broni:
+    skrzynia-broni: 60
+    brazowa: 20
+    brak: 20
+  # zbrojownia za kratą na poziomie 2 schronu
+  zbrojownia:
+    skrzynia-broni: 80
+    lepsza-skrzynia: 10
+    brak: 10
+  # pomost na szczycie komina kotłowni
+  komin:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
+  # kabina wieży kontroli lotów
+  wieza-lotow:
+    rzadka-skrzynia: 85
+    skrzynia-broni: 15
+  # skarbiec na dnie schronu (tylko przez szyb wentylacyjny)
+  skarbiec:
+    rzadka-skrzynia: 100
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
@@ -339,6 +395,23 @@ klasy:
       - {przedmiot: ender_pearl, ilosc: "1-2", szansa: 20}
       - {przedmiot: emerald, ilosc: "1-3", szansa: 20}
       - {przedmiot: diamond_sword, ilosc: "1", szansa: 8}
+
+  skrzynia-broni:
+    nazwa: "&2Skrzynia z bronią"
+    blok: skrzynia
+    min-przedmiotow: 2
+    loot:
+      - {przedmiot: arrow, ilosc: "8-24", szansa: 80, nazwa: "&fAmunicja"}
+      - {przedmiot: bow, ilosc: "1", szansa: 35}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_sword, ilosc: "1", szansa: 25, nazwa: "&fBagnet"}
+      - {przedmiot: shield, ilosc: "1", szansa: 20}
+      - {przedmiot: gunpowder, ilosc: "2-6", szansa: 35}
+      - {przedmiot: firework_rocket, ilosc: "1-3", szansa: 15, nazwa: "&fRaca"}
+      - {przedmiot: tnt, ilosc: "1", szansa: 5, nazwa: "&fŁadunek wybuchowy"}
+      - {przedmiot: chainmail_chestplate, ilosc: "1", szansa: 15, nazwa: "&fKamizelka"}
+      - {przedmiot: iron_helmet, ilosc: "1", szansa: 15, nazwa: "&fHełm wz. 67"}
+      - {przedmiot: spyglass, ilosc: "1", szansa: 8, nazwa: "&fLornetka"}
 
   zielona-karta:
     nazwa: "&aZielona karta dostępu"
