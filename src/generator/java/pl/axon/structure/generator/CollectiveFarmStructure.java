@@ -135,6 +135,7 @@ public final class CollectiveFarmStructure implements StructureDefinition {
             waterTower();
             weeds();
             weathering();
+            furnish();
             return bp;
         }
 
@@ -1095,6 +1096,114 @@ public final class CollectiveFarmStructure implements StructureDefinition {
                     bp.set(OX1, y, z, chance(0.5) ? "mossy_stone_bricks" : "mossy_cobblestone");
                 }
             }
+        }
+
+        // ------------------------------------------------------------------ wyposażenie i ślady dzikich lokatorów
+
+        /**
+         * Meble, dodatkowe skrzynie i rekwizyty. Stawiane na końcu, żeby chwasty i pajęczyny ich nie zasłoniły.
+         * Wszystko stoi przy ścianach i w kątach – przejścia, drabiny i trasy parkouru zostają wolne.
+         */
+        private void furnish() {
+            Furniture f = new Furniture(bp, 0, rnd);
+
+            // portiernia: kwiatek na biurku i napis na ścianie
+            bp.set(38, 2, 8, "potted_dead_bush");
+            bp.sign(37, 2, 6, "oak_wall_sign[facing=north]", "PORTIER", "POSZEDŁ", "NA PIWO", "W '92");
+            // budka wagowego: jedna skrzynka w środku
+            bp.crate(53, 1, 14, "north", "parter");
+
+            // obora: trzy kolejne boksy z otwartą furtką i skrzynką w kącie, w jednym kości krowy
+            for (int[] box : new int[][]{{12, 29, 11}, {16, 38, 17}, {12, 41, 11}}) {
+                bp.fill(box[0], 1, box[1] + 1, box[0], 2, box[1] + 1, "air");
+                bp.crate(box[2], 1, box[1] + 2, box[2] < 14 ? "east" : "west", "klepisko");
+            }
+            if (bp.isAir(18, 1, 25)) {
+                f.skeleton(18, 1, 25, "north");
+            }
+
+            // chlewnia: skrzynki w kojcach, kości i napis
+            bp.crate(32, 1, 35, "west", "parter");
+            bp.crate(26, 1, 40, "east", "parter");
+            f.skeleton(33, 1, 39, "east");
+            bp.sign(27, 2, 27, "oak_wall_sign[facing=south]", "GDZIE SĄ", "ŚWINIE?", "", "~ głodny");
+
+            // paszarnia (parter): skrzynia z paszą, kompostowniki jako pojemniki na śrutę, lampa
+            bp.crate(26, 1, 46, "east", "magazyn");
+            bp.set(33, 1, 42, "composter[level=4]");
+            bp.set(34, 1, 42, "composter[level=6]");
+            f.hangingLamp(31, 4, 44);
+
+            // baza maszynowa: stół warsztatowy obok narzędziowego
+            bp.set(71, 1, 21, "crafting_table");
+            bp.crate(72, 1, 21, "south", "zaplecze");
+            // biuro brygadzisty pod pomostem: pulpit, biurko z krzesłem, regał
+            bp.set(81, 1, 35, "lectern[facing=west,has_book=false,powered=false]");
+            f.desk(81, 1, 37, 81, 38, "spruce");
+            f.chair(80, 1, 37, "west", "spruce");
+            f.lamp(81, 2, 38);
+            f.bookshelf(81, 1, 39, 81, 40, 2, "west");
+            bp.crate(81, 1, 33, "west", "parter");
+            f.hangingLamp(80, 6, 37);
+            // socjalka w kącie hali: stół, szafka, kuchenka, zlew, blat
+            f.dining(76, 1, 44, true, "spruce");
+            f.lamp(76, 2, 44);
+            f.wardrobe(81, 1, 45, "west", "spruce");
+            f.stove(81, 1, 47, "north");
+            f.sink(80, 1, 47, "south");
+            bp.set(79, 1, 47, "spruce_slab[type=top]");
+            bp.crate(78, 1, 47, "north", "lada");
+            bp.crate(81, 1, 42, "west", "zaplecze");
+            f.hangingLamp(78, 10, 45);
+            bp.sign(76, 2, 47, "oak_wall_sign[facing=north]", "OBIADU", "NIE BĘDZIE", "", "kucharka");
+            // kabina WC z desek obok socjalki
+            for (int y = 1; y <= 3; y++) {
+                for (int z = 45; z <= 47; z++) {
+                    bp.set(72, y, z, "spruce_planks");
+                    bp.set(75, y, z, "spruce_planks");
+                }
+                bp.set(73, y, 45, "spruce_planks");
+                bp.set(74, y, 45, "spruce_planks");
+            }
+            door(73, 1, 45, "spruce_door", "north", "left", false);
+            f.toilet(74, 1, 47, "south");
+            bp.crate(73, 1, 47, "north", "toalety");
+            bp.sign(74, 2, 44, "oak_wall_sign[facing=north]", "WC", "NIECZYNNE", "OD ZAWSZE", "");
+            // barykada w jednym przęśle tylnej ściany (dwa pozostałe zostają otwarte) i ten, kto jej bronił
+            bp.set(57, 1, 48, "crafting_table");
+            bp.set(57, 2, 48, "oak_fence[east=false,north=false,south=false,waterlogged=false,west=false]");
+            bp.set(58, 1, 48, "oak_fence[east=false,north=false,south=false,waterlogged=false,west=false]");
+            bp.set(58, 2, 48, "oak_fence[east=false,north=false,south=false,waterlogged=false,west=false]");
+            bp.set(59, 1, 48, "crafting_table");
+            bp.set(59, 2, 48, "spruce_trapdoor[facing=south,half=bottom,open=true,powered=false,waterlogged=false]");
+            bp.sign(57, 1, 49, "oak_wall_sign[facing=south]", "NIE WCHODŹ", "STRZELAMY", "", "");
+            f.skeleton(59, 1, 47, "east");
+
+            // magazyn nawozów: skrzynia przy rozlanej chemii i kości tego, kto ją wąchał
+            bp.crate(63, 1, 59, "north", "magazyn");
+            f.skeleton(64, 1, 60, "north");
+
+            // suszarnia: obozowisko dzikiego lokatora w zachodnim kącie
+            f.camp(40, 1, 55, "east");
+            bp.crate(37, 1, 53, "east", "zaplecze");
+            bp.sign(37, 2, 57, "oak_wall_sign[facing=east]", "TU ŚPIĘ", "NIE RUSZAJ", "MOICH RZECZY", "");
+            bp.set(37, 6, 54, "cobweb");
+            bp.set(52, 6, 53, "cobweb");
+
+            // wieża elewatora: skrzynka na parterze, lampa i ostrzeżenie
+            bp.crate(44, 1, 70, "west", "parter");
+            bp.sign(42, 2, 70, "oak_wall_sign[facing=north]", "DRABINA", "ZERWANA", "IDŹ BOKIEM", "");
+            f.hangingLamp(43, 7, 69);
+
+            // beczki na placu, pod ścianami budynków
+            yardCrate(22, 40, "east");
+            yardCrate(23, 24, "south");
+            yardCrate(35, 54, "west");
+        }
+
+        private void yardCrate(int x, int z, String facing) {
+            bp.crate(x, 1, z, facing, "plac");
+            bp.set(x, 2, z, "air");
         }
 
         // ------------------------------------------------------------------ pomocnicze
