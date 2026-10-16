@@ -6,9 +6,18 @@ group = "pl.axon"
 version = "0.1.0"
 
 repositories {
-    mavenCentral()
+    // Repo Papera ma też kopię Maven Central, więc idzie pierwsze (Central potrafi odpowiadać 429).
     maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://maven.enginehub.org/repo/")
+    mavenCentral()
+    // WorldGuard/WorldEdit tylko z repo EngineHub i bez czytania POM-ów (ich rodzice z Maven Central nie są potrzebne).
+    exclusiveContent {
+        forRepository {
+            maven("https://maven.enginehub.org/repo/") {
+                metadataSources { artifact() }
+            }
+        }
+        filter { includeGroupByRegex("com\\.sk89q\\..*") }
+    }
 }
 
 dependencies {
