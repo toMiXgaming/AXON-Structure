@@ -48,7 +48,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "klasy" -> classes(sender);
             case "zrzut" -> sender.sendMessage(plugin.airdrops().isActive() || args.length < 2 || !args[1].equalsIgnoreCase("info")
                     ? plugin.airdrops().trigger(sender)
-                    : "§eNastępny zrzut za ok. §f" + plugin.airdrops().minutesToNext() + " min§e.");
+                    : "§eNastępny zrzut: §f" + plugin.airdrops().nextInfo() + "§e.");
             case "przeladuj" -> {
                 plugin.reload();
                 sender.sendMessage("§aPrzeładowano: " + plugin.library().all().size() + " struktur, "
@@ -70,7 +70,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " najblizsza §7– gdzie jest najbliższa postawiona struktura");
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
-        sender.sendMessage("§e/" + label + " zrzut [info] §7– zrzuca skrzynię z zaopatrzeniem teraz (info: kiedy następny)");
+        sender.sendMessage("§e/" + label + " zrzut [info] §7– zrzuca skrzynię z zaopatrzeniem teraz (info: o której następny)");
         sender.sendMessage("§e/" + label + " przeladuj §7– wczytuje config i pliki struktur od nowa");
         sender.sendMessage("§7Z konsoli: §ewklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]§7, "
                 + "§egeneruj <nazwa> <świat> <x> <z> [obrót 0-3]");

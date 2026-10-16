@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,18 +22,31 @@ import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.StructureInstance;
 import pl.axon.structure.world.InstanceStore;
 
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /**
- * Zrzuty zaopatrzenia: co losowy czas nad jedną z postawionych struktur (miejsca z pulą zrzutów w pliku .axs,
+ * Zrzuty zaopatrzenia: kilka razy dziennie, o losowej porze w podanych godzinach, nad jedną z postawionych struktur (miejsca z pulą zrzutów w pliku .axs,
  * np. lądowisko jednostki i dach szpitala) spada na spadochronie skrzynia z rzadkim lootem. Serwer dostaje
  * ogłoszenie ze współrzędnymi, a nad skrzynią unosi się dym, dopóki ktoś jej nie opróżni albo nie minie jej czas.
  */
 public final class AirdropService {
 
-    public record Settings(boolean enabled, int minMinutes, int maxMinutes, int minPlayers, String pool,
+    /**
+     * @param perDay ile zrzutów dziennie; okno godzin dzielone jest na tyle równych części, w każdej jeden zrzut
+     * @param hourFrom początek okna (pełna godzina)
+     * @param hourTo koniec okna (pełna godzina, wyłącznie)
+     */
+    public record Settings(boolean enabled, int perDay, int hourFrom, int hourTo, ZoneId zone, int minPlayers, String pool,
                            int lifetimeMinutes, int fallHeight, int fallSeconds, String crateName,
                            String announce, String landed, String expired) {
     }
@@ -47,7 +61,10 @@ public final class AirdropService {
     private final Random random = new Random();
     private Settings settings;
     private BukkitTask task;
-    private long nextDrop;
+    private final File stateFile;
+    private LocalDate day;
+    private final Set<Integer> done = new HashSet<>();
+    private ZonedDateTime[] planned = new ZonedDateTime[0];
 
     // aktywny zrzut (jeden naraz)
     private Target active;
@@ -62,12 +79,14 @@ public final class AirdropService {
         this.library = library;
         this.store = store;
         this.crates = crates;
+        this.stateFile = new File(plugin.getDataFolder(), "zrzuty.yml");
+        loadState();
     }
 
     public void configure(Settings settings) {
         this.settings = settings;
         crates.dropPool(settings.pool());
-        scheduleNext();
+        plan(ZonedDateTime.now(settings.zone()));
     }
 
     public Settings settings() {
@@ -91,15 +110,81 @@ public final class AirdropService {
         }
     }
 
-    private void scheduleNext() {
-        int min = Math.max(1, settings.minMinutes());
-        int max = Math.max(min, settings.maxMinutes());
-        nextDrop = System.currentTimeMillis() + (min + random.nextInt(max - min + 1)) * 60_000L;
+    private int windowMinutes() {
+        int from = Math.max(0, Math.min(23, settings.hourFrom()));
+        int to = Math.max(from + 1, Math.min(24, settings.hourTo()));
+        return (to - from) * 60;
     }
 
-    /** Minuty do następnego zrzutu (do komendy). */
-    public long minutesToNext() {
-        return Math.max(0, (nextDrop - System.currentTimeMillis()) / 60_000L);
+    private ZonedDateTime slotStart(LocalDate date, int slot) {
+        int from = Math.max(0, Math.min(23, settings.hourFrom()));
+        int perDay = Math.max(1, settings.perDay());
+        return date.atStartOfDay(settings.zone()).plusMinutes(from * 60L + (long) windowMinutes() * slot / perDay);
+    }
+
+    private ZonedDateTime slotEnd(LocalDate date, int slot) {
+        return slotStart(date, slot + 1);
+    }
+
+    /** Losuje godziny zrzutów na dziś dla części okna, które się jeszcze nie odbyły. */
+    private void plan(ZonedDateTime now) {
+        LocalDate today = now.toLocalDate();
+        if (!today.equals(day)) {
+            day = today;
+            done.clear();
+            saveState();
+        }
+        int perDay = Math.max(1, settings.perDay());
+        planned = new ZonedDateTime[perDay];
+        for (int slot = 0; slot < perDay; slot++) {
+            ZonedDateTime start = slotStart(today, slot);
+            ZonedDateTime end = slotEnd(today, slot);
+            if (now.isAfter(start)) {
+                start = now;
+            }
+            long span = Math.max(1, java.time.Duration.between(start, end).toMinutes());
+            planned[slot] = start.plusMinutes(random.nextLong(span));
+        }
+    }
+
+    /** Godzina najbliższego zaplanowanego zrzutu (do komendy). */
+    public String nextInfo() {
+        ZonedDateTime now = ZonedDateTime.now(settings.zone());
+        ZonedDateTime best = null;
+        for (int slot = 0; slot < planned.length; slot++) {
+            if (!done.contains(slot) && now.isBefore(slotEnd(day, slot)) && (best == null || planned[slot].isBefore(best))) {
+                best = planned[slot];
+            }
+        }
+        if (best == null) {
+            return "dziś już nie będzie, jutro między " + settings.hourFrom() + ":00 a " + settings.hourTo() + ":00";
+        }
+        return "dziś ok. " + best.format(DateTimeFormatter.ofPattern("HH:mm"));
+    }
+
+    private void loadState() {
+        if (!stateFile.exists()) {
+            return;
+        }
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(stateFile);
+        try {
+            day = LocalDate.parse(yaml.getString("dzien", ""));
+            done.addAll(yaml.getIntegerList("wykonane"));
+        } catch (RuntimeException e) {
+            day = null;
+            done.clear();
+        }
+    }
+
+    private void saveState() {
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("dzien", day == null ? "" : day.toString());
+        yaml.set("wykonane", new ArrayList<>(done));
+        try {
+            yaml.save(stateFile);
+        } catch (IOException e) {
+            plugin.getLogger().warning("Nie udało się zapisać " + stateFile.getName() + ": " + e.getMessage());
+        }
     }
 
     public boolean isActive() {
@@ -116,14 +201,31 @@ public final class AirdropService {
             }
             return;
         }
-        if (!settings.enabled() || System.currentTimeMillis() < nextDrop) {
+        if (!settings.enabled()) {
             return;
         }
-        if (Bukkit.getOnlinePlayers().size() < settings.minPlayers()) {
-            scheduleNext();
+        ZonedDateTime now = ZonedDateTime.now(settings.zone());
+        if (!now.toLocalDate().equals(day)) {
+            plan(now);
+        }
+        for (int slot = 0; slot < planned.length; slot++) {
+            if (done.contains(slot) || now.isBefore(planned[slot])) {
+                continue;
+            }
+            if (!now.isBefore(slotEnd(day, slot))) {
+                // za mało graczy przez całą część okna – ten zrzut przepada
+                done.add(slot);
+                saveState();
+                continue;
+            }
+            if (Bukkit.getOnlinePlayers().size() < settings.minPlayers()) {
+                continue; // czekamy, aż wejdzie więcej graczy (do końca tej części okna)
+            }
+            done.add(slot);
+            saveState();
+            trigger(null);
             return;
         }
-        trigger(null);
     }
 
     /**
@@ -135,7 +237,6 @@ public final class AirdropService {
         if (active != null) {
             return "§cJeden zrzut już trwa (" + active.x() + " " + active.y() + " " + active.z() + ").";
         }
-        scheduleNext();
         List<Target> targets = targets();
         if (targets.isEmpty()) {
             return "§cŻadna postawiona struktura nie ma miejsca na zrzut (pula §e" + settings.pool() + "§c).";

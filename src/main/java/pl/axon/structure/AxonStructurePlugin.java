@@ -105,8 +105,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
         airdrops.configure(new AirdropService.Settings(
                 config.getBoolean("zrzuty.wlaczone", true),
-                config.getInt("zrzuty.co-ile-minut-od", 45),
-                config.getInt("zrzuty.co-ile-minut-do", 90),
+                Math.max(1, config.getInt("zrzuty.dziennie", 2)),
+                config.getInt("zrzuty.godziny-od", 12),
+                config.getInt("zrzuty.godziny-do", 22),
+                zone(config.getString("zrzuty.strefa-czasowa", "Europe/Warsaw")),
                 Math.max(0, config.getInt("zrzuty.min-graczy", 2)),
                 config.getString("zrzuty.pula", "zrzut").toLowerCase(Locale.ROOT),
                 config.getInt("zrzuty.znika-po-minutach", 15),
@@ -151,6 +153,15 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public CrateService crates() {
         return crates;
+    }
+
+    private java.time.ZoneId zone(String id) {
+        try {
+            return java.time.ZoneId.of(id);
+        } catch (RuntimeException e) {
+            getLogger().warning("Zła strefa czasowa '" + id + "', używam strefy serwera.");
+            return java.time.ZoneId.systemDefault();
+        }
     }
 
     public AirdropService airdrops() {

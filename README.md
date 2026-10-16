@@ -21,7 +21,7 @@ Plugin na serwer **Paper 1.21.4** (Java 21) do stawiania struktur w stylu monume
 | `/struktury najblizsza` | pokazuje najbliższą postawioną strukturę |
 | `/struktury usun [id]` | zapomina strukturę: zdejmuje ochronę i skrzynie, bloki zostają |
 | `/struktury klasy` | klasy skrzyń i pule z szansami |
-| `/struktury zrzut [info]` | zrzuca skrzynię z zaopatrzeniem od razu (`info`: za ile minut następny) |
+| `/struktury zrzut [info]` | zrzuca skrzynię z zaopatrzeniem od razu (`info`: o której następny) |
 | `/struktury przeladuj` | wczytuje config i pliki struktur od nowa |
 
 Z konsoli: `wklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]` i `generuj <nazwa> <świat> <x> <z> [obrót 0-3]`.
@@ -78,7 +78,7 @@ W jednostce: strych garaży – zderzak Stara (albo palety przy wiacie i dach wi
 
 W szpitalu: 4 piętro (dyrekcja) – schody kończą się na 3 piętrze, dalej szybem windy: z 3 piętra na dach utkniętej kabiny i drabiną serwisową do wyważonych drzwi, albo włazem z dachu; dach z lądowiskiem – właz z 4 piętra albo rusztowanie przy zachodnim szczycie (pomosty co 4 bloki, drabiny na zmianę, dziury w deskach); apteka – kosz na śmieci, kabina i skrzynia przewróconej karetki, daszek wejścia do pawilonu, sześć klimatyzatorów na ścianie, dach pawilonu, kanał wentylacyjny z drabinką; blok operacyjny – tylko łącznikiem z 1 piętra (schody pawilonu zasypane), z sali przy wschodniej ścianie można wyskoczyć oknem. Z daszku podjazdu karetek wchodzi się na dach izby przyjęć i oknami do sal 1 piętra. Piwnice mają dwa wejścia (schody w klatce zachodniej i zjazd dla karawanów do kostnicy) i tunel do kotłowni z zalanym odcinkiem.
 
-**Zrzuty zaopatrzenia** (`zrzuty:` w configu): co losowe 45–90 minut, gdy online są co najmniej 2 osoby, nad lądowiskiem jednostki albo dachem szpitala spada na spadochronie skrzynia z pulą `zrzut` (rzadka skrzynia albo skrzynia broni). Serwer dostaje komunikat ze współrzędnymi, nad skrzynią unosi się dym, a nieopróżniona znika po 15 minutach. Miejsca zrzutów to punkty z pulą `zrzut` w plikach `.axs`; zwykłe odświeżanie skrzyń je pomija.
+**Zrzuty zaopatrzenia** (`zrzuty:` w configu): 2 razy dziennie o losowej porze między 12:00 a 22:00 (czas polski; raz w każdej połowie okna), gdy online są co najmniej 2 osoby, nad lądowiskiem jednostki albo dachem szpitala spada na spadochronie skrzynia z pulą `zrzut` (rzadka skrzynia albo skrzynia broni). Serwer dostaje komunikat ze współrzędnymi, nad skrzynią unosi się dym, a nieopróżniona znika po 15 minutach. Miejsca zrzutów to punkty z pulą `zrzut` w plikach `.axs`; zwykłe odświeżanie skrzyń je pomija.
 
 Wszystkie struktury mają rozpoznawalne wyposażenie (prawdziwe łóżka, krzesła ze schodków, stoliki, biurka z lampkami, kuchenki, umywalki, toalety, regały, szafy – wspólna klasa `Furniture`), dzikie obozowiska, szkielety, graffiti na tabliczkach i zapalone lampy w ciemnych wnętrzach i pod ziemią. Przy eksporcie klasa `Weathering` postarza każdą strukturę: część cegieł i bruku staje się omszała lub popękana, przy ścianach rośnie mech, na ścianach porosty. Słabszych skrzynek po pokojach jest ok. 1,5 raza więcej niż wcześniej (stacja 48, gospodarstwo 40, kombinat 51, kopalnia 38, jednostka 134, szpital 79).
 

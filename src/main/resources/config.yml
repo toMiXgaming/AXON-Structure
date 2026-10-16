@@ -66,13 +66,17 @@ auto-generowanie:
   struktury: {}
 
 zrzuty:
-  # Co losowy czas nad jedną z postawionych struktur spada na spadochronie skrzynia z rzadkim lootem.
-  # Miejsca zrzutów są w plikach struktur (lądowisko jednostki, dach szpitala). Komenda: /struktury zrzut
+  # Kilka razy dziennie, o losowej porze w podanych godzinach, nad jedną z postawionych struktur spada
+  # na spadochronie skrzynia z rzadkim lootem. Miejsca zrzutów są w plikach struktur (lądowisko jednostki,
+  # dach szpitala). Komenda: /struktury zrzut (od razu), /struktury zrzut info (o której następny).
   wlaczone: true
-  # Odstęp między zrzutami: losowo od-do minut.
-  co-ile-minut-od: 45
-  co-ile-minut-do: 90
-  # Zrzut tylko, gdy online jest co najmniej tylu graczy.
+  # Ile zrzutów dziennie. Okno godzin dzielone jest na tyle równych części, w każdej jeden zrzut o losowej porze
+  # (przy 2 i 12-22: raz między 12 a 17, raz między 17 a 22).
+  dziennie: 2
+  godziny-od: 12
+  godziny-do: 22
+  strefa-czasowa: Europe/Warsaw
+  # Zrzut tylko, gdy online jest co najmniej tylu graczy (czeka do końca swojej części okna, potem przepada).
   min-graczy: 2
   # Pula lootu (sekcja pule:) i zarazem nazwa miejsc zrzutu w plikach .axs.
   pula: zrzut
