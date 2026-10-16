@@ -86,9 +86,11 @@ public final class FarmStructure implements StructureDefinition {
         private final Palette siloSheet;
         private final Palette rubble;
         private final Palette hay;
+        private final Furniture f;
 
         Builder(Random rnd) {
             this.rnd = rnd;
+            this.f = new Furniture(bp, 0, rnd);
             yard = new Palette(rnd)
                     .add("coarse_dirt", 5).add("mud", 3).add("dirt", 3).add("grass_block", 4)
                     .add("packed_mud", 2).add("rooted_dirt", 1);
@@ -141,6 +143,10 @@ public final class FarmStructure implements StructureDefinition {
             fuelTank();
             silo(SILO_A_X, true);
             silo(SILO_B_X, false);
+            outhouse();
+            squatterCamp();
+            graffiti();
+            extraYardCrates();
             weeds();
             weathering();
             return bp;
@@ -518,8 +524,14 @@ public final class FarmStructure implements StructureDefinition {
                 bp.set(p[0], 0, p[1], "black_concrete");
             }
             bp.set(6, 1, 11, "black_carpet");
+            // taboret przy warsztacie, beczka w kącie, kompostownik i skrzynka przy zachodniej ścianie
+            f.chair(4, 1, 13, "east", "spruce");
+            bp.set(3, 1, 9, "barrel[facing=up,open=false]");
+            bp.set(3, 1, 22, "composter[level=4]");
             bp.crate(3, 1, 16, "east", "klepisko");
             bp.crate(13, 1, 10, "west", "klepisko");
+            bp.crate(7, 1, 9, "south", "klepisko");
+            bp.crate(3, 1, 20, "east", "klepisko");
         }
 
         /**
@@ -590,6 +602,8 @@ public final class FarmStructure implements StructureDefinition {
             bp.crate(8, LOFT_Y + 1, 39, "north", "strych");
             bp.crate(13, LOFT_Y + 1, 30, "west", "strych");
             bp.set(6, LOFT_Y + 1, 37, "lantern[hanging=false]");
+            // ktoś pilnował okna strychu i już nie zszedł
+            f.skeleton(12, LOFT_Y + 1, 34, "south");
         }
 
         // ------------------------------------------------------------------ dom „kostka”
@@ -708,22 +722,30 @@ public final class FarmStructure implements StructureDefinition {
             }
             hs(44, 1, 14, "cobblestone_slab[type=bottom]");
             hs(44, 4, 14, "cobweb");
-            // kuchnia: piec kaflowy, przewrócony stół
+            // kuchnia: piec kaflowy, zlew, kuchenka z okapem, przewrócony stół
             hs(47, 1, 11, "furnace[facing=south,lit=false]");
             hs(48, 1, 11, "brown_terracotta");
             hf(47, 2, 11, 48, 3, 11, "white_terracotta");
             hf(47, 4, 11, 48, 4, 11, "brown_terracotta");
-            hs(42, 1, 11, "cauldron");
+            f.sink(42 + OX, 1, 11 + OZ, "north");
             hs(43, 1, 11, "spruce_planks");
             hs(43, 2, 11, "flower_pot");
             hs(45, 1, 12, "spruce_trapdoor[facing=north,half=bottom,open=true]");
-            hs(44, 1, 11, "spruce_stairs[facing=west,half=top]");
+            f.stove(44 + OX, 1, 11 + OZ, "south");
             hc(41, 1, 11, "south", "parter");
-            // salon: zapadnięta wersalka i rozbity telewizor
-            hs(44, 1, 18, "red_wool");
-            hs(45, 1, 18, "red_carpet");
-            hs(46, 1, 18, "red_carpet");
-            hs(47, 1, 18, "red_wool");
+            // okno zabite deskami i zastawione stołem warsztatowym z płotkiem; pod barykadą jej obrońca
+            hf(46, 2, 10, 46, 3, 10, "spruce_planks");
+            hs(46, 1, 11, "crafting_table");
+            hs(46, 2, 11, "spruce_fence");
+            f.skeleton(46 + OX, 1, 12 + OZ, "east");
+            hc(48, 1, 12, "west", "lada");
+            f.hangingLamp(44 + OX, 4, 12 + OZ);
+            // salon: wersalka, meblościanka i rozbity telewizor
+            f.bench(44 + OX, 1, 18 + OZ, 4, true, "south", "crimson");
+            f.bookshelf(43 + OX, 1, 16 + OZ, 44 + OX, 16 + OZ, 2, "south");
+            f.lamp(47 + OX, 1, 16 + OZ);
+            f.hangingLamp(45 + OX, 4, 17 + OZ);
+            hc(41, 1, 16, "east", "parter");
             hs(45, 1, 16, "spruce_planks");
             hs(45, 2, 16, "black_concrete");
             hs(45, 3, 16, "lightning_rod[facing=up]");
@@ -747,16 +769,27 @@ public final class FarmStructure implements StructureDefinition {
             hs(47, y, 14, "andesite_slab[type=bottom]");
             hs(48, y, 14, "cobblestone");
             hs(48, y + 1, 14, "cobblestone_slab[type=bottom]");
-            // sypialnia z cenną skrzynią
+            // sypialnia z cenną skrzynią: łóżko, szafka nocna z lampką, biurko, szafa, chodnik
             hs(42, y, 12, "red_bed[facing=east,part=foot,occupied=false]");
             hs(43, y, 12, "red_bed[facing=east,part=head,occupied=false]");
-            hf(48, y, 11, 48, y + 2, 11, "spruce_planks");
+            hs(44, y, 12, "spruce_slab[type=top]");
+            f.lamp(44 + OX, y + 1, 12 + OZ);
+            f.desk(46 + OX, y, 11 + OZ, 47 + OX, 11 + OZ, "spruce");
+            f.chair(46 + OX, y, 12 + OZ, "south", "spruce");
+            f.wardrobe(48 + OX, y, 11 + OZ, "south", "spruce");
             hs(41, y, 11, "chiseled_bookshelf[facing=south]");
+            hf(43, y, 13, 45, y, 13, "light_gray_carpet");
             hc(48, y, 13, "west", "pietro");
-            // drugi pokój
-            hs(48, y, 18, "cauldron");
-            hs(47, y, 18, "cauldron");
+            hc(41, y, 14, "east", "parter");
+            f.hangingLamp(44 + OX, HOUSE_ROOF_Y - 1, 12 + OZ);
+            // drugi pokój: łazienka z wanną, sedesem i umywalką
+            hs(48, y, 18, "water_cauldron[level=2]");
+            hs(47, y, 18, "water_cauldron[level=2]");
+            f.toilet(48 + OX, y, 16 + OZ, "east");
+            f.sink(45 + OX, y, 16 + OZ, "north");
             hc(41, y, 17, "east", "pietro");
+            hc(43, y, 16, "south", "toalety");
+            f.hangingLamp(45 + OX, HOUSE_ROOF_Y - 1, 17 + OZ);
             hs(44, HOUSE_ROOF_Y - 1, 13, "cobweb");
             // drzwi balkonowe z wybitą szybą
             hd(44, y, DZ1, "birch_door", "north", "left", true);
@@ -800,6 +833,7 @@ public final class FarmStructure implements StructureDefinition {
             bp.set(sx1 + 2, 1, sz1 + 2, "coal_block");
             bp.set(sx1 + 2, 2, sz1 + 1, "coal_block");
             bp.crate(sx1 + 1, 1, sz2 - 1, "east", "plac");
+            bp.crate(sx1 + 1, 1, sz1 + 2, "east", "zaplecze");
             // stos drewna i pieniek: ziemia → pieniek (y1) → stos (y2) → niski dach szopy (y3) → wysoki (y4) → balkon (y5)
             bp.fill(sx1 - 1, 1, sz1 + 1, sx1 - 1, 2, sz1 + 2, "oak_log[axis=z]");
             bp.set(sx1 - 2, 1, sz1 + 1, "oak_log[axis=y]");
@@ -899,6 +933,53 @@ public final class FarmStructure implements StructureDefinition {
                 }
             }
             bp.crate(cx + 2, SILO_TOP + 3, SILO_Z, "west", "silos");
+        }
+
+        // ------------------------------------------------------------------ rekwizyty i opowieść
+
+        /** Drewniany wychodek za domem: sedes, drzwi i kartka „ZAJĘTE”. */
+        private void outhouse() {
+            int x1 = 42;
+            int x2 = 45;
+            int z1 = 36;
+            int z2 = 39;
+            for (int x = x1; x <= x2; x++) {
+                for (int z = z1; z <= z2; z++) {
+                    boolean wall = x == x1 || x == x2 || z == z1 || z == z2;
+                    if (wall) {
+                        bp.fill(x, 1, z, x, 2, z, chance(0.85) ? "spruce_planks" : "stripped_spruce_wood[axis=y]");
+                    }
+                    bp.set(x, 3, z, chance(0.8) ? "spruce_slab[type=bottom]" : "dark_oak_slab[type=bottom]");
+                }
+            }
+            door(43, 1, z1, "spruce_door", "north", "left", false);
+            f.toilet(44, 1, 38, "south");
+            bp.crate(43, 1, 38, "east", "toalety");
+            bp.set(44, 2, 37, "air");
+            bp.sign(44, 2, z1 - 1, "oak_wall_sign[facing=north]", "", "ZAJĘTE", "", "");
+        }
+
+        /** Obozowisko dzikiego lokatora pod strychem stodoły, z lampą i dobytkiem. */
+        private void squatterCamp() {
+            f.camp(11, 1, 33, "north");
+            f.hangingLamp(11, LOFT_Y - 1, 34);
+            bp.crate(10, 1, 31, "south", "zaplecze");
+            bp.sign(8, 2, LOFT_Z + 1, "oak_wall_sign[facing=south]", "NIE RUSZAĆ", "MOICH", "RZECZY!", "- Zbychu");
+        }
+
+        /** Napisy ocalałych na ścianach. */
+        private void graffiti() {
+            bp.sign(SX2 + 1, 3, 12, "oak_wall_sign[facing=east]", "STRYCH", "ZAJĘTY", "SPADAJ", "");
+            bp.sign(DX1 - 1 + OX, 3, 16 + OZ, "oak_wall_sign[facing=west]", "UWAGA!", "SNAJPER", "NA SILOSIE", "");
+        }
+
+        /** Dodatkowe beczki i skrzynki na podwórzu: przy rozrzutniku, bramie, studni, silosie i na przyczepie. */
+        private void extraYardCrates() {
+            bp.crate(45, 1, 13, "west", "plac");
+            bp.crate(34, 1, 9, "south", "plac");
+            bp.crate(25, 1, 35, "east", "plac");
+            bp.crate(37, 1, 46, "west", "plac");
+            bp.crate(20, 2, 22, "east", "plac");
         }
 
         // ------------------------------------------------------------------ zarośla i zniszczenia
