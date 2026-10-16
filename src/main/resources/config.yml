@@ -140,6 +140,26 @@ pule:
   silos:
     rzadka-skrzynia: 90
     lepsza-skrzynia: 10
+  # --- kombinat Przyszłość (beczki: plac, paliwo; małe skrzynki: parter, klepisko; piętro paszarni: strych) ---
+  # magazyn nawozów – jedyne pewne skrzynki medyczne
+  magazyn-nawozow:
+    skrzynka-medyczna: 60
+    narzedziowa: 25
+    brak: 15
+  # pomost suwnicy w bazie maszynowej
+  suwnica:
+    lepsza-skrzynia: 65
+    narzedziowa: 20
+    brak: 15
+  # pomost wieży ciśnień
+  wieza:
+    lepsza-skrzynia: 75
+    brazowa: 10
+    brak: 15
+  # maszynownia na szczycie wieży elewatora – dwie rzadkie skrzynie
+  elewator:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ

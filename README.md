@@ -60,8 +60,11 @@ Struktury opisane w kodzie (`src/generator`):
 | --- | --- | --- |
 | `stacja.axs` | Opuszczona stacja benzynowa (Oxum's Gas) | `paliwo`, `plac`, `lada`, `karta`, `sklep`, `lodowki`, `toalety`, `zaplecze`, `magazyn-regal`, `magazyn`, `dach` |
 | `gospodarstwo.axs` | Opuszczone gospodarstwo Agro-Pol (PGR) | `plac`, `paliwo`, `parter`, `klepisko`, `strych`, `pietro`, `silos` |
+| `kombinat.axs` | Kombinat rolny Przyszłość (spółdzielnia) | `plac`, `paliwo`, `parter`, `klepisko`, `strych`, `magazyn-nawozow`, `suwnica`, `wieza`, `elewator` |
 
 W gospodarstwie lepsze skrzynie wymagają parkouru: strych stodoły – heder kombajnu, maska, kabina, sterta siana, krawędź strychu; piętro domu – stos drewna, dach szopy na węgiel, balkon; rzadka skrzynia leży na szczycie silosu (drabina w klatce).
+
+W kombinacie: piętro paszarni – przyczepa, bela, poprzeczka silosu paszowego, daszek, okno; pomost suwnicy w hali – podniesiona wywrotka, dach kabiny ciągnika, regał; wieża elewatora – drabina na półpiętro, drzwi serwisowe na zewnętrzny pomost, drabina na ścianie i z powrotem do środka; wieża ciśnień – długa drabina bez klatki. Z kanału w hali i ze zbiornika na gnojowicę wychodzi się tylko po drabince.
 
 Zapisuje je do plików:
 
