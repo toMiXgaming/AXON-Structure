@@ -160,6 +160,32 @@ pule:
   elewator:
     rzadka-skrzynia: 85
     lepsza-skrzynia: 15
+  # --- kopalnia Jedność (beczki: plac, paliwo; cechownia i portiernia: parter; najwyższe piętro sortowni: strych) ---
+  # sztolnia w hałdzie – skrzynki narzędziowe w komorze na końcu chodnika
+  sztolnia:
+    narzedziowa: 60
+    mala-skrzynka: 15
+    brak: 25
+  # podszybie i komora pomp pod ziemią (jedyne wyjście to drabina w szybie)
+  podszybie:
+    narzedziowa: 55
+    mala-skrzynka: 15
+    lepsza-skrzynia: 10
+    brak: 20
+  # skład materiałów wybuchowych za kratą w podszybiu
+  podszybie-sklad:
+    lepsza-skrzynia: 75
+    narzedziowa: 10
+    brak: 15
+  # pulpit maszynisty w maszynowni wyciągowej
+  maszynownia:
+    lepsza-skrzynia: 70
+    narzedziowa: 15
+    brak: 15
+  # budka na szczycie wieży szybowej
+  wieza-szybowa:
+    rzadka-skrzynia: 90
+    lepsza-skrzynia: 10
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ

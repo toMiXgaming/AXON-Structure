@@ -265,8 +265,9 @@ public final class PasteService {
      * </ul>
      */
     private void planTerrain(World world, Blueprint bp, Placement placement, Map<Long, Op> ops) {
-        int baseY = placement.originY();
-        int topY = baseY + bp.height();
+        int bottomY = placement.originY();
+        int baseY = bottomY + bp.ground();
+        int topY = bottomY + bp.height();
         int margin = Math.max(0, settings.smoothing());
         BlockData air = resolve("minecraft:air");
         BlockData stone = resolve("minecraft:stone");
@@ -290,14 +291,14 @@ public final class PasteService {
                             put(ops, x, y, z, air);
                         }
                     }
-                    // pod strukturą: fundament do litego gruntu
+                    // pod strukturą (albo pod jej podziemiem): fundament do litego gruntu
                     for (int depth = 1; depth <= settings.maxFoundation(); depth++) {
-                        int y = baseY - depth;
+                        int y = bottomY - depth;
                         Material type = world.getBlockAt(x, y, z).getType();
                         if (Terrain.isGround(type)) {
                             break;
                         }
-                        put(ops, x, y, z, depth <= 3 ? under : stone);
+                        put(ops, x, y, z, depth <= 3 && bp.ground() == 0 ? under : stone);
                     }
                     continue;
                 }

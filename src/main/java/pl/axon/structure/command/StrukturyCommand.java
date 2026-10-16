@@ -118,7 +118,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
                 int x = Integer.parseInt(args[3]);
                 int y = Integer.parseInt(args[4]);
                 int z = Integer.parseInt(args[5]);
-                placement = Placement.anchored(world.getName(), x, y, z, bp.width() / 2, bp.depth() / 2, steps);
+                placement = Placement.anchored(world.getName(), x, y - bp.ground(), z, bp.width() / 2, bp.depth() / 2, steps);
             } catch (NumberFormatException e) {
                 sender.sendMessage("§cWspółrzędne i obrót muszą być liczbami.");
                 return;
@@ -126,7 +126,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         } else if (sender instanceof Player player) {
             Location l = player.getLocation();
             int steps = Rotation.stepsFromYaw(l.getYaw());
-            placement = Placement.anchored(l.getWorld().getName(), l.getBlockX(), l.getBlockY() - 1, l.getBlockZ(),
+            placement = Placement.anchored(l.getWorld().getName(), l.getBlockX(), l.getBlockY() - 1 - bp.ground(), l.getBlockZ(),
                     bp.width() / 2, -FRONT_DISTANCE, steps);
         } else {
             sender.sendMessage("§cZ konsoli podaj: wklej <nazwa> <świat> <x> <y> <z> [obrót]");
@@ -211,8 +211,10 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         }
         Location l = ((Player) sender).getLocation();
         int distance = (int) Math.sqrt(instance.distanceSquared(l.getX(), l.getZ()));
+        Blueprint shown = plugin.library().get(instance.structureId());
+        int groundY = instance.placement().originY() + (shown == null ? 0 : shown.ground());
         sender.sendMessage("§aNajbliższa: §e" + instance.structureId() + " §7(id " + instance.id() + ")§a na §f" + instance.centerX() + " "
-                + instance.placement().originY() + " " + instance.centerZ() + "§a (" + distance + " bloków"
+                + groundY + " " + instance.centerZ() + "§a (" + distance + " bloków"
                 + (instance.automatic() ? ", wygenerowana automatycznie" : "") + ")");
     }
 

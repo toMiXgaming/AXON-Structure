@@ -66,6 +66,13 @@ cmd "struktury wklej gospodarstwo world -300 90 0 2"
 wait_gotowe 3 180
 cmd "struktury wklej kombinat world 0 90 -300 1"
 wait_gotowe 4 240
+# Kopalnia ma 12 warstw podziemia: grunt (krata nad szybem) ma wypaść na y 90, drabina w szybie 5 bloków niżej.
+cmd "struktury wklej kopalnia world 300 90 -300 0"
+wait_gotowe 5 300
+cmd "forceload add 294 -300"
+sleep 3
+cmd "execute if block 295 90 -300 minecraft:iron_trapdoor run say GRUNT-OK"
+cmd "execute if block 294 85 -300 minecraft:ladder run say PODZIEMIE-OK"
 # Wybuch TNT nad środkiem stacji nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
 CX=$(awk '/srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
 CZ=$(awk '/srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
@@ -104,9 +111,11 @@ if grep -nE "Exception|Nieprawidłowy stan bloku|nieznany przedmiot|nieznanej kl
   echo "::error::W logu serwera są błędy"; FAIL=1
 fi
 GOT=$(grep -c "Gotowe!" server.log || true)
-if [ "$GOT" -lt 4 ]; then
-  echo "::error::Oczekiwano 4 postawień z komend, jest $GOT"; FAIL=1
+if [ "$GOT" -lt 5 ]; then
+  echo "::error::Oczekiwano 5 postawień z komend, jest $GOT"; FAIL=1
 fi
+grep -qF "Server] GRUNT-OK" server.log || { echo "::error::Kopalnia: grunt nie wypadł na poziomie wklejenia"; FAIL=1; }
+grep -qF "Server] PODZIEMIE-OK" server.log || { echo "::error::Kopalnia: brak drabiny w szybie pod ziemią"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }

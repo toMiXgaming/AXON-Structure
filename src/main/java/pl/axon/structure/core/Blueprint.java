@@ -9,7 +9,8 @@ import java.util.Map;
  * Struktura zapisana w lokalnych współrzędnych, zanim trafi do świata.
  * <p>
  * Układ lokalny: x rośnie w prawo (wschód), z rośnie w głąb struktury (południe),
- * y = 0 to warstwa gruntu. Front struktury jest po stronie z = 0 (północ).
+ * y = {@link #ground()} to warstwa gruntu (domyślnie 0), a warstwy poniżej to podziemie wklejane pod powierzchnię.
+ * Front struktury jest po stronie z = 0 (północ).
  * Każda pozycja w obrębie prostopadłościanu, która nie została ustawiona, zostanie wyczyszczona do powietrza.
  * <p>
  * Klasa nie zależy od API Bukkita, więc korzysta z niej też generator plików struktur.
@@ -41,6 +42,7 @@ public final class Blueprint {
     private final int width;
     private final int height;
     private final int depth;
+    private int ground;
     private final Map<Pos, String> blocks = new HashMap<>();
     private final List<SpawnPoint> spawnPoints = new ArrayList<>();
     private final List<SignSpec> signs = new ArrayList<>();
@@ -80,6 +82,19 @@ public final class Blueprint {
 
     public int depth() {
         return depth;
+    }
+
+    /** Warstwa, która wypada na poziomie terenu. Warstwy 0 .. ground-1 lądują pod ziemią. */
+    public int ground() {
+        return ground;
+    }
+
+    public Blueprint ground(int ground) {
+        if (ground < 0 || ground >= height) {
+            throw new IllegalArgumentException("poziom gruntu " + ground + " poza wysokością struktury");
+        }
+        this.ground = ground;
+        return this;
     }
 
     public boolean inBounds(int x, int y, int z) {

@@ -148,7 +148,7 @@ public final class AutoGenerator implements Listener {
                         done.accept(false);
                         return;
                     }
-                    Placement placement = new Placement(draft.world(), draft.originX(), site.baseY(),
+                    Placement placement = new Placement(draft.world(), draft.originX(), site.baseY() - bp.ground(),
                             draft.originZ(), steps);
                     boolean started = paster.paste(bp, placement, feedback, undoOwner, feedback == null, instance -> {
                         if (instance == null) {

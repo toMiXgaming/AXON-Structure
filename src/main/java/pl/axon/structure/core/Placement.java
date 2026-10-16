@@ -2,7 +2,8 @@ package pl.axon.structure.core;
 
 /**
  * Położenie struktury w świecie: punkt (0, 0, 0) układu lokalnego i obrót o {@code steps} * 90°.
- * Warstwa y = 0 struktury (grunt) leży na wysokości {@code originY}.
+ * Warstwa y = 0 struktury leży na wysokości {@code originY}. Dla struktur z podziemiem to jej dno,
+ * a grunt wypada na {@code originY + ground}.
  */
 public record Placement(String world, int originX, int originY, int originZ, int steps) {
 
@@ -22,6 +23,6 @@ public record Placement(String world, int originX, int originY, int originZ, int
     }
 
     public int[] center(Blueprint bp) {
-        return toWorld(bp.width() / 2, 0, bp.depth() / 2);
+        return toWorld(bp.width() / 2, bp.ground(), bp.depth() / 2);
     }
 }
