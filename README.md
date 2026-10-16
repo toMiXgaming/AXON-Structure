@@ -77,6 +77,8 @@ W jednostce: strych garaży – zderzak Stara (albo palety przy wiacie i dach wi
 
 W szpitalu: 4 piętro (dyrekcja) – schody kończą się na 3 piętrze, dalej szybem windy: z 3 piętra na dach utkniętej kabiny i drabiną serwisową do wyważonych drzwi, albo włazem z dachu; dach z lądowiskiem – właz z 4 piętra albo rusztowanie przy zachodnim szczycie (pomosty co 4 bloki, drabiny na zmianę, dziury w deskach); apteka – kosz na śmieci, kabina i skrzynia przewróconej karetki, daszek wejścia do pawilonu, sześć klimatyzatorów na ścianie, dach pawilonu, kanał wentylacyjny z drabinką; blok operacyjny – tylko łącznikiem z 1 piętra (schody pawilonu zasypane), z sali przy wschodniej ścianie można wyskoczyć oknem. Z daszku podjazdu karetek wchodzi się na dach izby przyjęć i oknami do sal 1 piętra. Piwnice mają dwa wejścia (schody w klatce zachodniej i zjazd dla karawanów do kostnicy) i tunel do kotłowni z zalanym odcinkiem.
 
+Wszystkie struktury mają rozpoznawalne wyposażenie (prawdziwe łóżka, krzesła ze schodków, stoliki, biurka z lampkami, kuchenki, umywalki, toalety, regały, szafy – wspólna klasa `Furniture`), dzikie obozowiska, szkielety, graffiti na tabliczkach i zapalone lampy w ciemnych wnętrzach i pod ziemią. Przy eksporcie klasa `Weathering` postarza każdą strukturę: część cegieł i bruku staje się omszała lub popękana, przy ścianach rośnie mech, na ścianach porosty. Słabszych skrzynek po pokojach jest ok. 1,5 raza więcej niż wcześniej (stacja 48, gospodarstwo 40, kombinat 51, kopalnia 38, jednostka 134, szpital 79).
+
 Zapisuje je do plików:
 
 ```bash
