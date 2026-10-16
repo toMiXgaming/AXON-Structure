@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Strażnicy NPC: serwer Paper z Citizens i Sentinelem (Modrinth, Jenkins Citizens albo ich Maven), wklejenie jednostki
+# Strażnicy NPC: serwer Paper z Citizens i Sentinelem (Jenkins Citizens albo ich Maven; na Modrinth ich nie ma), wklejenie jednostki
 # i szpitala, postawienie strażników komendą i sprawdzenie, że stoją. Gdy nie da się pobrać Citizens/Sentinela,
 # test jest pomijany (ostrzeżenie), bo to zewnętrzne pluginy.
 set -euo pipefail
@@ -11,22 +11,6 @@ cp build/struktury/jednostka.axs build/struktury/szpital.axs "$DIR/plugins/AXON-
 cd "$DIR"
 
 UA="Mozilla/5.0 (X11; Linux x86_64) AXON-Structure-CI"
-fetch_modrinth() { # plik docelowy, slugi projektów na Modrinth
-  local out="$1" slug url
-  shift
-  for slug in "$@"; do
-    url=$(curl -fsSL -A "$UA" "https://api.modrinth.com/v2/project/$slug/version?game_versions=%5B%221.21.4%22%5D" \
-      | jq -r '[.[] | select(.loaders | index("paper") or index("spigot") or index("bukkit"))][0].files[0].url' 2>/dev/null) \
-      || { echo "modrinth $slug: brak"; continue; }
-    if [ -n "$url" ] && [ "$url" != "null" ]; then
-      echo "modrinth $slug: $url"
-      curl -fsSL -A "$UA" -o "$out" "$url" && return 0
-    else
-      echo "modrinth $slug: brak wersji na 1.21.4"
-    fi
-  done
-  return 1
-}
 fetch_jenkins() { # plik docelowy, nazwy zadań Jenkinsa do wypróbowania
   local out="$1" job json path
   shift
@@ -52,12 +36,8 @@ fetch_sentinel_maven() { # Sentinel jest też w repozytorium Mavena Citizens (sa
   echo "maven sentinel: $ver/$file"
   curl -fsSL -A "$UA" -o "$1" "$base/$ver/$file"
 }
-modrinth_ids() { # identyfikatory projektów z wyszukiwarki Modrinth (slugi bywają inne niż nazwa)
-  curl -fsSL -A "$UA" "https://api.modrinth.com/v2/search?query=$1&limit=5" \
-    | jq -r '.hits[] | "\(.project_id) \(.title)"' | tee /dev/stderr | grep -iE " $1\b" | cut -d' ' -f1 || true
-}
-get_citizens() { fetch_modrinth "$1" citizens citizens2 $(modrinth_ids citizens) || fetch_jenkins "$1" citizens2 Citizens2 Citizens; }
-get_sentinel() { fetch_modrinth "$1" sentinel $(modrinth_ids sentinel) || fetch_jenkins "$1" sentinel Sentinel || fetch_sentinel_maven "$1"; }
+get_citizens() { fetch_jenkins "$1" citizens2 Citizens2 Citizens; }
+get_sentinel() { fetch_jenkins "$1" sentinel Sentinel || fetch_sentinel_maven "$1"; }
 if ! get_citizens plugins/Citizens.jar || ! get_sentinel plugins/Sentinel.jar; then
   echo "::warning::Nie udało się pobrać Citizens/Sentinela – test strażników pominięty"
   exit 0
