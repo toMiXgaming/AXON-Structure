@@ -68,9 +68,11 @@ public final class HospitalStructure implements StructureDefinition {
         private final Palette rubble;
         private final Palette rock;
         private final Palette car;
+        private final Furniture f;
 
         Builder(Random rnd) {
             this.rnd = rnd;
+            this.f = new Furniture(bp, G, rnd);
             grass = new Palette(rnd)
                     .add("grass_block", 12).add("coarse_dirt", 2).add("dirt", 1).add("podzol", 1);
             asphalt = new Palette(rnd)
@@ -110,6 +112,7 @@ public final class HospitalStructure implements StructureDefinition {
             park();
             basement();
             crates();
+            moreCrates();
             weeds();
             return bp;
         }
@@ -198,11 +201,17 @@ public final class HospitalStructure implements StructureDefinition {
             }
         }
 
-        /** Łóżko szpitalne na dwóch blokach wzdłuż z (z, z + dz), poduszka po stronie z. */
+        /**
+         * Prawdziwe łóżko szpitalne na dwóch blokach wzdłuż z (z, z + dz), poduszka po stronie z.
+         * Dla dz = 0 łóżko stoi wzdłuż x, poduszką na zachód (x - 1).
+         */
         private void bed(int x, int y, int z, int dz, String wool) {
-            set(x, y, z, wool);
-            set(x, y, z + dz, wool);
-            set(x, y + 1, z, "white_carpet");
+            String color = wool.replace("_wool", "");
+            if (dz == 0) {
+                f.bed(x, y, z, "west", color);
+            } else {
+                f.bed(x, y, z + dz, dz > 0 ? "north" : "south", color);
+            }
         }
 
         /**
@@ -517,25 +526,34 @@ public final class HospitalStructure implements StructureDefinition {
                         } else {
                             // przewrócone łóżko na środku sali
                             set(xb - 1, h + 1, 50, "iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=false]");
-                            set(xb, h + 1, 50, "white_wool");
+                            f.bed(xb, h + 1, 51, "north", "white");
                         }
                     }
                     if (chance(0.5)) {
                         set(xb, h + 1, 49, "iron_bars");
                     }
+                    // umywalka przy drzwiach
+                    if (!westStair && !eastStair && !shaft) {
+                        f.sink(xb, h + 1, 44, "south");
+                    }
                 }
                 if (k == 0 && !westStair && !eastStair) {
-                    // gabinety na parterze: kozetka i szafka
-                    set(xa, 1, 41, "white_wool");
-                    set(xb, 1, 52, "light_gray_terracotta");
+                    // gabinety na parterze: kozetka, szafa, umywalka i krzesło
+                    f.bed(xa, 1, 42, "north", "white");
+                    f.wardrobe(xb, 1, 52, "north", "birch");
+                    f.sink(xb, 1, 41, "north");
+                    f.chair(xb, 1, 42, "east", "spruce");
                 }
                 if (k == 4 && !shaft) {
                     // biura: biurko, regał
-                    fill(xa + 1, h + 1, 51, xa + 2, h + 1, 51, "dark_oak_slab[type=top]");
-                    set(xb, h + 1, 52, "bookshelf");
-                    set(xb, h + 2, 52, "bookshelf");
+                    f.desk(xa + 1, h + 1, 51, xa + 2, 51, "dark_oak");
+                    f.chair(xa + 1, h + 1, 50, "north", "dark_oak");
+                    f.lamp(xa + 2, h + 2, 51);
+                    f.bookshelf(xb, h + 1, 52, xb, 52, 2, "north");
                     if (!westStair) {
-                        fill(xa + 1, h + 1, 42, xa + 2, h + 1, 42, "dark_oak_slab[type=top]");
+                        f.desk(xa + 1, h + 1, 42, xa + 2, 42, "dark_oak");
+                        f.chair(xa + 1, h + 1, 43, "south", "dark_oak");
+                        set(xa + 2, h + 2, 42, chance(0.5) ? "flower_pot" : "brewing_stand[has_bottle_0=false,has_bottle_1=true,has_bottle_2=false]");
                     }
                 }
             }
@@ -554,13 +572,26 @@ public final class HospitalStructure implements StructureDefinition {
                 }
                 double r = rnd.nextDouble();
                 if (r < 0.4) {
-                    set(x, h + 1, z, "white_wool");
-                    set(x + 1, h + 1, z, "white_wool");
+                    f.bed(x, h + 1, z, "east", "white");
                 } else if (r < 0.7) {
                     set(x, h + 1, z, "iron_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]");
                 } else {
                     set(x, h + 1, z, stairs("spruce", z == 46 ? "south" : "north"));
                 }
+            }
+            // zapalone lampy na korytarzu (część jeszcze świeci) i graffiti
+            for (int x = 40; x <= 70; x += 15) {
+                if (chance(0.7) && isAir(x, h + 4, 47)) {
+                    f.hangingLamp(x, h + 4, 47);
+                }
+            }
+            String[][] graffiti = {
+                    {"NIE UFAJ", "NIKOMU", "", "-K."},
+                    {"TU BYŁ", "SZYMEK", "I JUŻ GO", "NIE MA"},
+                    {"WINDĄ NA", "4 PIĘTRO", "PO DACHU", "KABINY"},
+                    {"DACH", "= SNAJPER", "UWAŻAJ", "NA PLACU"}};
+            if (k >= 1 && isAir(46, h + 3, 47) && !isAir(46, h + 3, 48)) {
+                sign(46, h + 3, 47, "oak_wall_sign[facing=north]", graffiti[k - 1]);
             }
             cobwebs(31, 41, 78, 52, h + 4, 14);
         }
@@ -633,14 +664,16 @@ public final class HospitalStructure implements StructureDefinition {
             fill(49, 1, 28, 49, 2, 28, "air");
             fill(60, 1, 28, 60, 2, 28, "air");
             fill(43, 1, 26, 46, 1, 26, "white_terracotta");
-            set(41, 1, 30, "white_wool");
-            set(41, 1, 31, "white_wool");
+            f.bed(41, 1, 31, "north", "white");
+            set(44, 2, 26, "brewing_stand[has_bottle_0=true,has_bottle_1=false,has_bottle_2=false]");
+            f.sink(46, 1, 25, "north");
             set(47, 2, 25, "lantern[hanging=false,waterlogged=false]");
             set(47, 1, 25, "light_gray_terracotta");
-            set(62, 1, 26, "dark_oak_slab[type=top]");
-            set(63, 1, 26, "dark_oak_slab[type=top]");
-            set(66, 1, 30, "white_wool");
-            set(66, 1, 31, "white_wool");
+            f.desk(62, 1, 26, 63, 26, "dark_oak");
+            f.chair(62, 1, 27, "south", "dark_oak");
+            f.lamp(63, 2, 26);
+            f.bookshelf(61, 1, 25, 61, 25, 2, "south");
+            f.bed(66, 1, 31, "north", "white");
             // rejestracja: lada z okienkiem
             for (int x = 51; x <= 58; x++) {
                 set(x, 1, 30, "quartz_slab[type=top]");
@@ -661,7 +694,7 @@ public final class HospitalStructure implements StructureDefinition {
                 bed(42, 1, z, 0, "white_wool");
                 set(43, 1, z, "white_stained_glass_pane");
                 set(43, 2, z, "white_stained_glass_pane");
-                set(67, 1, z, "white_wool");
+                f.bed(67, 1, z, "east", "white");
                 set(66, 1, z, "white_stained_glass_pane");
                 set(66, 2, z, "white_stained_glass_pane");
             }
@@ -723,9 +756,10 @@ public final class HospitalStructure implements StructureDefinition {
                 set(x, 2, 35, chance(0.5) ? "flower_pot" : "air");
             }
             // przychodnia
-            set(86, 1, 46, "white_wool");
-            set(86, 1, 47, "white_wool");
-            fill(89, 1, 51, 90, 1, 51, "dark_oak_slab[type=top]");
+            f.bed(86, 1, 47, "north", "white");
+            f.desk(89, 1, 51, 90, 51, "dark_oak");
+            f.chair(89, 1, 50, "north", "dark_oak");
+            f.lamp(90, 2, 51);
             // zasypana klatka schodowa pawilonu
             walls(97, 49, 102, 52, 1, 4, white);
             fill(98, 1, 50, 101, 4, 51, rubble);
@@ -916,6 +950,8 @@ public final class HospitalStructure implements StructureDefinition {
                 set(x, 25, 46, "white_concrete");
                 set(x, 25, 47, "white_concrete");
             }
+            // obozowisko dzikich lokatorów na dachu
+            f.camp(39, 26, 47, "north");
             // przewrócona skrzynia transportowa i wywietrzniki (osłony)
             fill(69, 26, 49, 70, 26, 50, "spruce_planks");
             set(70, 27, 50, "spruce_slab[type=bottom]");
@@ -963,6 +999,12 @@ public final class HospitalStructure implements StructureDefinition {
             }
             fill(16, 1, 71, 23, 1, 71, "smooth_stone_slab[type=top]");
             set(18, 2, 71, "smoker[facing=south,lit=false]");
+            for (int x = 17; x <= 21; x += 2) {
+                f.chair(x, 1, 70, "north", "spruce");
+                f.chair(x, 1, 72, "south", "spruce");
+            }
+            f.stove(24, 1, 63, "south");
+            f.sink(22, 1, 63, "north");
             // pralnia: bębny pralek
             for (int x = 28; x <= 32; x += 2) {
                 set(x, 1, 64, "iron_block");
@@ -1012,7 +1054,8 @@ public final class HospitalStructure implements StructureDefinition {
             }
             set(90, 1, 80, "quartz_slab[type=top]");
             set(91, 1, 80, "quartz_slab[type=top]");
-            set(90, 2, 80, "candle[candles=3,lit=false,waterlogged=false]");
+            set(90, 2, 80, "candle[candles=3,lit=true,waterlogged=false]");
+            set(91, 2, 80, "candle[candles=2,lit=true,waterlogged=false]");
             windowsZ(x1, 72, 79, 3, 2, 3);
             windowsZ(x2, 72, 79, 3, 2, 3);
         }
@@ -1159,6 +1202,8 @@ public final class HospitalStructure implements StructureDefinition {
                 set(38, B + 2, z, "chain[axis=z]");
             }
             fill(38, B, 48, 39, B + 1, 48, "air");
+            f.skeleton(38, B, 52, "north");
+            set(39, B + 2, 51, "lantern[hanging=true,waterlogged=false]");
             // piwnica budynku gospodarczego i schody do kotłowni (rząd z 66)
             room(34, B, 64, 41, B + 2, 69);
             for (int i = 0; i < 4; i++) {
@@ -1236,6 +1281,45 @@ public final class HospitalStructure implements StructureDefinition {
             crate(77, B, 50, "west", "kostnica");
             crate(71, B, 43, "south", "parter");
             crate(40, B, 69, "north", "parter");
+        }
+
+        /** Dodatkowe, słabsze skrzynki po salach, żeby każdy pokój miał co przeszukać. */
+        private void moreCrates() {
+            // główny blok
+            crate(64, 1, 41, "south", "parter");
+            crate(69, 1, 52, "north", "izba-chorych");
+            crate(40, 6, 41, "south", "izba-chorych");
+            crate(58, 6, 52, "north", "parter");
+            crate(70, 6, 41, "south", "parter");
+            crate(40, 11, 41, "south", "parter");
+            crate(64, 11, 52, "north", "izba-chorych");
+            crate(46, 11, 52, "north", "parter");
+            crate(40, 16, 41, "south", "parter");
+            crate(58, 16, 52, "north", "izba-chorych");
+            crate(70, 16, 41, "south", "parter");
+            crate(40, 21, 52, "north", "parter");
+            crate(70, 21, 41, "south", "parter");
+            // izba przyjęć
+            crate(59, 1, 26, "south", "parter");
+            crate(41, 1, 37, "east", "izba-chorych");
+            crate(46, 1, 31, "north", "izba-chorych");
+            // pawilon
+            crate(90, 1, 45, "south", "izba-chorych");
+            crate(102, 1, 45, "west", "parter");
+            crate(94, 6, 50, "north", "izba-chorych");
+            // tył i kaplica
+            crate(25, 1, 73, "north", "lada");
+            crate(33, 1, 67, "west", "parter");
+            crate(42, 1, 75, "west", "plac");
+            crate(87, 1, 79, "east", "parter");
+            // piwnice
+            crate(35, B, 41, "south", "parter");
+            crate(53, B, 52, "north", "parter");
+            // na zewnątrz
+            crate(39, 1, 21, "north", "plac");
+            crate(85, 1, 29, "west", "plac");
+            crate(47, 1, 23, "north", "plac");
+            crate(50, 1, 5, "north", "plac");
         }
 
         private void weeds() {
