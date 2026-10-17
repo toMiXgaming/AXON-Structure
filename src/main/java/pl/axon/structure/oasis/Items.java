@@ -22,15 +22,11 @@ final class Items {
         }
         ItemStack item = null;
         if (spec.toLowerCase(Locale.ROOT).startsWith("qa:")) {
-            try {
-                Class<?> qa = Class.forName("me.zombie_striker.qg.api.QualityArmory");
-                Object stack = qa.getMethod("getCustomItemAsItemStack", String.class).invoke(null, spec.substring(3));
-                if (stack instanceof ItemStack s) {
-                    item = s.clone();
-                }
-            } catch (ReflectiveOperationException | RuntimeException e) {
+            ItemStack stack = pl.axon.structure.util.QaItems.find(spec.substring(3));
+            if (stack == null) {
                 return null;
             }
+            item = stack;
         } else {
             Material material = Material.matchMaterial(spec);
             if (material != null && material.isItem() && material != Material.AIR) {

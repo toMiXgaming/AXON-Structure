@@ -94,6 +94,7 @@ public final class GuardService implements Listener {
     private BukkitTask task;
     private Object registry;
     private boolean warned;
+    private final java.util.Set<String> warnedWeapons = new java.util.HashSet<>();
     /** Zestawy, których brakuje w configu, a struktury ich wymagają (do komunikatu i komendy). */
     private final java.util.Set<String> missingKits = new java.util.TreeSet<>();
 
@@ -402,16 +403,15 @@ public final class GuardService implements Listener {
         }
         if (spec.toLowerCase(Locale.ROOT).startsWith("qa:")) {
             String name = spec.substring(3);
-            try {
-                Class<?> qa = Class.forName("me.zombie_striker.qg.api.QualityArmory");
-                Object item = qa.getMethod("getCustomItemAsItemStack", String.class).invoke(null, name);
-                if (item instanceof ItemStack stack) {
-                    return stack;
-                }
-            } catch (ReflectiveOperationException | RuntimeException e) {
-                // brak QualityArmory albo innej wersji API – niżej zapas
+            ItemStack gun = pl.axon.structure.util.QaItems.find(name);
+            if (gun != null) {
+                return gun;
             }
-            plugin.getLogger().warning("Nie ma broni QualityArmory '" + name + "', strażnik dostaje kuszę.");
+            if (warnedWeapons.add(name.toLowerCase(Locale.ROOT))) {
+                java.util.List<String> names = pl.axon.structure.util.QaItems.names();
+                plugin.getLogger().warning("Nie ma broni QualityArmory '" + name + "', strażnik dostaje kuszę."
+                        + (names.isEmpty() ? " QualityArmory nie odpowiada." : " Dostępne: " + String.join(", ", names)));
+            }
             return new ItemStack(Material.CROSSBOW);
         }
         Material material = Material.matchMaterial(spec);

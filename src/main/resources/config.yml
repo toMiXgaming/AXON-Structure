@@ -144,7 +144,7 @@ straznicy:
       skin-tekstura: ""
       skin-podpis: ""
       skin-gracza: ""
-      bron: "qa:m4a1"
+      bron: "qa:m4a1s"
       zbroja: [iron_helmet, iron_chestplate, leather_leggings, iron_boots]
       zycie: 40
       obrazenia: -1
@@ -271,7 +271,7 @@ czarny-rynek:
   odswiezanie-godzin: 3
   lista:
     - {przedmiot: "qa:ak47", ilosc: 1, cena: 4500, sztuk: 2}
-    - {przedmiot: "qa:m4a1", ilosc: 1, cena: 5500, sztuk: 2}
+    - {przedmiot: "qa:m4a1s", ilosc: 1, cena: 5500, sztuk: 2}
     - {przedmiot: "qa:remington", ilosc: 1, cena: 3000, sztuk: 3}
     - {przedmiot: diamond_chestplate, ilosc: 1, cena: 4000, sztuk: 2}
     - {przedmiot: diamond_helmet, ilosc: 1, cena: 2500, sztuk: 2}
