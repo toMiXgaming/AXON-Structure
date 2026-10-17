@@ -225,14 +225,17 @@ oaza:
       - {przedmiot: bone, ilosc: 32, nagroda: 120}
   automaty:
     # stawka za jedną grę; 3 takie same symbole = stawka × mnoznik, 2 takie same = stawka × para-mnoznik
+    # symbol z mnoznik: 0 to pudło (nie płaci nawet w parze). Przy tych wagach wygrywa ok. 31% gier,
+    # a automat oddaje średnio ok. 59% stawek (reszta znika z ekonomii).
     stawka: 50
-    para-mnoznik: 0.5
+    para-mnoznik: 1.5
     symbole:
-      - {przedmiot: coal, waga: 10, mnoznik: 3}
-      - {przedmiot: iron_ingot, waga: 6, mnoznik: 5}
-      - {przedmiot: gold_ingot, waga: 3, mnoznik: 10}
-      - {przedmiot: emerald, waga: 2, mnoznik: 20}
-      - {przedmiot: diamond, waga: 1, mnoznik: 100}
+      - {przedmiot: dead_bush, waga: 10, mnoznik: 0}
+      - {przedmiot: coal, waga: 8, mnoznik: 4}
+      - {przedmiot: iron_ingot, waga: 5, mnoznik: 8}
+      - {przedmiot: gold_ingot, waga: 3, mnoznik: 20}
+      - {przedmiot: emerald, waga: 2, mnoznik: 40}
+      - {przedmiot: diamond, waga: 1, mnoznik: 150}
   radio:
     # ile kosztuje namiar na najbliższy zrzut (nad czym i o której spadnie)
     cena: 500

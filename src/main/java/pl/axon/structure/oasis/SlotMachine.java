@@ -17,7 +17,8 @@ import java.util.UUID;
 
 /**
  * Automat w barze: płacisz stawkę, trzy bębny kręcą się w okienku. Trzy takie same symbole wypłacają stawkę razy
- * mnożnik symbolu, dwa takie same – razy {@code para-mnoznik}. Wynik jest losowany od razu, więc zamknięcie okna
+ * mnożnik symbolu, dwa takie same – razy {@code para-mnoznik}. Symbol z mnożnikiem 0 to pudło: nie płaci ani
+ * w trójce, ani w parze. Wynik jest losowany od razu, więc zamknięcie okna
  * niczego nie zmienia.
  */
 final class SlotMachine {
@@ -51,7 +52,7 @@ final class SlotMachine {
             Material material = Material.matchMaterial(String.valueOf(map.get("przedmiot")));
             int weight = map.get("waga") instanceof Number n ? n.intValue() : 1;
             double multiplier = map.get("mnoznik") instanceof Number n ? n.doubleValue() : 2;
-            if (material != null && material.isItem() && weight > 0) {
+            if (material != null && material.isItem() && weight > 0 && multiplier >= 0) {
                 symbols.add(new Symbol(material, weight, multiplier));
                 totalWeight += weight;
             }
@@ -122,7 +123,9 @@ final class SlotMachine {
         if (r[0] == r[1] && r[1] == r[2]) {
             return cost * r[0].multiplier();
         }
-        if (r[0] == r[1] || r[1] == r[2] || r[0] == r[2]) {
+        // para pustych symboli (mnożnik 0) nic nie płaci
+        Symbol pair = r[0] == r[1] || r[0] == r[2] ? r[0] : r[1] == r[2] ? r[1] : null;
+        if (pair != null && pair.multiplier() > 0) {
             return cost * pairMultiplier;
         }
         return 0;
