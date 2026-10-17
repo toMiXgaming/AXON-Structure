@@ -43,6 +43,7 @@ public final class Blueprint {
     private final int height;
     private final int depth;
     private int ground;
+    private boolean safeZone;
     private final Map<Pos, String> blocks = new HashMap<>();
     private final List<SpawnPoint> spawnPoints = new ArrayList<>();
     private final List<SignSpec> signs = new ArrayList<>();
@@ -94,6 +95,19 @@ public final class Blueprint {
             throw new IllegalArgumentException("poziom gruntu " + ground + " poza wysokością struktury");
         }
         this.ground = ground;
+        return this;
+    }
+
+    /**
+     * Strefa bezpieczna (oaza): w obrysie nie ma PvP, struktura nie pojawia się sama (tylko z komendy),
+     * a strażnicy strzelają wyłącznie do potworów.
+     */
+    public boolean safeZone() {
+        return safeZone;
+    }
+
+    public Blueprint safeZone(boolean safeZone) {
+        this.safeZone = safeZone;
         return this;
     }
 

@@ -19,6 +19,7 @@ import java.util.Map;
  * opis: ...
  * rozmiar: 45 16 52          (szerokość wysokość głębokość)
  * grunt: 12                  (opcjonalnie: która warstwa leży na poziomie terenu, niższe idą pod ziemię)
+ * strefa: bezpieczna         (opcjonalnie: oaza bez PvP, stawiana tylko komendą)
  * paleta:
  * 0 minecraft:air
  * 1 minecraft:stone
@@ -64,6 +65,9 @@ public final class StructureFile {
         out.write("rozmiar: " + bp.width() + " " + bp.height() + " " + bp.depth() + "\n");
         if (bp.ground() > 0) {
             out.write("grunt: " + bp.ground() + "\n");
+        }
+        if (bp.safeZone()) {
+            out.write("strefa: bezpieczna\n");
         }
         out.write("paleta:\n");
         for (int i = 0; i < palette.size(); i++) {
@@ -205,6 +209,13 @@ public final class StructureFile {
             } catch (IllegalArgumentException e) {
                 throw new IOException("zły 'grunt': " + e.getMessage());
             }
+        }
+        String zone = meta.get("strefa");
+        if (zone != null) {
+            if (!zone.equalsIgnoreCase("bezpieczna")) {
+                throw new IOException("nieznana 'strefa': " + zone + " (dozwolona: bezpieczna)");
+            }
+            created.safeZone(true);
         }
         return created;
     }
