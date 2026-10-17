@@ -65,6 +65,8 @@ public final class AirdropService {
     private LocalDate day;
     private final Set<Integer> done = new HashSet<>();
     private ZonedDateTime[] planned = new ZonedDateTime[0];
+    /** Gdzie spadnie następny zrzut: losowane z wyprzedzeniem, żeby radiostacja w oazie mogła to zdradzić. */
+    private Target nextTarget;
 
     // aktywny zrzut (jeden naraz)
     private Target active;
@@ -147,8 +149,8 @@ public final class AirdropService {
         }
     }
 
-    /** Godzina najbliższego zaplanowanego zrzutu (do komendy). */
-    public String nextInfo() {
+    /** Najbliższy zaplanowany zrzut na dziś albo null. */
+    private ZonedDateTime nextPlanned() {
         ZonedDateTime now = ZonedDateTime.now(settings.zone());
         ZonedDateTime best = null;
         for (int slot = 0; slot < planned.length; slot++) {
@@ -156,6 +158,12 @@ public final class AirdropService {
                 best = planned[slot];
             }
         }
+        return best;
+    }
+
+    /** Godzina najbliższego zaplanowanego zrzutu (do komendy). */
+    public String nextInfo() {
+        ZonedDateTime best = nextPlanned();
         if (best == null) {
             return "dziś już nie będzie, jutro między " + settings.hourFrom() + ":00 a " + settings.hourTo() + ":00";
         }
@@ -185,6 +193,33 @@ public final class AirdropService {
         } catch (IOException e) {
             plugin.getLogger().warning("Nie udało się zapisać " + stateFile.getName() + ": " + e.getMessage());
         }
+    }
+
+    private Target nextTarget() {
+        if (nextTarget == null || store.get(nextTarget.instance().id()) == null) {
+            List<Target> targets = targets();
+            nextTarget = targets.isEmpty() ? null : targets.get(random.nextInt(targets.size()));
+        }
+        return nextTarget;
+    }
+
+    /**
+     * Co wie radiostacja w oazie: gdzie leży trwający zrzut albo nad czym i o której spadnie następny.
+     *
+     * @return wiadomość dla gracza albo null, gdy dziś nic już nie spadnie
+     */
+    public String radioInfo() {
+        if (active != null) {
+            return "§fZrzut " + (landed ? "leży" : "spada") + " nad §e" + active.blueprint().name()
+                    + " §7(" + active.x() + ", " + active.y() + ", " + active.z() + ")§f.";
+        }
+        ZonedDateTime best = settings.enabled() ? nextPlanned() : null;
+        Target target = best == null ? null : nextTarget();
+        if (target == null) {
+            return null;
+        }
+        return "§fNastępny zrzut spadnie nad §e" + target.blueprint().name() + " §7(" + target.x() + ", "
+                + target.z() + ")§f, około §e" + best.format(DateTimeFormatter.ofPattern("HH:mm")) + "§f.";
     }
 
     public boolean isActive() {
@@ -237,11 +272,11 @@ public final class AirdropService {
         if (active != null) {
             return "§cJeden zrzut już trwa (" + active.x() + " " + active.y() + " " + active.z() + ").";
         }
-        List<Target> targets = targets();
-        if (targets.isEmpty()) {
+        Target target = nextTarget();
+        nextTarget = null;
+        if (target == null) {
             return "§cŻadna postawiona struktura nie ma miejsca na zrzut (pula §e" + settings.pool() + "§c).";
         }
-        Target target = targets.get(random.nextInt(targets.size()));
         World world = target.world();
         world.getChunkAt(target.x() >> 4, target.z() >> 4); // wczytuje chunk, jeśli trzeba
         active = target;

@@ -140,7 +140,7 @@ public final class CrateService {
         Placement placement = instance.placement();
         int placed = 0;
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
-            if (point.pool().equalsIgnoreCase(dropPool) || point.pool().toLowerCase(Locale.ROOT).startsWith("npc-")) {
+            if (isMarker(point.pool())) {
                 continue;
             }
             int[] w = placement.toWorld(point.pos().x(), point.pos().y(), point.pos().z());
@@ -167,7 +167,7 @@ public final class CrateService {
             return;
         }
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
-            if (point.pool().equalsIgnoreCase(dropPool) || point.pool().toLowerCase(Locale.ROOT).startsWith("npc-")) {
+            if (isMarker(point.pool())) {
                 continue;
             }
             int[] w = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
@@ -180,6 +180,12 @@ public final class CrateService {
                 }
             }
         }
+    }
+
+    /** Miejsca, które nie są skrzyniami: zrzuty, strażnicy ({@code npc-}) i punkty oazy ({@code punkt-}). */
+    private boolean isMarker(String pool) {
+        String p = pool.toLowerCase(Locale.ROOT);
+        return p.equalsIgnoreCase(dropPool) || p.startsWith("npc-") || p.startsWith("punkt-");
     }
 
     private CrateClass pick(String poolId) {

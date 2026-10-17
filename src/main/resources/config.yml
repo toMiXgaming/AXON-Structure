@@ -86,7 +86,9 @@ zrzuty:
   czas-spadania-sekund: 10
   nazwa-skrzyni: "&4&lZrzut zaopatrzenia"
   # {nazwa} = nazwa struktury, {x} {y} {z} = współrzędne, {minuty} = znika-po-minutach. "" = bez komunikatu.
-  komunikat: "&4&l[ZRZUT] &fNad strukturą &e{nazwa} &fspada skrzynia z zaopatrzeniem! &7({x}, {y}, {z})"
+  # Domyślnie komunikat nie zdradza miejsca: wie to tylko radiostacja w oazie (za opłatą, sekcja oaza.radio).
+  # Miejsce w komunikacie: "&4&l[ZRZUT] &fNad strukturą &e{nazwa} &fspada skrzynia z zaopatrzeniem! &7({x}, {y}, {z})"
+  komunikat: "&4&l[ZRZUT] &fNad jedną ze struktur spada skrzynia z zaopatrzeniem! &7Gdzie? Radiostacja w oazie wie."
   komunikat-wyladowal: "&4&l[ZRZUT] &fSkrzynia wylądowała. Zniknie za &e{minuty} min&f."
   komunikat-zniknal: "&4&l[ZRZUT] &7Nikt nie zabrał zrzutu, skrzynia zniknęła."
 
@@ -120,6 +122,8 @@ straznicy:
       celnosc: 2.5
       # klasa skrzyni (sekcja klasy:), z której losuje się loot po zabiciu; "" = nic
       loot: lepsza-skrzynia
+      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
+      cele: [players]
     szabrownik:
       nazwa: "&6Szabrownik"
       skin-tekstura: ""
@@ -132,6 +136,111 @@ straznicy:
       zasieg: 20
       celnosc: 4
       loot: mala-skrzynka
+      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
+      cele: [players]
+    ochroniarz:
+      # strażnik oazy: broni przed potworami, do graczy nie strzela i nie da się go zranić
+      nazwa: "&aOchrona Oazy"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:m4a1"
+      zbroja: [iron_helmet, iron_chestplate, leather_leggings, iron_boots]
+      zycie: 40
+      obrazenia: -1
+      zasieg: 24
+      celnosc: 1.5
+      loot: ""
+      cele: [monsters]
+    handlarz:
+      # handlarz w sklepie oazy (punkt-handlarz): stoi za ladą, prawy klik otwiera sklep
+      nazwa: "&6Handlarz Zdzich"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+
+oaza:
+  # Oaza Świt (struktura "oaza"): strefa bez PvP, stawiana tylko komendą (/struktury generuj oaza), nigdy sama.
+  # W jej obrysie gracze nie zranią się nawzajem, a strażnicy (zestaw ochroniarz) strzelają tylko do potworów.
+  # Płatne rzeczy (sklep, zlecenia, automaty, radio) biorą pieniądze z pluginu ekonomii przez Vault.
+  # Dane graczy: plugins/AXON-Structure/oaza.yml. Komendy: /oaza (dla graczy), /struktury oaza (stan).
+  wlaczona: true
+  tytul-wejscie: "&a&lOaza Świt"
+  podtytul-wejscie: "&7Strefa bez przemocy. Broń w kaburze."
+  tytul-wyjscie: "&c&lOpuszczasz oazę"
+  podtytul-wyjscie: "&7Dalej już strzelają."
+  komunikat-pvp: "&cW oazie się nie strzela do ludzi."
+  sklep:
+    nazwa: "&6Sklep u Zdzicha"
+    # przedmiot: nazwa z Minecrafta albo qa:<broń z QualityArmory>; ilosc: ile w jednej paczce;
+    # kupno: cena dla gracza (0 = nie sprzedaje), skup: ile handlarz płaci (0 = nie skupuje). Do 45 towarów.
+    oferty:
+      - {przedmiot: bread, ilosc: 8, kupno: 40, skup: 10}
+      - {przedmiot: cooked_beef, ilosc: 8, kupno: 80, skup: 20}
+      - {przedmiot: golden_apple, ilosc: 1, kupno: 400, skup: 100}
+      - {przedmiot: torch, ilosc: 16, kupno: 30, skup: 0}
+      - {przedmiot: oak_planks, ilosc: 32, kupno: 60, skup: 10}
+      - {przedmiot: iron_ingot, ilosc: 8, kupno: 240, skup: 60}
+      - {przedmiot: gold_ingot, ilosc: 4, kupno: 300, skup: 80}
+      - {przedmiot: diamond, ilosc: 1, kupno: 600, skup: 150}
+      - {przedmiot: leather_chestplate, ilosc: 1, kupno: 120, skup: 20}
+      - {przedmiot: iron_chestplate, ilosc: 1, kupno: 900, skup: 150}
+      - {przedmiot: iron_helmet, ilosc: 1, kupno: 550, skup: 90}
+      - {przedmiot: shield, ilosc: 1, kupno: 200, skup: 30}
+      - {przedmiot: bow, ilosc: 1, kupno: 150, skup: 25}
+      - {przedmiot: arrow, ilosc: 32, kupno: 80, skup: 10}
+      - {przedmiot: crossbow, ilosc: 1, kupno: 250, skup: 40}
+      - {przedmiot: ender_pearl, ilosc: 2, kupno: 300, skup: 60}
+      - {przedmiot: experience_bottle, ilosc: 8, kupno: 200, skup: 0}
+      # Bronie z QualityArmory (nazwy jak w Twoim QA):
+      # - {przedmiot: "qa:ak47", ilosc: 1, kupno: 3000, skup: 700}
+  depozyt:
+    # ile rzędów po 9 miejsc ma prywatny schowek (1-6); opłata za każde otwarcie (0 = darmowy)
+    rzedy: 3
+    oplata: 0
+  zlecenia:
+    # ile zleceń wisi naraz i co ile godzin losują się nowe; każdy gracz wykonuje każde raz na okres
+    ile: 5
+    odswiezanie-godzin: 24
+    lista:
+      - {przedmiot: iron_ingot, ilosc: 16, nagroda: 300}
+      - {przedmiot: gold_ingot, ilosc: 8, nagroda: 350}
+      - {przedmiot: coal, ilosc: 64, nagroda: 150}
+      - {przedmiot: leather, ilosc: 24, nagroda: 200}
+      - {przedmiot: wheat, ilosc: 64, nagroda: 120}
+      - {przedmiot: oak_log, ilosc: 64, nagroda: 150}
+      - {przedmiot: string, ilosc: 32, nagroda: 180}
+      - {przedmiot: gunpowder, ilosc: 16, nagroda: 250}
+      - {przedmiot: redstone, ilosc: 32, nagroda: 200}
+      - {przedmiot: diamond, ilosc: 2, nagroda: 500}
+      - {przedmiot: rotten_flesh, ilosc: 48, nagroda: 100}
+      - {przedmiot: bone, ilosc: 32, nagroda: 120}
+  automaty:
+    # stawka za jedną grę; 3 takie same symbole = stawka × mnoznik, 2 takie same = stawka × para-mnoznik
+    stawka: 50
+    para-mnoznik: 0.5
+    symbole:
+      - {przedmiot: coal, waga: 10, mnoznik: 3}
+      - {przedmiot: iron_ingot, waga: 6, mnoznik: 5}
+      - {przedmiot: gold_ingot, waga: 3, mnoznik: 10}
+      - {przedmiot: emerald, waga: 2, mnoznik: 20}
+      - {przedmiot: diamond, waga: 1, mnoznik: 100}
+  radio:
+    # ile kosztuje namiar na najbliższy zrzut (nad czym i o której spadnie)
+    cena: 500
+  strzelnica:
+    # seria trwa tyle sekund od pierwszego trafienia; dalsza tarcza = więcej punktów (1 + co 10 bloków)
+    czas-serii-sekund: 60
+    # najlepszy wynik tygodnia dostaje tyle pieniędzy (wypłata w poniedziałek)
+    nagroda-tygodnia: 1000
 
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.

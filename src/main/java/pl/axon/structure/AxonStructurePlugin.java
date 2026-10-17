@@ -9,6 +9,8 @@ import pl.axon.structure.loot.AirdropService;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
 import pl.axon.structure.npc.GuardService;
+import pl.axon.structure.oasis.OasisService;
+import pl.axon.structure.command.OazaCommand;
 import pl.axon.structure.protect.ProtectionListener;
 import pl.axon.structure.protect.ProtectionService;
 import pl.axon.structure.world.AutoGenerator;
@@ -28,6 +30,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private CrateService crates;
     private AirdropService airdrops;
     private GuardService guards;
+    private OasisService oasis;
     private PasteService paster;
     private AutoGenerator autoGenerator;
     private ProtectionService protection;
@@ -40,6 +43,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         crates = new CrateService(this, library, store);
         airdrops = new AirdropService(this, library, store, crates);
         guards = new GuardService(this, library, store, crates);
+        oasis = new OasisService(this, library, store, guards, airdrops);
         protection = new ProtectionService(this, library, store);
         paster = new PasteService(this, store, crates, protection);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
@@ -51,7 +55,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
         crates.start();
         airdrops.start();
         guards.start();
+        oasis.start();
         getServer().getPluginManager().registerEvents(guards, this);
+        getServer().getPluginManager().registerEvents(oasis, this);
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
 
@@ -61,12 +67,21 @@ public final class AxonStructurePlugin extends JavaPlugin {
             pluginCommand.setExecutor(command);
             pluginCommand.setTabCompleter(command);
         }
+        OazaCommand oazaCommand = new OazaCommand(this);
+        PluginCommand oaza = getCommand("oaza");
+        if (oaza != null) {
+            oaza.setExecutor(oazaCommand);
+            oaza.setTabCompleter(oazaCommand);
+        }
         getLogger().info("Struktur: " + library.all().size() + ", postawionych: " + store.all().size()
                 + ", klas skrzyń: " + crates.loot().classes().size());
     }
 
     @Override
     public void onDisable() {
+        if (oasis != null) {
+            oasis.stop();
+        }
         if (guards != null) {
             guards.stop();
         }
@@ -147,7 +162,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
                         k.getDouble("obrazenia", -1),
                         k.getDouble("zasieg", 20),
                         k.getDouble("celnosc", 0),
-                        k.getString("loot", "")));
+                        k.getString("loot", ""),
+                        k.isList("cele") ? k.getStringList("cele") : java.util.List.of("players")));
             }
         }
         guards.configure(new GuardService.Settings(
@@ -155,6 +171,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 Math.max(16, config.getInt("straznicy.promien-aktywacji", 64)),
                 Math.max(1, config.getInt("straznicy.odradzanie-minut", 10)),
                 kits));
+
+        oasis.configure(config.getConfigurationSection("oaza"), zone(config.getString("zrzuty.strefa-czasowa", "Europe/Warsaw")));
 
         paster.configure(new PasteService.Settings(
                 Math.max(100, config.getInt("stawianie.bloki-na-tick", 4000)),
@@ -203,6 +221,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public GuardService guards() {
         return guards;
+    }
+
+    public OasisService oasis() {
+        return oasis;
     }
 
     public AirdropService airdrops() {

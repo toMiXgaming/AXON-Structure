@@ -111,7 +111,14 @@ public final class ProtectionService {
 
     public void onPlaced(StructureInstance instance) {
         if (worldGuard != null) {
-            worldGuard.ensureRegion(instance, area(instance), settings.regionFlags());
+            Map<String, String> flags = settings.regionFlags();
+            Blueprint bp = library.get(instance.structureId());
+            if (bp != null && bp.safeZone()) {
+                // oaza: WorldGuard też blokuje PvP (plugin i tak je blokuje sam)
+                flags = new java.util.LinkedHashMap<>(flags);
+                flags.put("pvp", "deny");
+            }
+            worldGuard.ensureRegion(instance, area(instance), flags);
         }
     }
 

@@ -24,7 +24,7 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "zrzut", "straznicy", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "zrzut", "straznicy", "oaza", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -47,6 +47,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
             case "straznicy" -> guards(sender, args);
+            case "oaza" -> plugin.oasis().status().forEach(sender::sendMessage);
             case "zrzut" -> sender.sendMessage(plugin.airdrops().isActive() || args.length < 2 || !args[1].equalsIgnoreCase("info")
                     ? plugin.airdrops().trigger(sender)
                     : "§eNastępny zrzut: §f" + plugin.airdrops().nextInfo() + "§e.");
@@ -73,6 +74,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
         sender.sendMessage("§e/" + label + " zrzut [info] §7– zrzuca skrzynię z zaopatrzeniem teraz (info: o której następny)");
         sender.sendMessage("§e/" + label + " straznicy [postaw] §7– strażnicy NPC (postaw: od razu we wczytanych strukturach)");
+        sender.sendMessage("§e/" + label + " oaza §7– stan oazy: stanowiska, sklep, czy działa Vault");
         sender.sendMessage("§e/" + label + " przeladuj §7– wczytuje config i pliki struktur od nowa");
         sender.sendMessage("§7Z konsoli: §ewklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]§7, "
                 + "§egeneruj <nazwa> <świat> <x> <z> [obrót 0-3]");

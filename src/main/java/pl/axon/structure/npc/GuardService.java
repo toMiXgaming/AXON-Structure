@@ -44,10 +44,22 @@ import java.util.UUID;
 public final class GuardService implements Listener {
 
     public static final String POOL_PREFIX = "npc-";
+    /** Handlarz w oazie: stoi bez broni i nie walczy, prawym kliknięciem otwiera sklep. */
+    public static final String TRADER_POOL = "punkt-handlarz";
+    public static final String TRADER_KIT = "handlarz";
 
     public record Kit(String id, String name, String skinTexture, String skinSignature, String skinName,
                       String weapon, List<String> armor, double health, double damage, double range,
-                      double accuracy, String lootClass) {
+                      double accuracy, String lootClass, List<String> targets) {
+
+        /** Bez celów NPC tylko stoi (handlarz); z "players" walczy z graczami, z "monsters" broni przed potworami. */
+        public boolean fights() {
+            return !targets.isEmpty();
+        }
+
+        public boolean attacksPlayers() {
+            return targets.stream().anyMatch(t -> t.equalsIgnoreCase("players"));
+        }
     }
 
     public record Settings(boolean enabled, int activationRadius, int respawnMinutes, Map<String, Kit> kits) {
@@ -195,16 +207,16 @@ public final class GuardService implements Listener {
         }
         int index = 0;
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
-            String pool = point.pool().toLowerCase(Locale.ROOT);
-            if (!pool.startsWith(POOL_PREFIX)) {
+            String kitId = kitId(point.pool());
+            if (kitId == null) {
                 continue;
             }
             String key = instance.id() + "#" + index++;
-            Kit kit = settings.kits().get(pool.substring(POOL_PREFIX.length()));
+            Kit kit = settings.kits().get(kitId);
             if (kit == null) {
                 if (!warned) {
                     warned = true;
-                    plugin.getLogger().warning("Brak zestawu strażnika '" + pool.substring(POOL_PREFIX.length())
+                    plugin.getLogger().warning("Brak zestawu strażnika '" + kitId
                             + "' w sekcji straznicy.zestawy – te miejsca zostają puste.");
                 }
                 continue;
@@ -220,6 +232,21 @@ public final class GuardService implements Listener {
             }
             spawn(guard);
         }
+    }
+
+    /** Zestaw dla punktu ze struktury albo null, gdy to nie jest miejsce na NPC. */
+    private static String kitId(String pool) {
+        String p = pool.toLowerCase(Locale.ROOT);
+        if (p.startsWith(POOL_PREFIX)) {
+            return p.substring(POOL_PREFIX.length());
+        }
+        return p.equals(TRADER_POOL) ? TRADER_KIT : null;
+    }
+
+    /** Zestaw NPC postawionego przez ten plugin albo null, gdy to nie nasz NPC. */
+    public Kit kitOf(Entity entity) {
+        Guard guard = byEntity.get(entity.getUniqueId());
+        return guard == null ? null : guard.kit;
     }
 
     private void despawnGuards(String instanceId) {
@@ -265,7 +292,11 @@ public final class GuardService implements Listener {
                     EntityType.PLAYER, LootConfig.color(guard.kit.name()));
             skin(npc, guard.kit);
             equip(npc, guard.kit);
-            sentinel(npc, guard);
+            if (guard.kit.fights()) {
+                sentinel(npc, guard);
+            } else {
+                trySet(npc, "setProtected", boolean.class, true);
+            }
             Boolean ok = (Boolean) call(npc, "spawn", new Class<?>[]{Location.class}, guard.location);
             if (ok == null || !ok) {
                 call(npc, "destroy", new Class<?>[0]);
@@ -385,7 +416,17 @@ public final class GuardService implements Listener {
     private void sentinel(Object npc, Guard guard) throws ReflectiveOperationException {
         Object sentinel = trait(npc, "org.mcmonkey.sentinel.SentinelTrait");
         Kit kit = guard.kit;
-        call(sentinel, "addTarget", new Class<?>[]{String.class}, "players");
+        for (String target : kit.targets()) {
+            call(sentinel, "addTarget", new Class<?>[]{String.class}, target);
+        }
+        if (!kit.attacksPlayers()) {
+            // strażnik oazy: gracze go nie obchodzą, nawet gdy ktoś go uderzy
+            try {
+                call(sentinel, "addIgnore", new Class<?>[]{String.class}, "players");
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                // starsza wersja Sentinela
+            }
+        }
         if (!trySet(sentinel, "setHealth", double.class, kit.health())) {
             setField(sentinel, "health", kit.health());
         }
@@ -395,7 +436,7 @@ public final class GuardService implements Listener {
         setField(sentinel, "chaseRange", Math.max(12.0, kit.range()));
         setField(sentinel, "respawnTime", -1L); // odradzaniem zajmuje się ten plugin
         setField(sentinel, "spawnPoint", guard.location.clone());
-        setField(sentinel, "fightback", true);
+        setField(sentinel, "fightback", kit.attacksPlayers());
         setField(sentinel, "needsAmmo", false);
     }
 
@@ -452,7 +493,7 @@ public final class GuardService implements Listener {
             Blueprint bp = library.get(instance.structureId());
             if (bp != null) {
                 for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
-                    if (point.pool().toLowerCase(Locale.ROOT).startsWith(POOL_PREFIX)) {
+                    if (kitId(point.pool()) != null) {
                         n++;
                     }
                 }
