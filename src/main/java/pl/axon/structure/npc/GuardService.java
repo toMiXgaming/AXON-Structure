@@ -47,6 +47,8 @@ public final class GuardService implements Listener {
     /** Handlarz w oazie: stoi bez broni i nie walczy, prawym kliknięciem otwiera sklep. */
     public static final String TRADER_POOL = "punkt-handlarz";
     public static final String TRADER_KIT = "handlarz";
+    public static final String FENCE_POOL = "punkt-czarny-rynek";
+    public static final String FENCE_KIT = "paser";
 
     public record Kit(String id, String name, String skinTexture, String skinSignature, String skinName,
                       String weapon, List<String> armor, double health, double damage, double range,
@@ -240,7 +242,7 @@ public final class GuardService implements Listener {
         if (p.startsWith(POOL_PREFIX)) {
             return p.substring(POOL_PREFIX.length());
         }
-        return p.equals(TRADER_POOL) ? TRADER_KIT : null;
+        return p.equals(TRADER_POOL) ? TRADER_KIT : p.equals(FENCE_POOL) ? FENCE_KIT : null;
     }
 
     /** Zestaw NPC postawionego przez ten plugin albo null, gdy to nie nasz NPC. */

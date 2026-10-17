@@ -71,6 +71,7 @@ public final class OasisService implements Listener {
 
     /** Punkty-lady: klika się sam blok (albo zaraz obok). */
     private static final Set<String> COUNTERS = Set.of("punkt-handel", "punkt-sklep", "punkt-depozyt", "punkt-automat", "punkt-radio");
+    private static final String BLACK_MARKET_COUNTER = "punkt-czarny-rynek-lada";
     private static final long POINTS_TTL_MS = 10_000;
     private static final long WARN_COOLDOWN_MS = 2_000;
 
@@ -90,6 +91,7 @@ public final class OasisService implements Listener {
     private final JobBoard jobs = new JobBoard(this);
     private final SlotMachine slots = new SlotMachine(this);
     private final ShootingRange range = new ShootingRange(this);
+    private final BlackMarketService blackMarket = new BlackMarketService(this);
 
     private boolean enabled = true;
     private String enterTitle = "";
@@ -130,6 +132,11 @@ public final class OasisService implements Listener {
         slots.configure(section == null ? null : section.getConfigurationSection("automaty"));
         range.configure(section == null ? null : section.getConfigurationSection("strzelnica"), zone);
         pointsAt = 0;
+    }
+
+    /** Paser w kryjówkach czarnego rynku (sekcja {@code czarny-rynek}). */
+    public void configureBlackMarket(ConfigurationSection section) {
+        blackMarket.configure(section, plugin.getLogger());
     }
 
     private static String text(ConfigurationSection section, String key, String fallback) {
@@ -204,7 +211,11 @@ public final class OasisService implements Listener {
         return null;
     }
 
-    /** Wszystkie punkty {@code punkt-*} postawionych oaz (odświeżane co kilka sekund). */
+    private static boolean blackMarketPool(String pool) {
+        return pool.startsWith("punkt-czarny-rynek");
+    }
+
+    /** Punkty {@code punkt-*} postawionych oaz i lady paserów z kryjówek czarnego rynku (odświeżane co kilka sekund). */
     public List<Point> points() {
         long now = System.currentTimeMillis();
         if (now - pointsAt < POINTS_TTL_MS) {
@@ -214,12 +225,12 @@ public final class OasisService implements Listener {
         for (StructureInstance instance : store.all()) {
             Blueprint bp = library.get(instance.structureId());
             World world = Bukkit.getWorld(instance.world());
-            if (bp == null || world == null || !bp.safeZone()) {
+            if (bp == null || world == null) {
                 continue;
             }
             for (Blueprint.SpawnPoint p : bp.spawnPoints()) {
                 String pool = p.pool().toLowerCase(Locale.ROOT);
-                if (!pool.startsWith("punkt-")) {
+                if (!pool.startsWith("punkt-") || !(bp.safeZone() || blackMarketPool(pool))) {
                     continue;
                 }
                 int[] w = instance.placement().toWorld(p.pos().x(), p.pos().y(), p.pos().z());
@@ -366,10 +377,15 @@ public final class OasisService implements Listener {
             return;
         }
         Block block = event.getClickedBlock();
+        Player player = event.getPlayer();
+        if (pointAt(block, BLACK_MARKET_COUNTER, 1.0) != null) {
+            event.setCancelled(true);
+            blackMarket.open(player);
+            return;
+        }
         if (safeAt(block.getLocation()) == null) {
             return;
         }
-        Player player = event.getPlayer();
         Point point = null;
         for (String pool : COUNTERS) {
             Point p = pointAt(block, pool, 1.0);
@@ -406,6 +422,9 @@ public final class OasisService implements Listener {
         if (kit != null && kit.id().equals(GuardService.TRADER_KIT)) {
             event.setCancelled(true);
             shop.open(event.getPlayer());
+        } else if (kit != null && kit.id().equals(GuardService.FENCE_KIT)) {
+            event.setCancelled(true);
+            blackMarket.open(event.getPlayer());
         }
     }
 
@@ -464,7 +483,8 @@ public final class OasisService implements Listener {
     /** Krótki opis stanu oazy (do /struktury oaza). */
     public List<String> status() {
         List<String> lines = new ArrayList<>();
-        lines.add("§eOaz postawionych: §f" + points().stream().map(p -> p.instance().id()).distinct().count()
+        lines.add("§eOaz postawionych: §f" + points().stream().filter(p -> !blackMarketPool(p.pool()))
+                .map(p -> p.instance().id()).distinct().count()
                 + "§e, ekonomia (Vault): " + (vault.available() ? "§atak" : "§cnie"));
         lines.add("§eStanowisk wymiany: §f" + count("punkt-handel") + "§e, sklep: §f" + count("punkt-sklep")
                 + " §e(" + shop.size() + " towarów), depozyt: §f" + count("punkt-depozyt") + "§e, automaty: §f"
@@ -473,7 +493,7 @@ public final class OasisService implements Listener {
         int total = 0;
         int standing = 0;
         for (Point p : points()) {
-            if (COUNTERS.contains(p.pool()) || p.pool().equals("punkt-tarcza")) {
+            if (COUNTERS.contains(p.pool()) || p.pool().equals("punkt-tarcza") || p.pool().equals(BLACK_MARKET_COUNTER)) {
                 total++;
                 if (!p.world().getBlockAt(p.x(), p.y(), p.z()).getType().isAir()) {
                     standing++;
@@ -481,8 +501,9 @@ public final class OasisService implements Listener {
             }
         }
         lines.add("§eLady i tarcze na miejscu: §f" + standing + "/" + total);
+        lines.add("§eKryjówek czarnego rynku: §f" + count(BLACK_MARKET_COUNTER) + "§e, towarów u pasera: §f" + blackMarket.size());
         plugin.getLogger().info("Oaza: lady i tarcze na miejscu " + standing + "/" + total + ", stanowisk wymiany "
-                + count("punkt-handel"));
+                + count("punkt-handel") + ", lad paserów " + count(BLACK_MARKET_COUNTER));
         return lines;
     }
 }

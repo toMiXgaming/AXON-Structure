@@ -166,6 +166,20 @@ straznicy:
       celnosc: 0
       loot: ""
       cele: []
+    paser:
+      # paser w kryjówce czarnego rynku (punkt-czarny-rynek): stoi za ladą, nie walczy, nie da się go zranić
+      nazwa: "&8Paser"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [leather_helmet, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
 
 oaza:
   # Oaza Świt (struktura "oaza"): strefa bez PvP, stawiana tylko komendą (/struktury generuj oaza), nigdy sama.
@@ -245,11 +259,41 @@ oaza:
     # najlepszy wynik tygodnia dostaje tyle pieniędzy (wypłata w poniedziałek)
     nagroda-tygodnia: 1000
 
+czarny-rynek:
+  # Kryjówki czarnego rynku (struktura "czarny-rynek") stawiają się same jak inne struktury i PvP w nich działa.
+  # W piwnicy stoi paser (zestaw paser): klik w niego albo w beczkę-ladę przed nim otwiera towar.
+  # Co odswiezanie-godzin paser losuje "ile" ofert z listy; ten sam towar jest we wszystkich kryjówkach.
+  # przedmiot: nazwa z Minecrafta albo qa:<broń z QualityArmory>; ilosc: ile w paczce; cena: z Vaulta;
+  # sztuk: ile paczek można kupić w jednym okresie na cały serwer (0 albo brak = bez limitu).
+  wlaczony: true
+  nazwa: "&8Paser &7– towar spod lady"
+  ile: 4
+  odswiezanie-godzin: 3
+  lista:
+    - {przedmiot: "qa:ak47", ilosc: 1, cena: 4500, sztuk: 2}
+    - {przedmiot: "qa:m4a1", ilosc: 1, cena: 5500, sztuk: 2}
+    - {przedmiot: "qa:remington", ilosc: 1, cena: 3000, sztuk: 3}
+    - {przedmiot: diamond_chestplate, ilosc: 1, cena: 4000, sztuk: 2}
+    - {przedmiot: diamond_helmet, ilosc: 1, cena: 2500, sztuk: 2}
+    - {przedmiot: totem_of_undying, ilosc: 1, cena: 6000, sztuk: 1}
+    - {przedmiot: enchanted_golden_apple, ilosc: 1, cena: 5000, sztuk: 1}
+    - {przedmiot: golden_apple, ilosc: 4, cena: 1200, sztuk: 5}
+    - {przedmiot: ender_pearl, ilosc: 8, cena: 900, sztuk: 5}
+    - {przedmiot: tnt, ilosc: 8, cena: 1500, sztuk: 3}
+    - {przedmiot: netherite_scrap, ilosc: 2, cena: 3500, sztuk: 2}
+    - {przedmiot: experience_bottle, ilosc: 32, cena: 1000, sztuk: 4}
+
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.
 #  Pula losuje klasę skrzyni według wag. "brak" = w tym miejscu nic się nie pojawi.
 # ------------------------------------------------------------
 pule:
+  # kryjówka czarnego rynku: składzik w piwnicy i skrzynia za ladą pasera
+  czarny-rynek:
+    lepsza-skrzynia: 40
+    skrzynia-broni: 25
+    mala-skrzynka: 20
+    brak: 15
   paliwo:
     beczka-paliwa: 65
     beczka: 20

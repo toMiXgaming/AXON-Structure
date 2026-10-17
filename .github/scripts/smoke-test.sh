@@ -92,6 +92,9 @@ cmd "execute if block 277 86 -1 minecraft:stone_brick_stairs run say SZPITAL-PIW
 # Oaza: strefa bez PvP; lady stanowisk i tarcze strzelnicy muszą stać po wklejeniu (to bloki-znaczniki).
 cmd "struktury wklej oaza world 0 90 300 0"
 wait_gotowe 8 420
+# Kryjówka czarnego rynku: mała struktura z piwnicą; beczka-lada pasera ma stać po wklejeniu.
+cmd "struktury wklej czarny-rynek world -300 90 300 0"
+wait_gotowe 9 180
 cmd "struktury oaza"
 sleep 5
 # Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
@@ -135,8 +138,8 @@ if grep -nE "Exception|Nieprawidłowy stan bloku|nieznany przedmiot|nieznanej kl
   echo "::error::W logu serwera są błędy"; FAIL=1
 fi
 GOT=$(grep -c "Gotowe!" server.log || true)
-if [ "$GOT" -lt 8 ]; then
-  echo "::error::Oczekiwano 8 postawień z komend, jest $GOT"; FAIL=1
+if [ "$GOT" -lt 9 ]; then
+  echo "::error::Oczekiwano 9 postawień z komend, jest $GOT"; FAIL=1
 fi
 grep -qF "Server] GRUNT-OK" server.log || { echo "::error::Kopalnia: grunt nie wypadł na poziomie wklejenia"; FAIL=1; }
 grep -qF "Server] PODZIEMIE-OK" server.log || { echo "::error::Kopalnia: brak drabiny w szybie pod ziemią"; FAIL=1; }
@@ -146,7 +149,7 @@ grep -qF "Server] SZPITAL-GRUNT-OK" server.log || { echo "::error::Szpital: grun
 grep -qF "Server] SZPITAL-PIWNICA-OK" server.log || { echo "::error::Szpital: brak schodów do piwnicy"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
-grep -q "Oaza: lady i tarcze na miejscu 30/30, stanowisk wymiany 8" server.log || { echo "::error::Oaza: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
+grep -q "Oaza: lady i tarcze na miejscu 31/31, stanowisk wymiany 8, lad paserów 1" server.log || { echo "::error::Oaza/czarny rynek: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
 grep -q "Zrzut wylądował" server.log || { echo "::error::Zrzut zaopatrzenia nie wylądował"; FAIL=1; }
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }
 if grep -q "Auto-generowanie: postawiono" server.log; then

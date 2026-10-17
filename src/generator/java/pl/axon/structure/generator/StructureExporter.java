@@ -18,7 +18,8 @@ import java.util.Random;
 public final class StructureExporter {
 
     private static final List<StructureDefinition> STRUCTURES = List.of(new GasStationStructure(), new FarmStructure(), new CollectiveFarmStructure(),
-            new MineStructure(), new MilitaryBaseStructure(), new HospitalStructure(), new OasisStructure());
+            new MineStructure(), new MilitaryBaseStructure(), new HospitalStructure(), new OasisStructure(),
+            new BlackMarketStructure());
 
     private StructureExporter() {
     }

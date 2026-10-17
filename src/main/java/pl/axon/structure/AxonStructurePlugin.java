@@ -173,6 +173,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 kits));
 
         oasis.configure(config.getConfigurationSection("oaza"), zone(config.getString("zrzuty.strefa-czasowa", "Europe/Warsaw")));
+        oasis.configureBlackMarket(config.getConfigurationSection("czarny-rynek"));
 
         paster.configure(new PasteService.Settings(
                 Math.max(100, config.getInt("stawianie.bloki-na-tick", 4000)),
