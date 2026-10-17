@@ -288,7 +288,8 @@ public final class GuardService implements Listener {
         }
         event.getDrops().clear();
         event.setDroppedExp(0);
-        CrateClass loot = guard.kit.lootClass().isBlank() ? null : crates.loot().crateClass(guard.kit.lootClass());
+        CrateClass loot = guard.kit.lootClass().isBlank() || crates.emptyLoot() ? null
+                : crates.loot().crateClass(guard.kit.lootClass());
         if (loot != null) {
             event.getDrops().addAll(loot.roll(random));
         }

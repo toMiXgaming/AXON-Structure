@@ -39,6 +39,8 @@ ochrona:
   komunikat: "&cTej struktury nie można niszczyć ani rozbudowywać."
   # Flagi regionu WorldGuard struktura_<id>. Niszczenie blokuje sam plugin, więc passthrough zostaje
   # na allow (inaczej WorldGuard zablokowałby też otwieranie skrzyń), a pvp na allow włącza walkę.
+  # Region kopalni (struktury z żyłami punkt-ruda) dostaje sam block-break: allow, żeby WorldGuard nie blokował
+  # kopania rud – chyba że wpiszesz tu block-break sam.
   flagi-worldguard:
     pvp: allow
     passthrough: allow
@@ -82,8 +84,9 @@ zrzuty:
   pula: zrzut
   # Po ilu minutach nieopróżniona skrzynia znika.
   znika-po-minutach: 15
-  wysokosc-spadania: 40
-  czas-spadania-sekund: 10
+  # Skrzynia spada powoli na spadochronie z tej wysokości (bloki nad miejscem lądowania) przez tyle sekund.
+  wysokosc-spadania: 60
+  czas-spadania-sekund: 45
   nazwa-skrzyni: "&4&lZrzut zaopatrzenia"
   # {nazwa} = nazwa struktury, {x} {y} {z} = współrzędne, {minuty} = znika-po-minutach. "" = bez komunikatu.
   # Domyślnie komunikat nie zdradza miejsca: wie to tylko radiostacja w oazie (za opłatą, sekcja oaza.radio).
@@ -91,6 +94,14 @@ zrzuty:
   komunikat: "&4&l[ZRZUT] &fNad jedną ze struktur spada skrzynia z zaopatrzeniem! &7Gdzie? Radiostacja w oazie wie."
   komunikat-wyladowal: "&4&l[ZRZUT] &fSkrzynia wylądowała. Zniknie za &e{minuty} min&f."
   komunikat-zniknal: "&4&l[ZRZUT] &7Nikt nie zabrał zrzutu, skrzynia zniknęła."
+  # Zrzut widać z daleka (miejsca dalej nie ma na czacie): za spadającą skrzynią smuga czerwonego dymu, a nad
+  # wylądowaną wysoki czerwony słup dymu (widoczny do ~500 bloków), czerwony fajerwerk i huk przy lądowaniu
+  # (słychać w promieniu 300 bloków, z kierunku zrzutu).
+  dym-sygnalowy: true
+  # Co ile sekund nad skrzynią wybucha czerwona flara (0 = bez flar).
+  flara-co-sekund: 5
+  # Spadająca skrzynia i spadochron świecą na czerwono (obrys widać przez ściany).
+  swiecenie: true
 
 straznicy:
   # Strażnicy NPC w strukturach (żołnierze w jednostce, szabrownicy w szpitalu). Wymagają pluginów Citizens
@@ -336,6 +347,125 @@ czarny-rynek:
     - {przedmiot: tnt, ilosc: 8, cena: 1500, sztuk: 3}
     - {przedmiot: netherite_scrap, ilosc: 2, cena: 3500, sztuk: 2}
     - {przedmiot: experience_bottle, ilosc: 32, cena: 1000, sztuk: 4}
+
+loot:
+  # Loot jeszcze nieustalony: true = skrzynie i beczki stoją w strukturach, ale są puste, skrzynia zrzutu spada pusta
+  # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z kartami nie ma. Tabele (pule:, klasy:, loot
+  # w zestawach strażników) zostają niżej na później – gdy będą gotowe, ustaw false i /struktury przeladuj.
+  puste: true
+
+kopalnia:
+  # Żyły rudy: punkty punkt-ruda w pliku struktury (kopalnia) leżą na blokach rudy. Te bloki – i tylko one – gracze
+  # mogą kopać mimo ochrony struktury (region WorldGuard kopalni dostaje sam block-break: allow, resztę dalej chroni
+  # plugin). Z rudy miedzi wypada Surowa Siarka taka jak z głazów AxonOre (AxonPlot przyjmie ją do rdzenia),
+  # z innych rud zwykły drop (fortuna i jedwabny dotyk działają) i doświadczenie – także w świecie AxonOre
+  # z mining.block-natural-ores: true. Wykopane miejsce zamienia się w kamień i po odnawianie-minut odrasta w nim
+  # losowa ruda (głęboka, jeśli w pliku była głęboka). Kolejka przeżywa restart (plik kopalnia.yml).
+  wlaczone: true
+  odnawianie-minut: 15
+  # Co zostaje po wykopaniu, zanim ruda odrośnie: kamien (kamień / łupek), bruk albo powietrze.
+  po-wykopaniu: kamien
+  # Ruda nie odrasta, gdy gracz stoi bliżej niż tyle bloków (nie pojawi się nikomu w twarz ani w nogach).
+  blokada-gdy-gracz-blizej-niz: 3
+  # Doświadczenie z rud jak w zwykłym Minecrafcie.
+  doswiadczenie: true
+  # Co odrasta (wagi jak w AxonOre, liczą się proporcjonalnie). copper = ruda miedzi, z której wypada siarka.
+  # Żeby ruda w ogóle nie odrastała, daj jej 0 (usunięta pozycja wróci przy następnym starcie).
+  rudy:
+    coal: 35
+    iron: 25
+    copper: 15
+    gold: 10
+    redstone: 8
+    lapis: 4
+    diamond: 2
+    emerald: 1
+  siarka:
+    # false = z rudy miedzi zwykła surowa miedź
+    wlaczona: true
+    # Musi być taka sama jak sulfur.name w configu AxonOre, inaczej siarka z kopalni nie złączy się w stos z tą
+    # z głazów. AxonPlot rozpoznaje siarkę po custom-model-data 10001 – nie zmieniaj go.
+    nazwa: "<#FDE047>&lSurowa Siarka"
+    opis: []
+    custom-model-data: 10001
+    min: 1
+    max: 2
+
+zwierzeta:
+  # Zwierzęta w strukturach: punkty punkt-zwierze-<typ> w pliku struktury (np. punkt-zwierze-chicken, -cow, -sheep,
+  # -pig, -cat, -wolf, -fox, -horse). Gdy gracz podejdzie do struktury, na każdym punkcie stoi jedno zwierzę.
+  # Nie zapisują się ze światem, więc nie mnożą się po restartach. Oswojone albo wzięte na smycz zostają u gracza
+  # (a na punkcie po czasie pojawia się nowe). W oazie gracze nie mogą ich ranić.
+  wlaczone: true
+  # Zwierzęta pojawiają się, gdy gracz jest bliżej niż tyle bloków od środka struktury.
+  promien-aktywacji: 64
+  # Po ilu minutach zabite (oswojone, zabrane) zwierzę wraca na swój punkt.
+  odradzanie-minut: 10
+  # Zwierzę, które odejdzie dalej niż tyle bloków od punktu, wraca na miejsce (0 = może chodzić, gdzie chce).
+  maks-odejscie: 24
+
+zycie:
+  # Odgłosy w strukturach: gracz w obrysie struktury co jakiś czas słyszy (tylko on) dźwięk z listy dla tej
+  # struktury, gdzieś obok siebie. Jeden zegar na cały serwer, liczą się tylko gracze w strukturach.
+  wlaczone: true
+  # Co ile sekund losować odgłos dla każdego gracza w strukturze i z jaką szansą (%) coś zabrzmi.
+  co-ile-sekund: 12
+  szansa-procent: 35
+  # Głośność wszystkich odgłosów (mnożona przez głośność z listy).
+  glosnosc: 0.7
+  # Lista dla id struktury (stacja, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek);
+  # struktury bez listy biorą "domyslne", pusta lista [] = cisza. Wpis: "nazwa dźwięku [wysokość] [głośność]",
+  # nazwy z Minecrafta (https://minecraft.wiki/w/Sounds.json) albo z paczki zasobów.
+  odglosy:
+    # ruiny: wiatr, skrzypienie, coś się sypie
+    domyslne:
+      - "minecraft:item.elytra.flying 0.6 0.3"
+      - "minecraft:block.wooden_door.open 0.5"
+      - "minecraft:block.wooden_trapdoor.close 0.6"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:block.iron_trapdoor.close 0.5 0.6"
+      - "minecraft:block.gravel.fall 0.8"
+      - "minecraft:ambient.cave 1.0 0.5"
+    # kopalnia: kapanie wody, osypujący się kamień, łańcuchy w szybie
+    kopalnia:
+      - "minecraft:ambient.cave 1.0 0.6"
+      - "minecraft:block.pointed_dripstone.drip_water 1.0"
+      - "minecraft:block.pointed_dripstone.drip_water 0.8"
+      - "minecraft:block.gravel.fall 0.7"
+      - "minecraft:block.stone.break 0.6 0.5"
+      - "minecraft:block.chain.step 0.6"
+      - "minecraft:block.anvil.land 0.5 0.15"
+    # jednostka: trzaski radia, buczenie, daleka strzelanina
+    jednostka:
+      - "minecraft:block.fire.extinguish 1.8 0.3"
+      - "minecraft:block.note_block.bit 0.6 0.5"
+      - "minecraft:block.note_block.bit 0.9 0.4"
+      - "minecraft:block.redstone_torch.burnout 1.4 0.4"
+      - "minecraft:block.beacon.ambient 0.7"
+      - "minecraft:entity.firework_rocket.blast_far 0.6 0.8"
+      - "minecraft:block.iron_door.close 0.7 0.6"
+      - "minecraft:item.elytra.flying 0.6 0.3"
+    # szpital: trzaśnięcia drzwi, szkło, ktoś (coś) jęczy w oddali
+    szpital:
+      - "minecraft:ambient.cave 1.0 0.5"
+      - "minecraft:block.iron_door.close 0.6 0.6"
+      - "minecraft:block.wooden_door.open 0.5"
+      - "minecraft:block.glass.break 0.8 0.3"
+      - "minecraft:entity.zombie.ambient 0.7 0.3"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:item.elytra.flying 0.6 0.3"
+    # oaza: szum agregatu, gwar ludzi, ognisko, warsztat, kury
+    oaza:
+      - "minecraft:block.beacon.ambient 0.6 0.8"
+      - "minecraft:block.beacon.ambient 0.5 0.8"
+      - "minecraft:entity.villager.ambient 1.0 0.6"
+      - "minecraft:entity.villager.trade 1.0 0.6"
+      - "minecraft:entity.villager.yes 1.0 0.5"
+      - "minecraft:block.campfire.crackle 1.0"
+      - "minecraft:block.anvil.use 1.0 0.3"
+      - "minecraft:block.smithing_table.use 1.0 0.4"
+      - "minecraft:entity.chicken.ambient 1.0 0.6"
+      - "minecraft:block.note_block.bit 0.7 0.3"
 
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.

@@ -31,7 +31,7 @@ PROPS
 # Pierwsze uruchomienie z configem testowym: auto-generowanie przy każdym nowym chunku.
 mkdir -p plugins/AXON-Structure
 unzip -p ../build/libs/AXON-Structure-*.jar config.yml \
-  | sed 's/szansa-procent: 0.5/szansa-procent: 100/; s/min-odleglosc-od-spawnu: 300/min-odleglosc-od-spawnu: 0/; s/min-odleglosc-miedzy: 1000/min-odleglosc-miedzy: 200/; s/maks-roznica-wysokosci: 6/maks-roznica-wysokosci: 12/; s/maks-woda-procent: 3/maks-woda-procent: 10/' \
+  | sed 's/szansa-procent: 0.5/szansa-procent: 100/; s/min-odleglosc-od-spawnu: 300/min-odleglosc-od-spawnu: 0/; s/min-odleglosc-miedzy: 1000/min-odleglosc-miedzy: 200/; s/maks-roznica-wysokosci: 6/maks-roznica-wysokosci: 12/; s/maks-woda-procent: 3/maks-woda-procent: 10/; s/czas-spadania-sekund: 45/czas-spadania-sekund: 10/' \
   > plugins/AXON-Structure/config.yml
 
 rm -f in && mkfifo in
@@ -96,6 +96,8 @@ wait_gotowe 8 420
 cmd "struktury wklej czarny-rynek world -300 90 300 0"
 wait_gotowe 9 180
 cmd "struktury oaza"
+# Żyły rudy w kopalni (punkt-ruda), zwierzęta i pusty loot: stan do logu.
+cmd "struktury zycie"
 sleep 5
 # Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
 cmd "struktury zrzut"
@@ -150,6 +152,10 @@ grep -qF "Server] SZPITAL-PIWNICA-OK" server.log || { echo "::error::Szpital: br
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
 grep -q "Oaza: lady i tarcze na miejscu 31/31, stanowisk wymiany 8, lad paserów 1" server.log || { echo "::error::Oaza/czarny rynek: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
+grep -q "Kopalnia: żył rudy" server.log || { echo "::error::Komenda zycie nie zadziałała"; FAIL=1; }
+if grep -q "Kopalnia: żył rudy 0," server.log; then
+  echo "::warning::Postawiona kopalnia nie ma żył rudy (punkt-ruda)"
+fi
 grep -q "Zrzut wylądował" server.log || { echo "::error::Zrzut zaopatrzenia nie wylądował"; FAIL=1; }
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }
 if grep -q "Auto-generowanie: postawiono" server.log; then

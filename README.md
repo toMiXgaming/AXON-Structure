@@ -23,6 +23,7 @@ Plugin na serwer **Paper 1.21.4** (Java 21) do stawiania struktur w stylu monume
 | `/struktury klasy` | klasy skrzyń i pule z szansami |
 | `/struktury zrzut [info]` | zrzuca skrzynię z zaopatrzeniem od razu (`info`: o której następny) |
 | `/struktury straznicy [postaw]` | ilu strażników NPC stoi (`postaw`: stawia ich od razu we wczytanych strukturach) |
+| `/struktury zycie` | żyły rudy w kopalni (ile czeka na odrośnięcie), zwierzęta, odgłosy i czy loot jest pusty |
 | `/struktury przeladuj` | wczytuje config i pliki struktur od nowa |
 
 Z konsoli: `wklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]` i `generuj <nazwa> <świat> <x> <z> [obrót 0-3]`.
@@ -33,6 +34,7 @@ Alias: `/axs`. Uprawnienie: `axonstructure.use` (domyślnie OP).
 - **Klasa skrzyni** (`klasy:` w configu) – nazwa, blok (`skrzynia`, `beczka` albo `ramka`), opcjonalna dekoracja na wieku i lista lootu z ilościami i szansami.
 - **Pula** (`pule:`) – dla danego miejsca losuje klasę według wag. Waga `brak` oznacza, że w tym miejscu nic się nie pojawi.
 - **Odświeżanie** – co `odswiezanie.co-ile-minut` minut. Pełne skrzynie zostają (chyba że `zastepuj-pelne: true`), puste i zniszczone losowane są od nowa. Nie odświeża, gdy gracz stoi bliżej niż `blokada-gdy-gracz-blizej-niz`.
+- **Pusty loot na razie** – `loot.puste: true` (domyślnie, dopisywane też do starego `config.yml`): skrzynie i beczki stoją, ale są puste, skrzynia zrzutu spada pusta i znika po czasie, zabici strażnicy nic nie dają, a ramek z kartami nie ma. Pule i klasy zostają w configu – gdy loot będzie ustalony, wystarczy `false` i `/struktury przeladuj`.
 
 ## Dopasowanie do terenu
 
@@ -79,7 +81,7 @@ W jednostce: strych garaży – zderzak Stara (albo palety przy wiacie i dach wi
 
 W szpitalu: 4 piętro (dyrekcja) – schody kończą się na 3 piętrze, dalej szybem windy: z 3 piętra na dach utkniętej kabiny i drabiną serwisową do wyważonych drzwi, albo włazem z dachu; dach z lądowiskiem – właz z 4 piętra albo rusztowanie przy zachodnim szczycie (pomosty co 4 bloki, drabiny na zmianę, dziury w deskach); apteka – kosz na śmieci, kabina i skrzynia przewróconej karetki, daszek wejścia do pawilonu, sześć klimatyzatorów na ścianie, dach pawilonu, kanał wentylacyjny z drabinką; blok operacyjny – tylko łącznikiem z 1 piętra (schody pawilonu zasypane), z sali przy wschodniej ścianie można wyskoczyć oknem. Z daszku podjazdu karetek wchodzi się na dach izby przyjęć i oknami do sal 1 piętra. Piwnice mają dwa wejścia (schody w klatce zachodniej i zjazd dla karawanów do kostnicy) i tunel do kotłowni z zalanym odcinkiem.
 
-**Zrzuty zaopatrzenia** (`zrzuty:` w configu): 2 razy dziennie o losowej porze między 12:00 a 22:00 (czas polski; raz w każdej połowie okna), gdy online są co najmniej 2 osoby, nad lądowiskiem jednostki albo dachem szpitala spada na spadochronie skrzynia z pulą `zrzut` (rzadka skrzynia albo skrzynia broni). Komunikat nie zdradza miejsca (wie to radiostacja w oazie, za opłatą), nad skrzynią unosi się dym, a nieopróżniona znika po 15 minutach. Miejsca zrzutów to punkty z pulą `zrzut` w plikach `.axs`; zwykłe odświeżanie skrzyń je pomija.
+**Zrzuty zaopatrzenia** (`zrzuty:` w configu): 2 razy dziennie o losowej porze między 12:00 a 22:00 (czas polski; raz w każdej połowie okna), gdy online są co najmniej 2 osoby, nad lądowiskiem jednostki albo dachem szpitala powoli (45 s z 60 bloków) spada na spadochronie skrzynia z pulą `zrzut` (rzadka skrzynia albo skrzynia broni). Komunikat nie zdradza miejsca (wie to radiostacja w oazie, za opłatą), ale zrzut widać z daleka: spadająca skrzynia i spadochron świecą na czerwono i ciągną smugę czerwonego dymu, lądowanie to czerwony fajerwerk i huk słyszany w promieniu 300 bloków (z kierunku zrzutu), a nad leżącą skrzynią stoi wysoki czerwony słup dymu (widoczny do ~500 bloków) i co 5 s wybucha flara (`dym-sygnalowy`, `flara-co-sekund`, `swiecenie`). Nieopróżniona skrzynia znika po 15 minutach. Miejsca zrzutów to punkty z pulą `zrzut` w plikach `.axs`; zwykłe odświeżanie skrzyń je pomija.
 
 **Strażnicy NPC** (`straznicy:` w configu, wymagają pluginów [Citizens](https://ci.citizensnpcs.co/job/Citizens2/) i [Sentinel](https://ci.citizensnpcs.co/job/Sentinel/)): w jednostce 4 żołnierzy (plac apelowy, lądowisko), w szpitalu 3 szabrowników (dach, hol, piwnica). Każdy zestaw ma skin (z mineskin.org albo nick gracza), broń (`qa:<nazwa>` z QualityArmory albo zwykły przedmiot), zbroję, życie, zasięg, celność i klasę skrzyni, z której losuje się loot po zabiciu. Strażnicy pojawiają się, gdy gracz podejdzie do struktury, znikają, gdy w okolicy nikogo nie ma, a zabici wracają po 10 minutach. Bez Citizens i Sentinela miejsca zostają puste.
 
@@ -96,6 +98,19 @@ Zapisuje je do plików:
 ```bash
 ./gradlew generujStruktury   # -> build/struktury/*.axs
 ```
+
+## Kopalnia, zwierzęta i odgłosy
+
+**Żyły rudy** (`kopalnia:` w configu): punkty `punkt-ruda` w pliku struktury leżą na blokach rudy (blok zostaje przy wklejaniu). Tylko te bloki gracze mogą kopać mimo ochrony struktury:
+
+- z rudy miedzi wypada **Surowa Siarka** identyczna z tą z głazów AxonOre (żółty barwnik, ta sama nazwa, `custom-model-data` 10001, bez opisu), więc łączy się z nią w stos i AxonPlot przyjmuje ją do rdzenia i ogniw; z innych rud zwykły drop (fortuna, jedwabny dotyk) i doświadczenie;
+- wykopane miejsce zamienia się w kamień (`po-wykopaniu`: `kamien`, `bruk` albo `powietrze`; łupek przy głębokich rudach), a po `odnawianie-minut` (15) odrasta w nim losowa ruda według wag `rudy` (jak w AxonOre: węgiel 35, żelazo 25, miedź/siarka 15, złoto 10, redstone 8, lapis 4, diament 2, szmaragd 1), głęboka, jeśli w pliku była głęboka. Nie odrasta, gdy ktoś stoi bliżej niż 3 bloki. Kolejka jest w `kopalnia.yml` i przeżywa restart, a co minutę plugin dopisuje do niej miejsca, w których z jakiegoś powodu nie ma rudy.
+
+AxonOre: jego `mining.block-natural-ores` zabiera drop rud spoza głazów (priorytet HIGH) – drop z żył ustawiamy później (HIGHEST), a siarkę wyrzucamy sami na MONITOR, więc działa też w świecie AxonOre. WorldGuard: ochronę struktury robi sam plugin (na LOWEST, przed WorldGuardem), a region `struktura_<id>` kopalni dostaje `block-break: allow`, żeby WorldGuard nie blokował kopania rud nawet przy `__global__` z `build: deny` albo bez `passthrough: allow`; inne bloki dalej chroni plugin.
+
+**Zwierzęta** (`zwierzeta:`): punkty `punkt-zwierze-<typ>` (`chicken`, `cow`, `sheep`, `pig`, `cat`, `wolf`, `fox`, `horse`, … albo po polsku: `kura`, `krowa`, `owca`, `swinia`, `kot`, `wilk`, `lis`, `kon`). Gdy gracz podejdzie do struktury, na każdym punkcie stoi jedno zwierzę; zabite wraca po `odradzanie-minut`. Zwierzęta nie zapisują się ze światem (i mają znacznik), więc nie mnożą się po restartach; oswojone albo wzięte na smycz zostają u gracza. Zwierzę, które odejdzie dalej niż `maks-odejscie`, wraca na punkt. W oazie gracze nie mogą ich ranić.
+
+**Odgłosy** (`zycie:`): gracz w obrysie struktury co `co-ile-sekund` z szansą `szansa-procent` słyszy (tylko on) dźwięk z listy tej struktury – wiatr i skrzypienie w ruinach, kapanie wody i osypujący się kamień w kopalni, trzaski radia i daleką strzelaninę w jednostce, szum agregatu i gwar w oazie. Jeden zegar na serwer i tylko gracze w strukturach; `wlaczone: false` wyłącza wszystko, pusta lista wycisza jedną strukturę.
 
 ## Budowanie
 

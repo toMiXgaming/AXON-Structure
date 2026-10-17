@@ -8,7 +8,7 @@ softdepend: [WorldGuard, Citizens, Sentinel, QualityArmory, Vault]
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|zrzut|straznicy|oaza|przeladuj]
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|zrzut|straznicy|oaza|zycie|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
   oaza:

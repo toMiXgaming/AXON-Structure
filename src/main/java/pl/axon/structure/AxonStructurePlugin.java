@@ -11,15 +11,21 @@ import pl.axon.structure.loot.LootConfig;
 import pl.axon.structure.npc.GuardService;
 import pl.axon.structure.oasis.OasisService;
 import pl.axon.structure.command.OazaCommand;
+import pl.axon.structure.life.AmbientService;
+import pl.axon.structure.life.AnimalService;
 import pl.axon.structure.protect.ProtectionListener;
 import pl.axon.structure.protect.ProtectionService;
 import pl.axon.structure.world.AutoGenerator;
 import pl.axon.structure.world.InstanceStore;
+import pl.axon.structure.world.OreVeinService;
 import pl.axon.structure.world.PasteService;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -34,6 +40,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private PasteService paster;
     private AutoGenerator autoGenerator;
     private ProtectionService protection;
+    private OreVeinService veins;
+    private AnimalService animals;
+    private AmbientService ambient;
 
     @Override
     public void onEnable() {
@@ -45,6 +54,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
         guards = new GuardService(this, library, store, crates);
         oasis = new OasisService(this, library, store, guards, airdrops);
         protection = new ProtectionService(this, library, store);
+        veins = new OreVeinService(this, library, store);
+        protection.veins(veins);
+        animals = new AnimalService(this, library, store, oasis);
+        ambient = new AmbientService(this, store);
         paster = new PasteService(this, store, crates, protection);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
 
@@ -56,7 +69,12 @@ public final class AxonStructurePlugin extends JavaPlugin {
         airdrops.start();
         guards.start();
         oasis.start();
+        veins.start();
+        animals.start();
+        ambient.start();
         getServer().getPluginManager().registerEvents(guards, this);
+        getServer().getPluginManager().registerEvents(veins, this);
+        getServer().getPluginManager().registerEvents(animals, this);
         getServer().getPluginManager().registerEvents(oasis, this);
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
@@ -79,6 +97,15 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (ambient != null) {
+            ambient.stop();
+        }
+        if (animals != null) {
+            animals.stop();
+        }
+        if (veins != null) {
+            veins.stop();
+        }
         if (oasis != null) {
             oasis.stop();
         }
@@ -127,6 +154,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
         addMissingDefaults(config);
         library.reload();
 
+        // przed ochroną: regiony WorldGuard kopalni zależą od tego, czy żyły rudy są włączone
+        configureVeins(config);
+
         Map<String, String> flags = new LinkedHashMap<>();
         ConfigurationSection flagSection = config.getConfigurationSection("ochrona.flagi-worldguard");
         if (flagSection != null) {
@@ -149,7 +179,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
         crates.configure(LootConfig.load(config, getLogger()), new CrateService.Settings(
                 Math.max(1, config.getLong("odswiezanie.co-ile-minut", 20)) * 60_000L,
                 config.getInt("odswiezanie.blokada-gdy-gracz-blizej-niz", 32),
-                config.getBoolean("odswiezanie.zastepuj-pelne", false)));
+                config.getBoolean("odswiezanie.zastepuj-pelne", false),
+                config.getBoolean("loot.puste", true)));
 
         airdrops.configure(new AirdropService.Settings(
                 config.getBoolean("zrzuty.wlaczone", true),
@@ -160,12 +191,15 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 Math.max(0, config.getInt("zrzuty.min-graczy", 2)),
                 config.getString("zrzuty.pula", "zrzut").toLowerCase(Locale.ROOT),
                 config.getInt("zrzuty.znika-po-minutach", 15),
-                config.getInt("zrzuty.wysokosc-spadania", 40),
-                config.getInt("zrzuty.czas-spadania-sekund", 10),
+                config.getInt("zrzuty.wysokosc-spadania", 60),
+                config.getInt("zrzuty.czas-spadania-sekund", 45),
                 config.getString("zrzuty.nazwa-skrzyni", "&4&lZrzut zaopatrzenia"),
                 config.getString("zrzuty.komunikat", ""),
                 config.getString("zrzuty.komunikat-wyladowal", ""),
-                config.getString("zrzuty.komunikat-zniknal", "")));
+                config.getString("zrzuty.komunikat-zniknal", ""),
+                config.getBoolean("zrzuty.dym-sygnalowy", true),
+                Math.max(0, config.getInt("zrzuty.flara-co-sekund", 5)),
+                config.getBoolean("zrzuty.swiecenie", true)));
 
         Map<String, GuardService.Kit> kits = new LinkedHashMap<>();
         ConfigurationSection kitSection = config.getConfigurationSection("straznicy.zestawy");
@@ -206,6 +240,35 @@ public final class AxonStructurePlugin extends JavaPlugin {
         oasis.configure(config.getConfigurationSection("oaza"), zone(config.getString("zrzuty.strefa-czasowa", "Europe/Warsaw")));
         oasis.configureBlackMarket(config.getConfigurationSection("czarny-rynek"));
 
+        animals.configure(new AnimalService.Settings(
+                config.getBoolean("zwierzeta.wlaczone", true),
+                Math.max(16, config.getInt("zwierzeta.promien-aktywacji", 64)),
+                Math.max(1, config.getInt("zwierzeta.odradzanie-minut", 10)),
+                Math.max(0, config.getInt("zwierzeta.maks-odejscie", 24))));
+
+        Map<String, List<AmbientService.SoundSpec>> sounds = new LinkedHashMap<>();
+        ConfigurationSection soundSection = config.getConfigurationSection("zycie.odglosy");
+        if (soundSection != null) {
+            for (String key : soundSection.getKeys(false)) {
+                List<AmbientService.SoundSpec> list = new ArrayList<>();
+                for (String line : soundSection.getStringList(key)) {
+                    AmbientService.SoundSpec spec = AmbientService.SoundSpec.parse(line);
+                    if (spec == null) {
+                        getLogger().warning("zycie.odglosy." + key + ": zły wpis '" + line + "' (nazwa [wysokość] [głośność])");
+                    } else {
+                        list.add(spec);
+                    }
+                }
+                sounds.put(key.toLowerCase(Locale.ROOT), list);
+            }
+        }
+        ambient.configure(new AmbientService.Settings(
+                config.getBoolean("zycie.wlaczone", true),
+                Math.max(2, config.getInt("zycie.co-ile-sekund", 12)),
+                Math.max(0, config.getDouble("zycie.szansa-procent", 35)),
+                (float) Math.max(0.05, config.getDouble("zycie.glosnosc", 0.6)),
+                sounds));
+
         paster.configure(new PasteService.Settings(
                 Math.max(100, config.getInt("stawianie.bloki-na-tick", 4000)),
                 Math.max(0, config.getInt("stawianie.wygladzanie-krawedzi", 6)),
@@ -228,6 +291,35 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 config.getInt("auto-generowanie.maks-roznica-wysokosci", 6),
                 config.getDouble("auto-generowanie.maks-woda-procent", 3),
                 weights));
+    }
+
+    private void configureVeins(FileConfiguration config) {
+        Map<OreVeinService.Ore, Integer> weights = new EnumMap<>(OreVeinService.Ore.class);
+        ConfigurationSection oreSection = config.getConfigurationSection("kopalnia.rudy");
+        if (oreSection != null) {
+            for (String key : oreSection.getKeys(false)) {
+                OreVeinService.Ore ore = OreVeinService.Ore.parse(key);
+                if (ore == null) {
+                    getLogger().warning("kopalnia.rudy: nieznana ruda '" + key
+                            + "' (coal, iron, copper, gold, redstone, lapis, diamond, emerald)");
+                } else {
+                    weights.put(ore, Math.max(0, oreSection.getInt(key)));
+                }
+            }
+        }
+        veins.configure(new OreVeinService.Settings(
+                config.getBoolean("kopalnia.wlaczone", true),
+                Math.max(1, config.getLong("kopalnia.odnawianie-minut", 15)) * 60_000L,
+                OreVeinService.Leftover.parse(config.getString("kopalnia.po-wykopaniu", "kamien")),
+                Math.max(0, config.getInt("kopalnia.blokada-gdy-gracz-blizej-niz", 3)),
+                config.getBoolean("kopalnia.doswiadczenie", true),
+                weights,
+                config.getBoolean("kopalnia.siarka.wlaczona", true),
+                config.getString("kopalnia.siarka.nazwa", "<#FDE047>&lSurowa Siarka"),
+                config.getStringList("kopalnia.siarka.opis"),
+                config.getInt("kopalnia.siarka.custom-model-data", 10001),
+                config.getInt("kopalnia.siarka.min", 1),
+                config.getInt("kopalnia.siarka.max", 2)));
     }
 
     public StructureLibrary library() {
@@ -265,6 +357,18 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public PasteService paster() {
         return paster;
+    }
+
+    public OreVeinService veins() {
+        return veins;
+    }
+
+    public AnimalService animals() {
+        return animals;
+    }
+
+    public AmbientService ambient() {
+        return ambient;
     }
 
     public ProtectionService protection() {

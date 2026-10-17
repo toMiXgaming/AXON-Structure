@@ -1,6 +1,8 @@
 package pl.axon.structure.loot;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -11,6 +13,9 @@ import org.bukkit.block.Container;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Firework;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -45,11 +50,26 @@ public final class AirdropService {
      * @param perDay ile zrzutów dziennie; okno godzin dzielone jest na tyle równych części, w każdej jeden zrzut
      * @param hourFrom początek okna (pełna godzina)
      * @param hourTo koniec okna (pełna godzina, wyłącznie)
+     * @param signalSmoke  wysoki czerwony słup dymu nad wylądowaną skrzynią i smuga za spadającą (widać z daleka)
+     * @param flareSeconds co ile sekund nad skrzynią wybucha czerwona flara (0 = bez flar)
+     * @param glowing      spadająca skrzynia i spadochron świecą na czerwono (widać przez ściany)
      */
     public record Settings(boolean enabled, int perDay, int hourFrom, int hourTo, ZoneId zone, int minPlayers, String pool,
                            int lifetimeMinutes, int fallHeight, int fallSeconds, String crateName,
-                           String announce, String landed, String expired) {
+                           String announce, String landed, String expired,
+                           boolean signalSmoke, int flareSeconds, boolean glowing) {
     }
+
+    /** Czerwień sygnałowa zrzutu (dym, flary, poświata). */
+    private static final Color SIGNAL_RED = Color.fromRGB(0xE0, 0x1B, 0x1B);
+    private static final Color SIGNAL_ORANGE = Color.fromRGB(0xFF, 0x8A, 0x1F);
+    private static final Particle.DustOptions RED_DUST = new Particle.DustOptions(SIGNAL_RED, 2.5f);
+    private static final Particle.DustTransition FLARE_DUST = new Particle.DustTransition(SIGNAL_RED, SIGNAL_ORANGE, 2.0f);
+    /** Wysokość słupa dymu nad skrzynią. */
+    private static final int SMOKE_COLUMN = 36;
+    /** Do kogo dociera huk lądowania (w blokach). */
+    private static final double BOOM_RANGE = 300;
+    private static final long EFFECT_PERIOD = 10L;
 
     private record Target(StructureInstance instance, Blueprint blueprint, World world, int x, int y, int z) {
     }
@@ -73,8 +93,17 @@ public final class AirdropService {
     private BlockDisplay crateDisplay;
     private BlockDisplay chuteDisplay;
     private BukkitTask fallTask;
+    /** Dym i flary nad wylądowaną skrzynią (jeden zegar co 10 ticków, tylko gdy zrzut leży). */
+    private BukkitTask effectTask;
+    private int effectTicks;
+    /** Chunk miejsca lądowania trzymany wczytany przez całe spadanie (bilet pluginu). */
+    private World ticketWorld;
+    private int ticketX;
+    private int ticketZ;
     private long expiresAt;
     private boolean landed;
+    /** Czy w skrzyni zrzutu coś leży (przy {@code loot.puste} jest pusta i znika dopiero po czasie). */
+    private boolean stocked;
 
     public AirdropService(JavaPlugin plugin, StructureLibrary library, InstanceStore store, CrateService crates) {
         this.plugin = plugin;
@@ -229,8 +258,7 @@ public final class AirdropService {
     private void tick() {
         if (active != null) {
             if (landed) {
-                smoke();
-                if (System.currentTimeMillis() >= expiresAt || crateEmptied()) {
+                if (System.currentTimeMillis() >= expiresAt || (stocked ? crateEmptied() : crateGone())) {
                     finish(true);
                 }
             }
@@ -279,6 +307,13 @@ public final class AirdropService {
         }
         World world = target.world();
         world.getChunkAt(target.x() >> 4, target.z() >> 4); // wczytuje chunk, jeśli trzeba
+        // spadanie trwa długo (domyślnie 45 s): bez biletu chunk mógłby się wyładować, a z nim spadochron
+        releaseTicket();
+        if (world.addPluginChunkTicket(target.x() >> 4, target.z() >> 4, plugin)) {
+            ticketWorld = world;
+            ticketX = target.x() >> 4;
+            ticketZ = target.z() >> 4;
+        }
         active = target;
         landed = false;
         broadcast(format(settings.announce(), target));
@@ -312,10 +347,13 @@ public final class AirdropService {
         int ticks = Math.max(20, settings.fallSeconds() * 20);
         double height = Math.max(8, settings.fallHeight());
         Location start = new Location(world, target.x(), target.y() + height, target.z());
+        // co 2 ticki nowa pozycja, a klient płynnie dociąga ją przez 2 ticki (teleport duration), więc nawet
+        // 45 s spadania z 60 bloków (ok. 0,13 bloku na krok) wygląda jak ciągły ruch
         crateDisplay = world.spawn(start, BlockDisplay.class, d -> {
             d.setBlock(Bukkit.createBlockData(Material.BARREL));
             d.setTeleportDuration(2);
             d.setPersistent(false);
+            glow(d);
         });
         chuteDisplay = world.spawn(start, BlockDisplay.class, d -> {
             d.setBlock(Bukkit.createBlockData(Material.WHITE_WOOL));
@@ -323,6 +361,7 @@ public final class AirdropService {
                     new Vector3f(3.5f, 0.35f, 3.5f), new AxisAngle4f()));
             d.setTeleportDuration(2);
             d.setPersistent(false);
+            glow(d);
         });
         final int[] step = {0};
         fallTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -336,6 +375,12 @@ public final class AirdropService {
                 chuteDisplay.teleport(at);
             }
             world.spawnParticle(Particle.CLOUD, at.clone().add(0.5, 0, 0.5), 2, 0.2, 0.1, 0.2, 0.01);
+            if (settings.signalSmoke()) {
+                // smuga: dym sygnałowy i czerwony pył widoczne z daleka (force = do 512 bloków)
+                Location trail = at.clone().add(0.5, 0.5, 0.5);
+                world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, trail, 1, 0.15, 0.1, 0.15, 0.01, null, true);
+                world.spawnParticle(Particle.DUST, trail, 4, 0.3, 0.3, 0.3, 0, RED_DUST, true);
+            }
             if (t >= 1.0) {
                 land(target);
             }
@@ -358,10 +403,12 @@ public final class AirdropService {
             setName(container, LootConfig.color(settings.crateName()));
             container.update(true, false);
         }
+        stocked = false;
         if (block.getState() instanceof Container container) {
             container.getInventory().clear();
-            if (crate != null) {
+            if (crate != null && !crates.emptyLoot()) {
                 crate.fill(container.getInventory(), random);
+                stocked = !crateIsEmpty(container);
             }
         }
         active = new Target(target.instance(), target.blueprint(), world, block.getX(), block.getY(), block.getZ());
@@ -370,6 +417,9 @@ public final class AirdropService {
         Location center = block.getLocation().add(0.5, 0.5, 0.5);
         world.spawnParticle(Particle.EXPLOSION, center, 1);
         world.playSound(center, Sound.BLOCK_ANVIL_LAND, 1.5f, 0.6f);
+        releaseTicket();
+        landingSignals(world, center);
+        startEffects();
         broadcast(format(settings.landed(), active));
         plugin.getLogger().info("Zrzut wylądował na " + block.getX() + " " + block.getY() + " " + block.getZ());
     }
@@ -384,10 +434,95 @@ public final class AirdropService {
         return classId == null ? null : crates.loot().crateClass(classId);
     }
 
-    private void smoke() {
-        Location top = new Location(active.world(), active.x() + 0.5, active.y() + 1.0, active.z() + 0.5);
-        if (active.world().isChunkLoaded(active.x() >> 4, active.z() >> 4)) {
-            active.world().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, top, 3, 0.15, 0.1, 0.15, 0.02);
+    private void releaseTicket() {
+        if (ticketWorld != null) {
+            ticketWorld.removePluginChunkTicket(ticketX, ticketZ, plugin);
+            ticketWorld = null;
+        }
+    }
+
+    private void glow(BlockDisplay display) {
+        display.setViewRange(4f); // dalej niż zwykle (ile dokładnie, decyduje też zasięg śledzenia encji serwera)
+        if (settings.glowing()) {
+            display.setGlowing(true);
+            display.setGlowColorOverride(SIGNAL_RED);
+        }
+    }
+
+    /** Lądowanie: czerwony fajerwerk wysoko nad skrzynią i huk słyszany w promieniu {@link #BOOM_RANGE} bloków. */
+    private void landingSignals(World world, Location center) {
+        if (settings.signalSmoke() || settings.flareSeconds() > 0) {
+            // wysoko, bo wybuch fajerwerku z gwiazdkami rani w promieniu kilku bloków
+            Location sky = center.clone().add(0, 20, 0);
+            try {
+                Firework firework = world.spawn(sky, Firework.class, fw -> {
+                    FireworkMeta meta = fw.getFireworkMeta();
+                    meta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.BALL_LARGE)
+                            .withColor(SIGNAL_RED).withFade(SIGNAL_ORANGE).flicker(true).trail(true).build());
+                    meta.setPower(0);
+                    fw.setFireworkMeta(meta);
+                    fw.setPersistent(false);
+                });
+                firework.detonate();
+            } catch (RuntimeException e) {
+                plugin.getLogger().warning("Zrzut: nie udało się odpalić fajerwerku: " + e.getMessage());
+            }
+        }
+        double range = BOOM_RANGE * BOOM_RANGE;
+        for (Player player : world.getPlayers()) {
+            Location eye = player.getEyeLocation();
+            double d2 = eye.distanceSquared(center);
+            if (d2 > range) {
+                continue;
+            }
+            // dźwięk kilkanaście bloków od gracza w stronę skrzyni: słychać kierunek, a nie dokładną odległość
+            double d = Math.sqrt(d2);
+            Location at = d < 12 ? center : eye.clone().add(center.toVector().subtract(eye.toVector()).multiply(12 / d));
+            float volume = (float) Math.max(0.4, 1.6 - d / BOOM_RANGE);
+            player.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, volume, 0.5f);
+            player.playSound(at, Sound.ENTITY_FIREWORK_ROCKET_BLAST_FAR, volume, 0.7f);
+        }
+    }
+
+    private void startEffects() {
+        cancelEffects();
+        effectTicks = 0;
+        effectTask = Bukkit.getScheduler().runTaskTimer(plugin, this::effects, EFFECT_PERIOD, EFFECT_PERIOD);
+    }
+
+    private void cancelEffects() {
+        if (effectTask != null) {
+            effectTask.cancel();
+            effectTask = null;
+        }
+    }
+
+    /** Słup dymu i flary nad wylądowaną skrzynią; cząsteczki z force widać do 512 bloków. */
+    private void effects() {
+        if (active == null || !landed) {
+            cancelEffects();
+            return;
+        }
+        effectTicks += (int) EFFECT_PERIOD;
+        World world = active.world();
+        Location base = new Location(world, active.x() + 0.5, active.y() + 1.0, active.z() + 0.5);
+        if (settings.signalSmoke()) {
+            world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, base, 3, 0.15, 0.1, 0.15, 0.02, null, true);
+            // słup: dym sygnałowy sam się wznosi, czerwony pył barwi go na całej wysokości
+            for (int i = 0; i < 4; i++) {
+                Location at = base.clone().add(0, 2 + random.nextDouble() * SMOKE_COLUMN, 0);
+                world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, at, 1, 0.3, 0.3, 0.3, 0.01, null, true);
+                world.spawnParticle(Particle.DUST, at, 3, 0.4, 0.6, 0.4, 0, RED_DUST, true);
+            }
+        } else {
+            world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, base, 3, 0.15, 0.1, 0.15, 0.02);
+        }
+        int flareTicks = settings.flareSeconds() * 20;
+        if (flareTicks > 0 && effectTicks % flareTicks < EFFECT_PERIOD) {
+            Location flare = base.clone().add(0, SMOKE_COLUMN * 0.7, 0);
+            world.spawnParticle(Particle.FIREWORK, flare, 40, 0.3, 0.3, 0.3, 0.15, null, true);
+            world.spawnParticle(Particle.DUST_COLOR_TRANSITION, flare, 30, 1.5, 1.5, 1.5, 0, FLARE_DUST, true);
+            world.playSound(flare, Sound.ENTITY_FIREWORK_ROCKET_BLAST_FAR, 4f, 0.8f);
         }
     }
 
@@ -396,9 +531,16 @@ public final class AirdropService {
             return false;
         }
         Block block = active.world().getBlockAt(active.x(), active.y(), active.z());
-        if (!(block.getState() instanceof Container container)) {
-            return true;
-        }
+        return !(block.getState() instanceof Container container) || crateIsEmpty(container);
+    }
+
+    /** Skrzynia zrzutu zniknęła (pusta skrzynia przy {@code loot.puste} nie kończy zrzutu samym otwarciem). */
+    private boolean crateGone() {
+        return active.world().isChunkLoaded(active.x() >> 4, active.z() >> 4)
+                && !(active.world().getBlockAt(active.x(), active.y(), active.z()).getState() instanceof Container);
+    }
+
+    private static boolean crateIsEmpty(Container container) {
         for (ItemStack item : container.getInventory().getContents()) {
             if (item != null && !item.getType().isAir()) {
                 return false;
@@ -410,10 +552,12 @@ public final class AirdropService {
     /** Kończy zrzut: zabiera skrzynię (jeśli jeszcze stoi) i sprząta animację. */
     private void finish(boolean announce) {
         cancelFall();
+        cancelEffects();
+        releaseTicket();
         removeDisplays();
         if (active != null && landed) {
             Block block = active.world().getBlockAt(active.x(), active.y(), active.z());
-            boolean emptied = crateEmptied();
+            boolean emptied = !stocked || crateEmptied();
             if (block.getType() == Material.CHEST) {
                 if (block.getState() instanceof Container container) {
                     container.getInventory().clear();

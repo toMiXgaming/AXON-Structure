@@ -42,8 +42,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Gracze nie mogą niszczyć ani rozbudowywać struktur. Wolno otwierać skrzynie, drzwi i przyciski oraz
- * zabierać przedmioty z ramek (karty dostępu). PvP nie jest tu w ogóle ruszane.
+ * Gracze nie mogą niszczyć ani rozbudowywać struktur. Wolno otwierać skrzynie, drzwi i przyciski, zabierać
+ * przedmioty z ramek (karty dostępu) i kopać rudy w żyłach kopalni ({@code punkt-ruda}). PvP nie jest tu w ogóle ruszane.
  * Priorytet LOWEST: zdarzenie jest anulowane, zanim zobaczą je inne pluginy (np. rdzeń działki AxonPlot,
  * który z ignoreCancelled nie założy wtedy działki).
  */
@@ -78,6 +78,9 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
+        if (protection.breakable(event.getBlock())) {
+            return; // ruda w żyle kopalni (punkt-ruda): kopanie, drop i odnawianie obsługuje OreVeinService
+        }
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
             warn(event.getPlayer());
