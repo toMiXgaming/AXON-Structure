@@ -146,7 +146,7 @@ grep -qF "Server] SZPITAL-GRUNT-OK" server.log || { echo "::error::Szpital: grun
 grep -qF "Server] SZPITAL-PIWNICA-OK" server.log || { echo "::error::Szpital: brak schodów do piwnicy"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
-grep -q "Oaza: lady i tarcze na miejscu 29/29, stanowisk wymiany 8" server.log || { echo "::error::Oaza: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
+grep -q "Oaza: lady i tarcze na miejscu 30/30, stanowisk wymiany 8" server.log || { echo "::error::Oaza: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
 grep -q "Zrzut wylądował" server.log || { echo "::error::Zrzut zaopatrzenia nie wylądował"; FAIL=1; }
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }
 if grep -q "Auto-generowanie: postawiono" server.log; then
