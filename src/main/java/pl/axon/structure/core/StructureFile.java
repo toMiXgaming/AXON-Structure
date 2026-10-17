@@ -18,6 +18,8 @@ import java.util.Map;
  * nazwa: Opuszczona stacja benzynowa
  * opis: ...
  * rozmiar: 45 16 52          (szerokość wysokość głębokość)
+ * grunt: 12                  (opcjonalnie: która warstwa leży na poziomie terenu, niższe idą pod ziemię)
+ * strefa: bezpieczna         (opcjonalnie: oaza bez PvP, stawiana tylko komendą)
  * paleta:
  * 0 minecraft:air
  * 1 minecraft:stone
@@ -61,6 +63,12 @@ public final class StructureFile {
         out.write("nazwa: " + bp.name() + "\n");
         out.write("opis: " + bp.description() + "\n");
         out.write("rozmiar: " + bp.width() + " " + bp.height() + " " + bp.depth() + "\n");
+        if (bp.ground() > 0) {
+            out.write("grunt: " + bp.ground() + "\n");
+        }
+        if (bp.safeZone()) {
+            out.write("strefa: bezpieczna\n");
+        }
         out.write("paleta:\n");
         for (int i = 0; i < palette.size(); i++) {
             out.write(i + " " + palette.get(i) + "\n");
@@ -195,6 +203,20 @@ public final class StructureFile {
         String[] s = size.trim().split("\\s+");
         Blueprint created = new Blueprint(Integer.parseInt(s[0]), Integer.parseInt(s[1]), Integer.parseInt(s[2]));
         created.meta(meta.get("id"), meta.getOrDefault("nazwa", meta.get("id")), meta.getOrDefault("opis", ""));
+        if (meta.containsKey("grunt")) {
+            try {
+                created.ground(Integer.parseInt(meta.get("grunt").trim()));
+            } catch (IllegalArgumentException e) {
+                throw new IOException("zły 'grunt': " + e.getMessage());
+            }
+        }
+        String zone = meta.get("strefa");
+        if (zone != null) {
+            if (!zone.equalsIgnoreCase("bezpieczna")) {
+                throw new IOException("nieznana 'strefa': " + zone + " (dozwolona: bezpieczna)");
+            }
+            created.safeZone(true);
+        }
         return created;
     }
 

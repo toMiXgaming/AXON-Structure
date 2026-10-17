@@ -30,7 +30,10 @@ import java.util.Set;
 /** Losuje i odświeża skrzynie w postawionych strukturach. */
 public final class CrateService {
 
-    public record Settings(long intervalMillis, int playerBlockRadius, boolean replaceFull) {
+    /**
+     * @param emptyLoot skrzynie stoją, ale są puste (loot jeszcze nieustalony); dotyczy też zrzutów i zabitych NPC
+     */
+    public record Settings(long intervalMillis, int playerBlockRadius, boolean replaceFull, boolean emptyLoot) {
     }
 
     private final JavaPlugin plugin;
@@ -42,6 +45,7 @@ public final class CrateService {
     private LootConfig loot;
     private Settings settings;
     private BukkitTask task;
+    private String dropPool = "";
 
     public CrateService(JavaPlugin plugin, StructureLibrary library, InstanceStore store) {
         this.plugin = plugin;
@@ -65,8 +69,18 @@ public final class CrateService {
         }
     }
 
+    /** Pula oznaczająca miejsca zrzutów: tych punktów nie losujemy przy odświeżaniu, obsługuje je {@link AirdropService}. */
+    public void dropPool(String pool) {
+        this.dropPool = pool == null ? "" : pool;
+    }
+
     public LootConfig loot() {
         return loot;
+    }
+
+    /** {@code loot.puste}: skrzynie, zrzuty i zabici NPC nic nie dają, tabele lootu czekają w configu na później. */
+    public boolean emptyLoot() {
+        return settings != null && settings.emptyLoot();
     }
 
     public void start() {
@@ -134,6 +148,9 @@ public final class CrateService {
         Placement placement = instance.placement();
         int placed = 0;
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+            if (isMarker(point.pool())) {
+                continue;
+            }
             int[] w = placement.toWorld(point.pos().x(), point.pos().y(), point.pos().z());
             if (!world.isChunkLoaded(w[0] >> 4, w[2] >> 4)) {
                 continue;
@@ -158,6 +175,9 @@ public final class CrateService {
             return;
         }
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+            if (isMarker(point.pool())) {
+                continue;
+            }
             int[] w = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
             if (point.kind() == Blueprint.SpawnKind.FRAME) {
                 removeFrames(world, w);
@@ -168,6 +188,15 @@ public final class CrateService {
                 }
             }
         }
+    }
+
+    /**
+     * Miejsca, które nie są skrzyniami: zrzuty, strażnicy ({@code npc-}) i wszystkie znaczniki {@code punkt-}
+     * (stanowiska oazy, żyły rudy {@code punkt-ruda}, zwierzęta {@code punkt-zwierze-*}).
+     */
+    private boolean isMarker(String pool) {
+        String p = pool.toLowerCase(Locale.ROOT);
+        return p.equalsIgnoreCase(dropPool) || p.startsWith("npc-") || p.startsWith("punkt-");
     }
 
     private CrateClass pick(String poolId) {
@@ -209,7 +238,9 @@ public final class CrateService {
         }
         if (block.getState() instanceof Container container) {
             container.getInventory().clear();
-            crate.fill(container.getInventory(), random);
+            if (!settings.emptyLoot()) {
+                crate.fill(container.getInventory(), random);
+            }
         }
         if (!crate.decoration().isBlank()) {
             Block above = block.getRelative(BlockFace.UP);
@@ -235,6 +266,9 @@ public final class CrateService {
             }
         }
         removeFrames(world, w);
+        if (settings.emptyLoot()) {
+            return false; // przedmiot w ramce (karta) to też loot
+        }
         CrateClass crate = pick(poolId);
         if (crate == null || crate.kind() != CrateClass.Kind.FRAME) {
             return false;

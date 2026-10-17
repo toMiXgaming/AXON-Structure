@@ -148,7 +148,7 @@ public final class AutoGenerator implements Listener {
                         done.accept(false);
                         return;
                     }
-                    Placement placement = new Placement(draft.world(), draft.originX(), site.baseY(),
+                    Placement placement = new Placement(draft.world(), draft.originX(), site.baseY() - bp.ground(),
                             draft.originZ(), steps);
                     boolean started = paster.paste(bp, placement, feedback, undoOwner, feedback == null, instance -> {
                         if (instance == null) {
@@ -221,6 +221,9 @@ public final class AutoGenerator implements Listener {
         List<Integer> weights = new ArrayList<>();
         int total = 0;
         for (Blueprint bp : library.all()) {
+            if (bp.safeZone()) {
+                continue; // oaza stoi tylko tam, gdzie postawi ją admin
+            }
             int weight = settings.weights().isEmpty()
                     ? 1
                     : settings.weights().getOrDefault(bp.id().toLowerCase(Locale.ROOT), 0);
