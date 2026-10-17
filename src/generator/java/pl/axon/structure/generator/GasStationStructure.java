@@ -106,6 +106,7 @@ public final class GasStationStructure implements StructureDefinition {
             sideRamp();
             weathering();
             furnish();
+            lifeSigns();
             return bp;
         }
 
@@ -824,6 +825,20 @@ public final class GasStationStructure implements StructureDefinition {
             bp.crate(40, 1, 13, "west", "plac");
             bp.crate(3, 1, 22, "east", "plac");
             bp.sign(24, 3, BZ2 + 1, "oak_wall_sign[facing=south]", "PALIWA BRAK", "WODY BRAK", "NADZIEI BRAK", "");
+        }
+
+        /**
+         * Ślady dawnego życia: napisy ocalałych na ścianach, zaschnięta krew, porozrzucane kartki
+         * i zawalony namiot. Wszystko leży płasko albo na ścianach, więc nie zamyka przejść ani osłon.
+         */
+        private void lifeSigns() {
+            furniture.traces(BX1 + 1, BZ1 + 1, BX2 - 1, 34, 1, 4, 6);
+            furniture.traces(BX1 + 1, 36, BX2 - 1, BZ2 - 1, 1, 2, 3);
+            furniture.traces(0, 3, WIDTH - 1, 17, 1, 2, 0);
+            furniture.graffiti(BX1 + 1, BZ1 + 1, BX2 - 1, 34, 2, "DZIEŃ 47", "JESZCZE", "ŻYJĘ", "- R.");
+            furniture.graffiti(BX1 + 1, 36, BX2 - 1, BZ2 - 1, 2, "NIE PIJ", "WODY", "Z KRANU!", "");
+            furniture.graffiti(0, BZ2 + 1, WIDTH - 1, DEPTH - 1, 2, "OAZA ŚWIT", "NA POŁUDNIE", "ZA LASEM", "");
+            furniture.collapsedTent(0, BZ2 + 1, WIDTH - 1, DEPTH - 1, 1, "green");
         }
 
         /** Obozowisko za ladą kasową: śpiwór, wygaszone ognisko, garnek, świeczki i barykada na ladzie. */

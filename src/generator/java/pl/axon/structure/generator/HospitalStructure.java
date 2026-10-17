@@ -113,8 +113,24 @@ public final class HospitalStructure implements StructureDefinition {
             basement();
             crates();
             moreCrates();
+            lifeSigns();
             weeds();
             return bp;
+        }
+
+        /**
+         * Ślady dawnego życia: napisy ocalałych na ścianach, zaschnięta krew, porozrzucane kartki
+         * i zawalony namiot. Wszystko leży płasko albo na ścianach, więc nie zamyka przejść ani osłon.
+         */
+        private void lifeSigns() {
+            f.traces(41, 25, 68, 38, 1, 6, 6);
+            f.traces(31, 41, 78, 52, 1, 5, 8);
+            f.traces(31, 41, 78, 52, 6, 3, 6);
+            f.traces(85, 35, 102, 52, 1, 2, 6);
+            f.graffiti(41, 25, 68, 38, 2, "NIE MA", "LEKARZY.", "NIE MA", "LEKÓW.");
+            f.graffiti(31, 41, 78, 52, 2, "SALA 3:", "ZARAŻENI", "NIE OTWIERAĆ", "");
+            f.graffiti(31, 41, 78, 52, 7, "DZIEŃ 12", "MAMA ŚPI", "JUŻ DŁUGO", "");
+            f.collapsedTent(0, 5, 109, 23, 1, "light_gray");
         }
 
         // ------------------------------------------------------------------ pomocnicze (y względem gruntu)

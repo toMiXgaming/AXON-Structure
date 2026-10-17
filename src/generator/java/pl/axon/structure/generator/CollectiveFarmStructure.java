@@ -136,6 +136,7 @@ public final class CollectiveFarmStructure implements StructureDefinition {
             weeds();
             weathering();
             furnish();
+            lifeSigns();
             return bp;
         }
 
@@ -1104,6 +1105,24 @@ public final class CollectiveFarmStructure implements StructureDefinition {
          * Meble, dodatkowe skrzynie i rekwizyty. Stawiane na końcu, żeby chwasty i pajęczyny ich nie zasłoniły.
          * Wszystko stoi przy ścianach i w kątach – przejścia, drabiny i trasy parkouru zostają wolne.
          */
+        /**
+         * Ślady dawnego życia: napisy ocalałych na ścianach, zaschnięta krew, porozrzucane kartki
+         * i zawalony namiot. Wszystko leży płasko albo na ścianach, więc nie zamyka przejść ani osłon.
+         */
+        private void lifeSigns() {
+            Furniture f = new Furniture(bp, 0, rnd);
+            f.traces(9, 17, 19, 49, 1, 3, 2);
+            f.traces(57, 21, 81, 47, 1, 3, 4);
+            f.traces(57, 55, 67, 61, 1, 1, 3);
+            f.graffiti(9, 17, 19, 49, 2, "KROWY", "UCIEKŁY", "MY TEŻ", "");
+            f.graffiti(57, 21, 81, 47, 2, "PRZYSZŁOŚĆ?", "HA, HA", "", "");
+            f.graffiti(57, 55, 67, 61, 2, "NIE WĄCHAJ", "NAWOZÓW", "– STEFAN", "(†)");
+            f.collapsedTent(0, 62, 89, 77, 1, "blue");
+            // bezpańskie koty w oborze i w bazie maszynowej
+            f.animalSomewhere(9, 17, 19, 49, 1, "cat");
+            f.animalSomewhere(57, 21, 81, 47, 1, "cat");
+        }
+
         private void furnish() {
             Furniture f = new Furniture(bp, 0, rnd);
 
