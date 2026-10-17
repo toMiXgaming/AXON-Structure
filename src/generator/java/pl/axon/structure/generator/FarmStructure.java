@@ -147,6 +147,7 @@ public final class FarmStructure implements StructureDefinition {
             squatterCamp();
             graffiti();
             extraYardCrates();
+            lifeSigns();
             weeds();
             weathering();
             return bp;
@@ -965,6 +966,25 @@ public final class FarmStructure implements StructureDefinition {
             f.hangingLamp(11, LOFT_Y - 1, 34);
             bp.crate(10, 1, 31, "south", "zaplecze");
             bp.sign(8, 2, LOFT_Z + 1, "oak_wall_sign[facing=south]", "NIE RUSZAĆ", "MOICH", "RZECZY!", "- Zbychu");
+        }
+
+        /**
+         * Ślady dawnego życia: napisy ocalałych na ścianach, zaschnięta krew, porozrzucane kartki
+         * i zawalony namiot. Wszystko leży płasko albo na ścianach, więc nie zamyka przejść ani osłon.
+         */
+        private void lifeSigns() {
+            f.traces(HX1 + 1, HZ1 + 1, HX2 - 1, HZ2 - 1, 1, 2, 5);
+            f.traces(SX1 + 1, SZ1 + 1, SX2 - 1, LOFT_Z - 1, 1, 3, 2);
+            f.graffiti(SX1 + 1, SZ1 + 1, SX2 - 1, SZ2 - 1, 2, "TU SPALIŚMY", "CAŁĄ ZIMĘ", "DZIĘKI, PGR", "");
+            f.graffiti(HX1 + 1, HZ1 + 1, HX2 - 1, HZ2 - 1, 2, "ZABRALI", "WSZYSTKO", "NAWET", "FIRANKI");
+            f.graffiti(15, 6, 37, 42, 2, "SZUKAM", "BRATA", "PIOTREK K.", "WRÓĆ!");
+            f.collapsedTent(0, 42, WIDTH - 1, DEPTH - 3, 1, "brown");
+            // bezpańskie zwierzęta: kury na podwórzu, koty w stodole i przy domu
+            f.animalSomewhere(16, 8, 36, 40, 1, "chicken");
+            f.animalSomewhere(16, 8, 36, 40, 1, "chicken");
+            f.animalSomewhere(16, 8, 36, 40, 1, "chicken");
+            f.animalSomewhere(SX1 + 1, SZ1 + 1, SX2 - 1, LOFT_Z - 1, 1, "cat");
+            f.animalSomewhere(HX1 - 4, HZ1 - 2, HX2 + 2, HZ2 + 3, 1, "cat");
         }
 
         /** Napisy ocalałych na ścianach. */

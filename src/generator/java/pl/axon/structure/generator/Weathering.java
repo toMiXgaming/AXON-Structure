@@ -129,7 +129,7 @@ final class Weathering {
         return sb.toString();
     }
 
-    private static boolean isFullBlock(String state) {
+    static boolean isFullBlock(String state) {
         String n = state.replace("minecraft:", "");
         if (n.equals("air") || n.contains("[") && !n.contains("axis=")) {
             return false;

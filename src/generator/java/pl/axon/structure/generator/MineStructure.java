@@ -3,7 +3,12 @@ package pl.axon.structure.generator;
 import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.Palette;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Zamknięta Kopalnia Węgla Kamiennego „Jedność” – śląski przemysł po upadku, z małym podziemiem pod nadszybiem.
@@ -145,6 +150,8 @@ public final class MineStructure implements StructureDefinition {
             heap();
             adit();
             weeds();
+            lifeSigns();
+            oreVeins();
             return bp;
         }
 
@@ -1186,6 +1193,170 @@ public final class MineStructure implements StructureDefinition {
             fill(18, 1, 49, 18, 3, 49, "oak_log[axis=y]");
             fill(14, 4, 49, 18, 4, 49, "oak_log[axis=x]");
             sign(18, 2, 48, "oak_wall_sign[facing=north]", "SZTOLNIA", "„JEDNOŚĆ”", "", "");
+        }
+
+        /**
+         * Ślady dawnego życia: napisy ocalałych na ścianach, zaschnięta krew, porozrzucane kartki
+         * i zawalony namiot. Wszystko leży płasko albo na ścianach, więc nie zamyka przejść ani osłon.
+         */
+        private void lifeSigns() {
+            f.traces(CX1 + 1, CZ1 + 1, CX2 - 1, CZ2 - 1, 1, 3, 6);
+            f.traces(SX2 + 1, 33, 48, 40, UY, 3, 2);
+            f.graffiti(CX1 + 1, CZ1 + 1, CX2 - 1, CZ2 - 1, 2, "SZCZĘŚĆ", "BOŻE", "– OSTATNIA", "ZMIANA");
+            f.graffiti(SX2 + 1, 33, 48, 40, UY + 1, "WYCHODŹCIE", "GÓRĄ!", "KLATKA", "NIE JEDZIE");
+            f.graffiti(20, 6, 56, 29, 2, "WĘGIEL", "ZA CHLEB", "PYTAĆ", "W OAZIE");
+            f.collapsedTent(20, 6, 56, 29, 1, "blue");
+        }
+
+        // ------------------------------------------------------------------ żyły rudy
+
+        /**
+         * Żyły rudy w ścianach chodników: w podziemiu (chodnik na wschód i przekop do składu) i w sztolni pod hałdą.
+         * Każda ruda to punkt {@code punkt-ruda} – blok zostaje, a plugin po wykopaniu wstawia w to miejsce nową,
+         * losową rudę. Ruda leży tylko w skale odsłoniętej z jednej strony (na wysokości stóp albo głowy gracza),
+         * więc wykopanie jej robi najwyżej wnękę, a nie nowe przejście.
+         */
+        private void oreVeins() {
+            List<int[]> under = new ArrayList<>();
+            List<int[]> adit = new ArrayList<>();
+            for (int x = 38; x <= 79; x++) {
+                for (int z = 20; z <= 48; z++) {
+                    for (int y = UY; y <= UY + 1; y++) {
+                        if (oreSpot(x, y, z)) {
+                            under.add(new int[]{x, y, z});
+                        }
+                    }
+                }
+            }
+            for (int x = 8; x <= 24; x++) {
+                for (int z = 44; z <= 66; z++) {
+                    for (int y = 1; y <= 2; y++) {
+                        if (oreSpot(x, y, z)) {
+                            adit.add(new int[]{x, y, z});
+                        }
+                    }
+                }
+            }
+            veins(under, 42, 0.35);
+            veins(adit, 18, 0.1);
+        }
+
+        /** Skała z dokładnie jedną odsłoniętą ścianą (z boku), bez niczego do niej przyczepionego. */
+        private boolean oreSpot(int x, int y, int z) {
+            if (!isOreHost(get(x, y, z)) || isCrate(x, y, z)) {
+                return false;
+            }
+            int[][] d = {{1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}, {0, 1, 0}, {0, -1, 0}};
+            int open = 0;
+            for (int i = 0; i < d.length; i++) {
+                int nx = x + d[i][0];
+                int ny = y + d[i][1];
+                int nz = z + d[i][2];
+                String n = get(nx, ny, nz);
+                if (n.equals(Blueprint.AIR)) {
+                    if (i >= 4 || isCrate(nx, ny, nz)) {
+                        return false;
+                    }
+                    open++;
+                    // gracz musi tam stanąć (stopy) albo mieć tam głowę
+                    boolean feet = !isAir(nx, ny - 1, nz) && isAir(nx, ny + 1, nz);
+                    boolean head = isAir(nx, ny - 1, nz) && !isAir(nx, ny - 2, nz);
+                    // i to pod stropem chodnika, a nie pod gołym niebem na zboczu hałdy
+                    boolean roofed = !isAir(nx, ny + 1, nz) || !isAir(nx, ny + 2, nz) || !isAir(nx, ny + 3, nz);
+                    if (!feet && !head || !roofed) {
+                        return false;
+                    }
+                } else if (!isOreHost(n) && !n.contains("stone_bricks") && !n.contains("bricks") && !n.contains("gravel")
+                        && !n.contains("dirt") && !n.contains("grass_block") && !n.contains("podzol")) {
+                    // obok stoi coś przyczepionego albo nie-skała (płot, tablica, lampa, tory)
+                    return false;
+                }
+            }
+            return open == 1;
+        }
+
+        private static boolean isOreHost(String state) {
+            return switch (state) {
+                case "minecraft:stone", "minecraft:andesite", "minecraft:tuff", "minecraft:black_concrete",
+                     "minecraft:blackstone", "minecraft:basalt[axis=y]", "minecraft:cobbled_deepslate" -> true;
+                default -> false;
+            };
+        }
+
+        /** Wybiera do {@code count} miejsc na rudę, w żyłach po 1-4 bloki tej samej rudy. */
+        private void veins(List<int[]> spots, int count, double deepslate) {
+            Collections.shuffle(spots, rnd);
+            Set<Long> used = new HashSet<>();
+            List<int[]> seeds = new ArrayList<>();
+            int placed = 0;
+            for (int[] s : spots) {
+                if (placed >= count) {
+                    break;
+                }
+                boolean far = true;
+                for (int[] o : seeds) {
+                    if (Math.abs(o[0] - s[0]) + Math.abs(o[2] - s[2]) < 2) {
+                        far = false;
+                        break;
+                    }
+                }
+                if (!far) {
+                    continue;
+                }
+                seeds.add(s);
+                String ore = oreType();
+                boolean deep = chance(deepslate);
+                // cenne rudy pojedynczo, złoto, redstone i lapis najwyżej po dwie
+                int size = switch (ore) {
+                    case "diamond", "emerald" -> 1;
+                    case "gold", "redstone", "lapis" -> 1 + rnd.nextInt(2);
+                    default -> 2 + rnd.nextInt(3);
+                };
+                List<int[]> vein = new ArrayList<>();
+                vein.add(s);
+                for (int[] o : spots) {
+                    if (vein.size() >= size) {
+                        break;
+                    }
+                    int dist = Math.abs(o[0] - s[0]) + Math.abs(o[1] - s[1]) + Math.abs(o[2] - s[2]);
+                    if (dist == 1) {
+                        vein.add(o);
+                    }
+                }
+                for (int[] v : vein) {
+                    long key = ((long) v[0] << 32) | ((long) (v[1] + 64) << 16) | v[2];
+                    if (placed >= count || !used.add(key)) {
+                        continue;
+                    }
+                    set(v[0], v[1], v[2], (deep ? "deepslate_" : "") + ore + "_ore");
+                    crate(v[0], v[1], v[2], "north", "punkt-ruda");
+                    placed++;
+                }
+            }
+        }
+
+        /** Rodzaj rudy: dużo węgla, żelaza i miedzi (siarki), rzadko złoto, redstone i lapis, wyjątkowo diament i szmaragd. */
+        private String oreType() {
+            int r = rnd.nextInt(100);
+            if (r < 30) {
+                return "coal";
+            }
+            if (r < 52) {
+                return "iron";
+            }
+            if (r < 70) {
+                return "copper";
+            }
+            if (r < 80) {
+                return "redstone";
+            }
+            if (r < 88) {
+                return "gold";
+            }
+            if (r < 95) {
+                return "lapis";
+            }
+            return r < 98 ? "diamond" : "emerald";
         }
 
         // ------------------------------------------------------------------ zarośla

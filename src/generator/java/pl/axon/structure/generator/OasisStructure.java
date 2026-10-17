@@ -148,6 +148,8 @@ public final class OasisStructure implements StructureDefinition {
             bonfireSquare();
             parking();
             lampPosts();
+            farmyard();
+            strays();
             weeds();
             connect();
             return bp;
@@ -1014,8 +1016,7 @@ public final class OasisStructure implements StructureDefinition {
             windowsX(z1, 109, 123, 3, 3, 4);
             windowsZ(x1, 24, 32, 4, 2, 3);
             windowsZ(x2, 24, 32, 4, 2, 3);
-            door(116, 1, z2, "spruce_door", "south", "left", false);
-            door(117, 1, z2, "spruce_door", "south", "right", false);
+            Furniture.doubleDoor(this::door, 116, 1, z2, "spruce_door", "south", false);
             for (int x = 114; x <= 119; x++) {
                 set(x, 4, z2 + 1, x % 2 == 0 ? "green_wool" : "white_wool");
             }
@@ -1531,7 +1532,8 @@ public final class OasisStructure implements StructureDefinition {
                 for (int[] r : rooms) {
                     int dx = r[0] + 3;
                     door(dx, h + 1, wallN, "spruce_door", "south", "left", false);
-                    door(dx, h + 1, wallS, "spruce_door", "north", "left", false);
+                    // pierwszy pokój od południa ma drzwi z boku – na środku korytarza stoją schody na piętro
+                    door(r[0] == 13 ? r[1] : dx, h + 1, wallS, "spruce_door", "north", "left", false);
                     for (boolean north : new boolean[]{true, false}) {
                         int head = north ? z1 + 1 : z2 - 1;
                         int foot = north ? z1 + 2 : z2 - 2;
@@ -1733,8 +1735,7 @@ public final class OasisStructure implements StructureDefinition {
             set(38, 4, 74, hanging());
             set(39, 4, 74, hanging());
             fill(38, 5, 74, 39, 5, 74, "glass");
-            door(38, 1, z2, "spruce_door", "south", "left", false);
-            door(39, 1, z2, "spruce_door", "south", "right", false);
+            Furniture.doubleDoor(this::door, 38, 1, z2, "spruce_door", "south", false);
             set(38, 3, z2, "stripped_spruce_log[axis=x]");
             set(39, 3, z2, "stripped_spruce_log[axis=x]");
             sign(37, 3, z2 + 1, "south", "SZKLARNIA", "ZAMYKAJ", "DRZWI", "– CIEPŁO UCIEKA");
@@ -1757,8 +1758,10 @@ public final class OasisStructure implements StructureDefinition {
                 set(x2, 1, z, "spruce_fence");
                 set(39, 1, z, "spruce_fence");
             }
-            set(x2, 1, 86, "spruce_fence_gate[facing=east,in_wall=false,open=true,powered=false]");
-            set(x2, 1, 87, "spruce_fence_gate[facing=east,in_wall=false,open=true,powered=false]");
+            // furtki zamknięte, żeby zwierzęta nie uciekły; furtka w przegrodzie do kurnika
+            set(x2, 1, 86, "spruce_fence_gate[facing=east,in_wall=false,open=false,powered=false]");
+            set(x2, 1, 87, "spruce_fence_gate[facing=east,in_wall=false,open=false,powered=false]");
+            set(39, 1, 87, "spruce_fence_gate[facing=east,in_wall=false,open=false,powered=false]");
             for (int x = x1 + 1; x < x2; x++) {
                 for (int z = z1 + 1; z < z2; z++) {
                     set(x, 0, z, chance(0.5) ? "coarse_dirt" : chance(0.5) ? "podzol" : "grass_block");
@@ -1776,7 +1779,106 @@ public final class OasisStructure implements StructureDefinition {
             fill(44, 1, 84, 44, 3, 84, "spruce_fence");
             fill(40, 4, 84, 44, 4, 85, slab("spruce", "bottom"));
             set(42, 3, 84, hanging());
-            post(46, 1, 82, 4, "ZAGRODA", "KURY I KOZY", "WRÓCĄ", "NA WIOSNĘ");
+            post(46, 1, 82, 4, "ZAGRODA", "KURY I OWCE", "ZAMYKAJ", "FURTKĘ!");
+            // kurnik: grzędy z płotków i gniazda z siana, kury w zachodniej zagrodzie, owce we wschodniej
+            set(38, 1, 84, "spruce_trapdoor[facing=south,half=top,open=false,powered=false,waterlogged=false]");
+            set(36, 1, 89, "hay_block[axis=x]");
+            animal(36, 86, "chicken");
+            animal(37, 88, "chicken");
+            animal(35, 87, "chicken");
+            animal(41, 87, "sheep");
+            animal(43, 88, "sheep");
+        }
+
+        /** Miejsce zwierzęcia: plugin trzyma tu zwierzę danego typu (punkt-zwierze-*), kratka zostaje pusta. */
+        private void animal(int x, int z, String type) {
+            f.animal(x, 1, z, type);
+        }
+
+        /**
+         * Zagroda przy agregacie (x 38-53 / z 20-40): pastwisko z wiatą, chlewik z błotem, wędzarnia z ogniskiem,
+         * kotłem i beczkami, warsztat i sznur z prześcieradłami. Wejścia od południa, z alei północnej.
+         */
+        private void farmyard() {
+            // pastwisko: krowy i owca
+            fence(46, 20, 52, 31);
+            set(49, 1, 31, "spruce_fence_gate[facing=south,in_wall=false,open=false,powered=false]");
+            fill(47, 2, 20, 47, 2, 20, "spruce_fence");
+            fill(51, 2, 20, 51, 2, 20, "spruce_fence");
+            fill(47, 1, 22, 47, 2, 22, "spruce_fence");
+            fill(51, 1, 22, 51, 2, 22, "spruce_fence");
+            fill(47, 3, 20, 51, 3, 22, slab("spruce", "bottom"));
+            set(48, 1, 21, "hay_block[axis=x]");
+            set(49, 1, 21, "hay_block[axis=x]");
+            set(48, 2, 21, "hay_block[axis=z]");
+            set(50, 1, 21, "water_cauldron[level=3]");
+            set(50, 2, 22, hanging());
+            animal(48, 26, "cow");
+            animal(50, 28, "cow");
+            animal(49, 24, "sheep");
+            post(53, 1, 32, 0, "PASTWISKO", "MUĆKA, KRASULA", "I BEATKA", "MLEKO RANO");
+            // chlewik
+            fence(46, 34, 52, 39);
+            set(49, 1, 39, "spruce_fence_gate[facing=south,in_wall=false,open=false,powered=false]");
+            for (int x = 47; x <= 51; x++) {
+                for (int z = 35; z <= 38; z++) {
+                    set(x, 0, z, chance(0.7) ? "mud" : "packed_mud");
+                    set(x, 1, z, "air");
+                }
+            }
+            set(51, 1, 35, "water_cauldron[level=2]");
+            set(47, 1, 35, "composter[level=4]");
+            animal(48, 37, "pig");
+            animal(50, 37, "pig");
+            post(53, 1, 39, 0, "CHLEWIK", "NIE KARMIĆ", "ŚWIŃ PALCAMI", "");
+            // wędzarnia i kuchnia pod chmurką
+            set(40, 1, 36, "smoker[facing=south,lit=true]");
+            set(41, 1, 37, campfire("south"));
+            set(42, 1, 37, "water_cauldron[level=2]");
+            set(39, 1, 37, "stripped_oak_log[axis=z]");
+            set(41, 1, 39, "stripped_oak_log[axis=x]");
+            set(43, 1, 36, "barrel[facing=up,open=false]");
+            set(44, 1, 36, "barrel[facing=up,open=false]");
+            set(43, 2, 36, "barrel[facing=up,open=true]");
+            set(44, 1, 37, "spruce_planks");
+            set(44, 2, 37, "barrel[facing=up,open=false]");
+            set(44, 1, 38, "crafting_table");
+            set(44, 2, 38, flowerPot());
+            set(38, 1, 36, "spruce_fence");
+            set(38, 2, 36, lantern());
+            // sznur z prześcieradłami
+            fill(38, 1, 40, 38, 3, 40, "spruce_fence");
+            fill(44, 1, 40, 44, 3, 40, "spruce_fence");
+            for (int x = 39; x <= 43; x++) {
+                set(x, 3, 40, "spruce_fence");
+                if (x % 2 == 1) {
+                    set(x, 2, 40, "white_wool");
+                } else {
+                    set(x, 4, 40, chance(0.5) ? "white_carpet" : woolColor() + "_carpet");
+                }
+            }
+            post(45, 1, 41, 4, "WĘDZARNIA", "KIEŁBASA", "W SOBOTĘ", "");
+        }
+
+        /** Prostokąt z płotka na poziomie 1. */
+        private void fence(int x1, int z1, int x2, int z2) {
+            for (int x = x1; x <= x2; x++) {
+                set(x, 1, z1, "spruce_fence");
+                set(x, 1, z2, "spruce_fence");
+            }
+            for (int z = z1; z <= z2; z++) {
+                set(x1, 1, z, "spruce_fence");
+                set(x2, 1, z, "spruce_fence");
+            }
+        }
+
+        /** Zwierzęta poza zagrodami: koty przy ludziach, psy przy wartowni i warsztacie, kury przy kompostowniku. */
+        private void strays() {
+            animal(22, 53, "cat");
+            animal(125, 85, "cat");
+            animal(71, 15, "wolf");
+            animal(24, 38, "wolf");
+            animal(17, 65, "chicken");
         }
 
         // ------------------------------------------------------------------ pas południowy
@@ -2090,7 +2192,9 @@ public final class OasisStructure implements StructureDefinition {
             for (int x = 89; x <= 98; x++) {
                 for (int z = zN; z <= zS; z++) {
                     if (x == 89 && (z - zN) % 5 == 0 || x == 98 && (z - zN) % 5 == 0) {
-                        fill(x, 1, z, x, 4, z, "spruce_log[axis=y]");
+                        // słup nie może stać tuż przed furtką toru (z 100, 104, 108, 112, 116)
+                        int pz = x == 98 && z % 4 == 0 && z > zN && z < zS ? z + 1 : z;
+                        fill(x, 1, pz, x, 4, pz, "spruce_log[axis=y]");
                     }
                 }
             }
@@ -2136,8 +2240,7 @@ public final class OasisStructure implements StructureDefinition {
             patches(cx1, z1, cx2, z2, 1, 5, 10);
             windowsZ(cx1, 51, 67, 3, 2, 3);
             windowsX(z2, 108, 120, 3, 2, 3);
-            door(113, 1, z2, "spruce_door", "south", "left", false);
-            door(114, 1, z2, "spruce_door", "south", "right", false);
+            Furniture.doubleDoor(this::door, 113, 1, z2, "spruce_door", "south", false);
             sign(113, 4, z2 + 1, "south", "STOŁÓWKA", "ZUPA CODZIENNIE", "W POŁUDNIE", "");
             sign(114, 4, z2 + 1, "south", "MENU:", "ZUPA", "ALBO", "ZUPA");
             // kuchnia: wędzarnie z okapami, ognisko, zlew
@@ -2190,8 +2293,7 @@ public final class OasisStructure implements StructureDefinition {
             patches(bx1, z1, bx2, z2, 1, 5, 6);
             windowsX(z2, 124, 135, 3, 2, 3);
             windowsZ(bx2, 51, 55, 2, 2, 3);
-            door(129, 1, z2, "dark_oak_door", "south", "left", false);
-            door(130, 1, z2, "dark_oak_door", "south", "right", false);
+            Furniture.doubleDoor(this::door, 129, 1, z2, "dark_oak_door", "south", false);
             sign(129, 4, z2 + 1, "south", "BAR", "POD", "KANISTREM", "");
             sign(130, 4, z2 + 1, "south", "PIWO Z", "WŁASNEJ", "WARKI", "");
             for (int x = 127; x <= 132; x++) {

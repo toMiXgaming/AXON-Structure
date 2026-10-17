@@ -137,8 +137,23 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             berm();
             forest();
             bunker();
+            lifeSigns();
             weeds();
             return bp;
+        }
+
+        /**
+         * Ślady dawnego życia: napisy ocalałych na ścianach, zaschnięta krew, porozrzucane kartki
+         * i zawalony namiot. Wszystko leży płasko albo na ścianach, więc nie zamyka przejść ani osłon.
+         */
+        private void lifeSigns() {
+            f.traces(6, 6, 143, 50, 1, 8, 10);
+            f.traces(6, 54, 143, 88, 1, 5, 4);
+            f.graffiti(6, 6, 143, 50, 2, "JW 2137", "ROZWIĄZANA.", "IDŹCIE", "DO DOMU");
+            f.graffiti(6, 6, 143, 50, 2, "ŻOŁNIERZE", "ZOSTALI", "W SCHRONIE", "");
+            f.graffiti(6, 54, 143, 88, 2, "PALIWA", "NIE MA,", "SPRAWDZAŁEM", "– KAPRAL");
+            f.collapsedTent(6, 6, 143, 50, 1, "green");
+            f.collapsedTent(6, 54, 143, 88, 1, "brown");
         }
 
         // ------------------------------------------------------------------ pomocnicze (y względem gruntu)
@@ -1573,26 +1588,47 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                     set(x, 0, z, b);
                 }
             }
-            // kadłub przechylony: im dalej na południe, tym wyżej
-            for (int x = 52; x <= 63; x++) {
-                for (int z = 94; z <= 97; z++) {
-                    int h = z - 93;
-                    for (int y = 1; y <= h; y++) {
-                        set(x, y, z, x <= 53 && y >= 2 && z < 97 ? "glass" : army.next());
-                    }
+            // wrak Mi-8: nos na zachód, kadłub x 51-62 / z 94-97, belka ogonowa do x 70, statecznik x 71-72
+            helicopter(51, 94, 55, true);
+            // zawalone podwozie: koła wbite w płytę przy burtach, zbiorniki paliwa na ziemi
+            set(52, 1, 93, "black_concrete");
+            set(59, 1, 93, "black_concrete");
+            set(61, 1, 98, "black_concrete");
+            fill(55, 1, 93, 58, 1, 93, "light_gray_concrete");
+            fill(58, 1, 98, 60, 1, 98, "light_gray_concrete");
+            // wyrwane drzwi boczne leżą przed wejściem
+            set(55, 1, 99, "iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=false]");
+            set(56, 1, 99, "iron_trapdoor[facing=north,half=bottom,open=false,powered=false,waterlogged=false]");
+            // łopaty wirnika: jedna sterczy w górę z piasty, dwie leżą na płycie
+            set(57, 6, 95, "polished_blackstone");
+            String[] up = {"deepslate_tile_slab[type=bottom,waterlogged=false]", "deepslate_tile_slab[type=top,waterlogged=false]"};
+            for (int i = 0; i < 6; i++) {
+                set(58 + i, 6 + i / 2, 95, up[i % 2]);
+            }
+            set(56, 6, 95, "deepslate_tile_slab[type=top,waterlogged=false]");
+            set(55, 6, 95, "deepslate_tile_slab[type=bottom,waterlogged=false]");
+            for (int z = 99; z <= 105; z++) {
+                set(65, 1, z, "deepslate_tile_slab[type=bottom,waterlogged=false]");
+            }
+            for (int x = 48; x <= 52; x++) {
+                set(x, 1, 102, "deepslate_tile_slab[type=bottom,waterlogged=false]");
+            }
+            // okopcenia na płycie i drobne szczątki
+            for (int i = 0; i < 40; i++) {
+                int x = 49 + rnd.nextInt(26);
+                int z = 92 + rnd.nextInt(10);
+                if (Math.hypot(x - 58, z - 96) < 9 && x <= 68) {
+                    set(x, 0, z, chance(0.5) ? "black_concrete" : chance(0.5) ? "coal_block" : "blackstone");
                 }
             }
-            crate(53, 4, 97, "north", "wrak");
-            for (int x = 64; x <= 70; x++) {
-                set(x, 2, 96, army.next());
-                set(x, 3, 96, x == 70 ? army.next() : "air");
+            for (int[] p : new int[][]{{50, 98}, {63, 99}, {66, 97}, {53, 92}}) {
+                if (isAir(p[0], 1, p[1])) {
+                    set(p[0], 1, p[1], chance(0.5)
+                            ? "iron_trapdoor[facing=east,half=bottom,open=false,powered=false,waterlogged=false]"
+                            : "lightning_rod[facing=east,powered=false,waterlogged=false]");
+                }
             }
-            set(70, 4, 96, "iron_bars");
-            // łopaty wirnika leżą obok
-            for (int i = 0; i < 7; i++) {
-                set(55 + i, 1, 99, "iron_bars");
-                set(58, 1, 92 + i, "iron_bars");
-            }
+            crate(60, 2, 95, "west", "wrak");
             crate(50, 1, 108, "east", "plac");
             crate(66, 1, 94, "west", "plac");
             // miejsce zrzutu zaopatrzenia (losowane przez plugin, nie przy odświeżaniu skrzyń)
@@ -1600,6 +1636,116 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             // strażnicy (NPC z pluginu Citizens/Sentinel, jeśli jest na serwerze)
             crate(62, 1, 107, "north", "npc-zolnierz");
             crate(54, 1, 100, "south", "npc-zolnierz");
+        }
+
+        /**
+         * Śmigłowiec transportowy Mi-8 wzdłuż osi x, nos na zachodzie w {@code nx}, kadłub z0..z0+3: zaokrąglony
+         * nos z przeszklonym kokpitem w ramie, kabina z rzędem okien i otwartymi drzwiami bocznymi (od południa,
+         * x doorX..doorX+1), garb silników na dachu, otwarta tylna rampa. Z {@code tail}: cienka belka ogonowa,
+         * statecznik z biało-czerwoną szachownicą i małe śmigło ogonowe; bez niej – kikut belki.
+         */
+        private void helicopter(int nx, int z0, int doorX, boolean tail) {
+            int za = z0;
+            int zb = z0 + 3;
+            int c1 = nx + 2;
+            int c2 = nx + 10;
+            int rear = nx + 11;
+            // czubek nosa i dolne okna nawigatora
+            for (int z = za + 1; z <= zb - 1; z++) {
+                set(nx, 1, z, army.next());
+                set(nx, 2, z, "glass");
+            }
+            // kokpit: rama z przeszkleniem z przodu i u góry
+            for (int z = za; z <= zb; z++) {
+                boolean side = z == za || z == zb;
+                set(nx + 1, 1, z, army.next());
+                set(nx + 1, 2, z, side ? army.next() : "glass");
+                set(nx + 1, 3, z, side ? army.next() : "glass");
+                if (!side) {
+                    set(nx + 1, 4, z, "gray_stained_glass");
+                }
+            }
+            // kabina
+            for (int x = c1; x <= c2; x++) {
+                for (int z = za; z <= zb; z++) {
+                    boolean side = z == za || z == zb;
+                    set(x, 1, z, army.next());
+                    set(x, 4, z, x == c1 && side ? "air" : army.next());
+                    for (int y = 2; y <= 3; y++) {
+                        if (!side) {
+                            set(x, y, z, "air");
+                        } else if (y == 3 && x > c1 && (x - c1) % 2 == 0) {
+                            set(x, y, z, chance(0.3) ? "air" : "glass");
+                        } else {
+                            set(x, y, z, army.next());
+                        }
+                    }
+                }
+            }
+            // boczne okna kokpitu (bąble)
+            set(c1, 3, za, "glass");
+            set(c1, 3, zb, "glass");
+            // drzwi boczne otwarte na oścież
+            fill(doorX, 2, zb, doorX + 1, 3, zb, "air");
+            // fotele pilotów i ławka desantu wzdłuż północnej burty
+            set(c1, 2, za + 1, "spruce_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]");
+            set(c1, 2, zb - 1, "spruce_stairs[facing=east,half=bottom,shape=straight,waterlogged=false]");
+            for (int x = c1 + 3; x <= c2 - 2; x++) {
+                if (x < doorX - 1 || x > doorX + 2) {
+                    set(x, 2, za + 1, "spruce_slab[type=bottom,waterlogged=false]");
+                }
+            }
+            // tylna rampa otwarta: same skrzydła po bokach
+            for (int z = za; z <= zb; z++) {
+                set(rear, 1, z, army.next());
+                set(rear, 4, z, army.next());
+                for (int y = 2; y <= 3; y++) {
+                    set(rear, y, z, z == za || z == zb ? army.next() : "air");
+                }
+            }
+            // garb silników z wlotami i wydechami
+            for (int x = nx + 4; x <= nx + 9; x++) {
+                for (int z = za + 1; z <= zb - 1; z++) {
+                    set(x, 5, z, x == nx + 4 ? "black_concrete" : "light_gray_concrete");
+                }
+            }
+            set(nx + 9, 5, za, "black_concrete");
+            set(nx + 9, 5, zb, "black_concrete");
+            if (!tail) {
+                for (int z = za + 1; z <= zb - 1; z++) {
+                    set(rear + 1, 3, z, army.next());
+                    set(rear + 1, 4, z, army.next());
+                }
+                return;
+            }
+            // belka ogonowa: gruba przy kadłubie, dalej cienka
+            for (int x = rear + 1; x <= rear + 2; x++) {
+                for (int z = za + 1; z <= zb - 1; z++) {
+                    set(x, 3, z, army.next());
+                    set(x, 4, z, army.next());
+                }
+            }
+            for (int x = rear + 3; x <= rear + 8; x++) {
+                set(x, 4, zb - 1, army.next());
+            }
+            fill(rear + 7, 1, zb - 1, rear + 7, 3, zb - 1, "iron_bars");
+            // statecznik z szachownicą lotnictwa
+            int f1 = rear + 9;
+            int f2 = rear + 10;
+            set(f1, 4, zb - 1, army.next());
+            set(f2, 4, zb - 1, army.next());
+            set(f1, 5, zb - 1, "red_concrete");
+            set(f2, 5, zb - 1, "white_concrete");
+            set(f1, 6, zb - 1, "white_concrete");
+            set(f2, 6, zb - 1, "red_concrete");
+            set(f1, 7, zb - 1, army.next());
+            set(f2, 7, zb - 1, army.next());
+            // śmigło ogonowe po południowej stronie statecznika
+            set(f2, 6, zb, "iron_block");
+            set(f2, 5, zb, "iron_bars");
+            set(f2, 7, zb, "iron_bars");
+            set(f2 + 1, 6, zb, "iron_bars");
+            set(f1, 6, zb, "iron_bars");
         }
 
         /** Łukowy hangar x 76-92 / z 94-118 ze śmigłowcem bez wirnika i szybem windy do schronu. */
@@ -1626,14 +1772,17 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 }
             }
             fill(83, 1, z2, 85, 2, z2, "air");
-            // śmigłowiec bez wirnika i rusztowanie
-            for (int x = 79; x <= 89; x++) {
-                for (int z = 99; z <= 102; z++) {
-                    fill(x, 1, z, x, x <= 80 ? 2 : 3, z, x <= 80 && z > 99 && z < 102 ? "glass" : army.next());
-                }
+            // śmigłowiec w naprawie: bez wirnika, odczepiona belka ogonowa leży obok, rusztowanie przy burcie
+            helicopter(78, 99, 86, false);
+            for (int z = 104; z <= 108; z++) {
+                set(90, 1, z, army.next());
             }
-            for (int x = 90; x <= 91; x++) {
-                set(x, 2, 100, army.next());
+            set(90, 1, 109, "red_concrete");
+            set(91, 1, 109, "white_concrete");
+            set(90, 1, 110, "white_concrete");
+            set(91, 1, 110, "red_concrete");
+            for (int z = 105; z <= 110; z++) {
+                set(78, 1, z, "deepslate_tile_slab[type=bottom,waterlogged=false]");
             }
             for (int y = 1; y <= 4; y++) {
                 set(80, y, 104, "spruce_fence");
@@ -1973,8 +2122,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             room(51, L1, 110, 56, L1 + 2, 112);
             for (int sx : new int[]{52, 55}) {
                 fill(sx, L1, 110, sx, L1 + 2, 112, "gray_concrete");
-                door(sx, L1, 110, "iron_door", "east", "left", true);
-                door(sx, L1, 111, "iron_door", "east", "right", true);
+                Furniture.doubleDoor(this::door, sx, L1, 110, "iron_door", "east", true);
             }
             f.hangingLamp(53, L1 + 2, 111);
             // korytarz poziomu 1
@@ -2110,8 +2258,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             for (int y = L2; y <= L1 - 1; y++) {
                 set(84, y, 121, "ladder[facing=west,waterlogged=false]");
             }
-            door(79, L2, 113, "iron_door", "north", "left", false);
-            door(80, L2, 113, "iron_door", "north", "right", false);
+            Furniture.doubleDoor(this::door, 79, L2, 113, "iron_door", "north", false);
             for (int z = 115; z <= 121; z += 2) {
                 set(75, L2 + 1, z, "iron_trapdoor[facing=east,half=top,open=false,powered=false,waterlogged=false]");
             }
