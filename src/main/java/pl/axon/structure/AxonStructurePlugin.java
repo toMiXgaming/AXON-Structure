@@ -96,10 +96,35 @@ public final class AxonStructurePlugin extends JavaPlugin {
         }
     }
 
+    /**
+     * Dopisuje do config.yml na serwerze ustawienia, których w nim nie ma, a są w domyślnym configu z nowszej
+     * wersji pluginu (np. nowe zestawy strażników albo sekcje oazy). Istniejących wartości nie zmienia.
+     */
+    private void addMissingDefaults(FileConfiguration config) {
+        if (config.getDefaults() == null) {
+            return;
+        }
+        java.util.Set<String> before = config.getKeys(true);
+        config.options().copyDefaults(true);
+        java.util.Set<String> added = new java.util.TreeSet<>(config.getKeys(true));
+        added.removeAll(before);
+        if (added.isEmpty()) {
+            return;
+        }
+        saveConfig();
+        java.util.Set<String> top = new java.util.TreeSet<>();
+        for (String key : added) {
+            String[] parts = key.split("\\.");
+            top.add(parts.length > 2 ? parts[0] + "." + parts[1] + "." + parts[2] : key);
+        }
+        getLogger().info("Uzupełniono config.yml o nowe ustawienia (" + added.size() + "): " + String.join(", ", top));
+    }
+
     /** Wczytuje config.yml i pliki struktur od nowa. */
     public void reload() {
         reloadConfig();
         FileConfiguration config = getConfig();
+        addMissingDefaults(config);
         library.reload();
 
         Map<String, String> flags = new LinkedHashMap<>();

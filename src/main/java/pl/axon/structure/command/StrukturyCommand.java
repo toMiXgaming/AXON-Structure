@@ -260,6 +260,10 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             plugin.getLogger().info("Strażnicy: postawiono " + placed);
             return;
         }
+        if (!plugin.guards().missingKits().isEmpty()) {
+            sender.sendMessage("§cW config.yml brakuje zestawów strażników: §f" + String.join(", ", plugin.guards().missingKits())
+                    + "§c. Te miejsca zostają puste – dopisz je w straznicy.zestawy albo usuń config.yml, żeby powstał nowy.");
+        }
         sender.sendMessage("§eStrażnicy: §f" + plugin.guards().activeCount() + " §estoi, miejsc w postawionych strukturach: §f"
                 + plugin.guards().guardPoints() + "§e. Pojawiają się, gdy gracz podejdzie do struktury.");
     }

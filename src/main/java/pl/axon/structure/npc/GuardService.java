@@ -94,6 +94,8 @@ public final class GuardService implements Listener {
     private BukkitTask task;
     private Object registry;
     private boolean warned;
+    /** Zestawy, których brakuje w configu, a struktury ich wymagają (do komunikatu i komendy). */
+    private final java.util.Set<String> missingKits = new java.util.TreeSet<>();
 
     public GuardService(JavaPlugin plugin, StructureLibrary library, InstanceStore store, CrateService crates) {
         this.plugin = plugin;
@@ -104,6 +106,8 @@ public final class GuardService implements Listener {
 
     public void configure(Settings settings) {
         removeAll();
+        missingKits.clear();
+        warned = false;
         this.settings = settings;
     }
 
@@ -216,8 +220,7 @@ public final class GuardService implements Listener {
             String key = instance.id() + "#" + index++;
             Kit kit = settings.kits().get(kitId);
             if (kit == null) {
-                if (!warned) {
-                    warned = true;
+                if (missingKits.add(kitId)) {
                     plugin.getLogger().warning("Brak zestawu strażnika '" + kitId
                             + "' w sekcji straznicy.zestawy – te miejsca zostają puste.");
                 }
@@ -489,6 +492,22 @@ public final class GuardService implements Listener {
     }
 
     /** Ile miejsc na strażników mają postawione struktury (do komendy). */
+    /** Zestawy wymagane przez postawione struktury, których nie ma w sekcji straznicy.zestawy. */
+    public java.util.Set<String> missingKits() {
+        for (StructureInstance instance : store.all()) {
+            Blueprint bp = library.get(instance.structureId());
+            if (bp != null) {
+                for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+                    String kitId = kitId(point.pool());
+                    if (kitId != null && !settings.kits().containsKey(kitId)) {
+                        missingKits.add(kitId);
+                    }
+                }
+            }
+        }
+        return java.util.Collections.unmodifiableSet(missingKits);
+    }
+
     public int guardPoints() {
         int n = 0;
         for (StructureInstance instance : store.all()) {
