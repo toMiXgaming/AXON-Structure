@@ -124,6 +124,10 @@ straznicy:
       loot: lepsza-skrzynia
       # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
       cele: [players]
+      # czy chodzi po okolicy, gdy nie walczy (domyślnie tak, handlarz i paser stoją za ladą), i jak daleko
+      # od swojego miejsca w strukturze może odejść (w blokach)
+      chodzi: true
+      promien-chodzenia: 8
     szabrownik:
       nazwa: "&6Szabrownik"
       skin-tekstura: ""
@@ -180,6 +184,54 @@ straznicy:
       celnosc: 0
       loot: ""
       cele: []
+    osadnik:
+      # osadnik w oazie (npc-osadnik): uprawia ogródki – podchodzi do dojrzałych roślin, zbiera je i sadzi od nowa
+      nazwa: "&aOsadnik"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "iron_hoe"
+      zbroja: [leather_helmet, air, leather_leggings, leather_boots]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      chodzi: true
+      promien-chodzenia: 6
+      uprawia: true
+    ocalaly:
+      # ocalały w oazie (npc-ocalaly): chodzi po okolicy, przy kuchni, ognisku i po korytarzach noclegowni
+      nazwa: "&7Ocalały"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      chodzi: true
+      promien-chodzenia: 6
+    spiacy:
+      # śpiący w noclegowni (npc-spiacy): leży w najbliższym łóżku, nie chodzi
+      nazwa: "&7Ocalały"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, air, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      spi: true
 
 oaza:
   # Oaza Świt (struktura "oaza"): strefa bez PvP, stawiana tylko komendą (/struktury generuj oaza), nigdy sama.

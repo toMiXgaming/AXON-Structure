@@ -1576,6 +1576,13 @@ public final class OasisStructure implements StructureDefinition {
             for (int x = 14; x <= 38; x += 2) {
                 set(x, 1, z2 + 1, chance(0.7) ? flowerPot() : "air");
             }
+            // ocalali: dwóch śpi w pokojach na parterze, jeden na piętrze; trzech chodzi po korytarzach
+            marker(14, 1, 48, "west", "npc-spiacy");
+            marker(31, 1, 60, "east", "npc-spiacy");
+            marker(24, 6, 48, "west", "npc-spiacy");
+            marker(25, 1, 54, "east", "npc-ocalaly");
+            marker(35, 1, 54, "west", "npc-ocalaly");
+            marker(30, 6, 54, "east", "npc-ocalaly");
         }
 
         /** Sznury z praniem przy noclegowni: płotek na słupkach z kolorowymi dywanami. */
@@ -1666,6 +1673,9 @@ public final class OasisStructure implements StructureDefinition {
             set(23, 1, 91, lantern());
             set(11, 1, 77, lantern());
             set(11, 1, 81, lantern());
+            // osadnicy przy grządkach (na ścieżce środkiem ogrodu)
+            marker(21, 1, 72, "east", "npc-osadnik");
+            marker(21, 1, 85, "west", "npc-osadnik");
         }
 
         /** Szklarnia z drewnianą ramą i szklanym dachem. */
@@ -1728,6 +1738,8 @@ public final class OasisStructure implements StructureDefinition {
             set(38, 3, z2, "stripped_spruce_log[axis=x]");
             set(39, 3, z2, "stripped_spruce_log[axis=x]");
             sign(37, 3, z2 + 1, "south", "SZKLARNIA", "ZAMYKAJ", "DRZWI", "– CIEPŁO UCIEKA");
+            marker(38, 1, 72, "west", "npc-osadnik");
+            marker(39, 1, 77, "east", "npc-osadnik");
         }
 
         /** Zagrody: płoty, siano, koryta z wodą i wiata. */
@@ -2272,6 +2284,7 @@ public final class OasisStructure implements StructureDefinition {
             set(111, 5, 76, hanging());
             set(115, 5, 76, hanging());
             post(118, 1, 72, 4, "KUCHNIA", "POLOWA", "GROCHÓWKA", "PO 18:00");
+            marker(112, 1, 75, "south", "npc-ocalaly");
         }
 
         /** Plac z dużym ogniskiem, ławy z pni, huśtawki, zjeżdżalnia i piaskownica. */
@@ -2349,6 +2362,7 @@ public final class OasisStructure implements StructureDefinition {
             tent(134, 77, "light_gray");
             set(122, 1, 78, campfire("north").replace("lit=true", "lit=true"));
             post(121, 1, 84, 4, "NAMIOTY", "DLA GOŚCI", "PIERWSZA NOC", "ZA DARMO");
+            marker(127, 1, 79, "south", "npc-ocalaly");
         }
 
         /** Mały namiot (3 × 4 wzdłuż z) ze śpiworem w środku, wejście od północy. */

@@ -188,7 +188,13 @@ public final class AxonStructurePlugin extends JavaPlugin {
                         k.getDouble("zasieg", 20),
                         k.getDouble("celnosc", 0),
                         k.getString("loot", ""),
-                        k.isList("cele") ? k.getStringList("cele") : java.util.List.of("players")));
+                        k.isList("cele") ? k.getStringList("cele") : java.util.List.of("players"),
+                        // handlarze stoją za ladą; reszta domyślnie chodzi po okolicy
+                        k.getBoolean("chodzi", !id.equals(GuardService.TRADER_KIT) && !id.equals(GuardService.FENCE_KIT)
+                                && !k.getBoolean("spi", false)),
+                        Math.max(1, Math.min(32, k.getInt("promien-chodzenia", 8))),
+                        k.getBoolean("uprawia", false),
+                        k.getBoolean("spi", false)));
             }
         }
         guards.configure(new GuardService.Settings(
