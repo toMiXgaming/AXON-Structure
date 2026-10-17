@@ -156,9 +156,14 @@ public final class Blueprint {
         return get(x, y, z).equals(AIR);
     }
 
-    /** Miejsce na skrzynię. Sam blok zostaje pusty – stawia go odświeżanie skrzyń. */
+    /**
+     * Miejsce na skrzynię. Sam blok zostaje pusty – stawia go odświeżanie skrzyń. Wyjątek: punkty oazy
+     * ({@code punkt-*}, np. lada wymiany albo tarcza) to znaczniki na prawdziwych blokach, więc blok zostaje.
+     */
     public void crate(int x, int y, int z, String facing, String pool) {
-        set(x, y, z, AIR);
+        if (!pool.toLowerCase(java.util.Locale.ROOT).startsWith("punkt-")) {
+            set(x, y, z, AIR);
+        }
         spawnPoints.removeIf(p -> p.pos().equals(new Pos(x, y, z)));
         spawnPoints.add(new SpawnPoint(new Pos(x, y, z), SpawnKind.CRATE, facing, pool));
     }

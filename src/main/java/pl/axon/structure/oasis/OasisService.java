@@ -469,6 +469,20 @@ public final class OasisService implements Listener {
         lines.add("§eStanowisk wymiany: §f" + count("punkt-handel") + "§e, sklep: §f" + count("punkt-sklep")
                 + " §e(" + shop.size() + " towarów), depozyt: §f" + count("punkt-depozyt") + "§e, automaty: §f"
                 + count("punkt-automat") + "§e, radio: §f" + count("punkt-radio") + "§e, tarcze: §f" + count("punkt-tarcza"));
+        // lady i tarcze to prawdziwe bloki: sprawdzamy, czy stoją (wczytuje chunki, to komenda admina)
+        int total = 0;
+        int standing = 0;
+        for (Point p : points()) {
+            if (COUNTERS.contains(p.pool()) || p.pool().equals("punkt-tarcza")) {
+                total++;
+                if (!p.world().getBlockAt(p.x(), p.y(), p.z()).getType().isAir()) {
+                    standing++;
+                }
+            }
+        }
+        lines.add("§eLady i tarcze na miejscu: §f" + standing + "/" + total);
+        plugin.getLogger().info("Oaza: lady i tarcze na miejscu " + standing + "/" + total + ", stanowisk wymiany "
+                + count("punkt-handel"));
         return lines;
     }
 }
