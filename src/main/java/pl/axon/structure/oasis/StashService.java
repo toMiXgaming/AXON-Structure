@@ -61,6 +61,7 @@ final class StashService {
                 if (m.getInventory().getViewers().size() <= 1) {
                     save(id, m);
                     open.remove(id);
+                    oasis.flush();
                 }
             });
             open.put(id, menu);

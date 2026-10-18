@@ -21,7 +21,7 @@ Plugin na serwer **Paper 1.21.4** (Java 21) do stawiania struktur w stylu monume
 | `/struktury najblizsza` | pokazuje najbliższą postawioną strukturę |
 | `/struktury usun [id]` | zapomina strukturę: zdejmuje ochronę i skrzynie, bloki zostają |
 | `/struktury klasy` | klasy skrzyń i pule z szansami |
-| `/struktury zrzut [info]` | zrzuca skrzynię z zaopatrzeniem od razu (`info`: o której następny) |
+| `/struktury zrzut [teraz]` | o której następny zrzut (`teraz`: zrzuca skrzynię z zaopatrzeniem od razu) |
 | `/struktury straznicy [postaw]` | ilu strażników NPC stoi (`postaw`: stawia ich od razu we wczytanych strukturach) |
 | `/struktury zycie` | żyły rudy w kopalni (ile czeka na odrośnięcie), zwierzęta, odgłosy i czy loot jest pusty |
 | `/struktury przeladuj` | wczytuje config i pliki struktur od nowa |

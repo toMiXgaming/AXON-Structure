@@ -60,6 +60,9 @@ auto-generowanie:
   maks-roznica-wysokosci: 6
   # Maks. udział wody/lawy/lodu pod strukturą w %.
   maks-woda-procent: 3
+  # Pomija teren, na którym gracze spędzili już łącznie więcej ticków (20 = 1 s), żeby nie postawić struktury
+  # na czyjejś bazie, gdy nowy chunk pojawi się obok starego. 0 = bez sprawdzania.
+  maks-czas-graczy-w-chunku: 1200
   # Które struktury i jak często (wagi). Puste {} = wszystkie wczytane po równo.
   # Przykład:
   #   struktury:
@@ -70,7 +73,7 @@ auto-generowanie:
 zrzuty:
   # Kilka razy dziennie, o losowej porze w podanych godzinach, nad jedną z postawionych struktur spada
   # na spadochronie skrzynia z rzadkim lootem. Miejsca zrzutów są w plikach struktur (lądowisko jednostki,
-  # dach szpitala). Komenda: /struktury zrzut (od razu), /struktury zrzut info (o której następny).
+  # dach szpitala). Komenda: /struktury zrzut teraz (od razu), /struktury zrzut (o której następny).
   wlaczone: true
   # Ile zrzutów dziennie. Okno godzin dzielone jest na tyle równych części, w każdej jeden zrzut o losowej porze
   # (przy 2 i 12-22: raz między 12 a 17, raz między 17 a 22).

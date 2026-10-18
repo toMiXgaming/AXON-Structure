@@ -97,29 +97,25 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (ambient != null) {
-            ambient.stop();
+        // każda usługa osobno: błąd jednej nie może zablokować zapisu reszty (depozyty, wymiany, dane.yml)
+        safely("odgłosy", ambient == null ? null : ambient::stop);
+        safely("zwierzęta", animals == null ? null : animals::stop);
+        safely("kopalnia", veins == null ? null : veins::stop);
+        safely("oaza", oasis == null ? null : oasis::stop);
+        safely("strażnicy", guards == null ? null : guards::stop);
+        safely("zrzuty", airdrops == null ? null : airdrops::stop);
+        safely("skrzynie", crates == null ? null : crates::stop);
+        safely("dane.yml", store == null ? null : store::save);
+    }
+
+    private void safely(String what, Runnable action) {
+        if (action == null) {
+            return;
         }
-        if (animals != null) {
-            animals.stop();
-        }
-        if (veins != null) {
-            veins.stop();
-        }
-        if (oasis != null) {
-            oasis.stop();
-        }
-        if (guards != null) {
-            guards.stop();
-        }
-        if (airdrops != null) {
-            airdrops.stop();
-        }
-        if (crates != null) {
-            crates.stop();
-        }
-        if (store != null) {
-            store.save();
+        try {
+            action.run();
+        } catch (RuntimeException | LinkageError e) {
+            getLogger().log(java.util.logging.Level.SEVERE, "Błąd przy wyłączaniu (" + what + ")", e);
         }
     }
 
@@ -128,23 +124,47 @@ public final class AxonStructurePlugin extends JavaPlugin {
      * wersji pluginu (np. nowe zestawy strażników albo sekcje oazy). Istniejących wartości nie zmienia.
      */
     private void addMissingDefaults(FileConfiguration config) {
-        if (config.getDefaults() == null) {
+        org.bukkit.configuration.Configuration defaults = config.getDefaults();
+        if (defaults == null) {
             return;
         }
-        java.util.Set<String> before = config.getKeys(true);
-        config.options().copyDefaults(true);
-        java.util.Set<String> added = new java.util.TreeSet<>(config.getKeys(true));
-        added.removeAll(before);
+        // Tylko całe brakujące sekcje główne i całe nowe zestawy strażników. Nie scalamy głębiej: admin mógł
+        // celowo usunąć wpis z mapy (np. rudę z kopalnia.rudy albo odgłos), a copyDefaults dopisałby go z powrotem.
+        java.util.List<String> added = new java.util.ArrayList<>();
+        for (String key : defaults.getKeys(false)) {
+            if (!config.isSet(key)) {
+                config.set(key, defaults.get(key));
+                added.add(key);
+            }
+        }
+        ConfigurationSection defaultKits = defaults.getConfigurationSection("straznicy.zestawy");
+        ConfigurationSection kits = config.getConfigurationSection("straznicy.zestawy");
+        if (defaultKits != null && kits != null) {
+            java.util.List<String> known = config.getStringList("straznicy.znane-zestawy");
+            boolean knownChanged = false;
+            for (String kit : defaultKits.getKeys(false)) {
+                if (!known.contains(kit)) {
+                    // zestaw nowy w tej wersji pluginu: dopisujemy raz; usunięty później przez admina nie wróci
+                    if (!kits.isSet(kit)) {
+                        kits.set(kit, defaultKits.get(kit));
+                        added.add("straznicy.zestawy." + kit);
+                    }
+                    known.add(kit);
+                    knownChanged = true;
+                }
+            }
+            if (knownChanged) {
+                config.set("straznicy.znane-zestawy", known);
+            }
+            if (knownChanged && added.isEmpty()) {
+                saveConfig();
+            }
+        }
         if (added.isEmpty()) {
             return;
         }
         saveConfig();
-        java.util.Set<String> top = new java.util.TreeSet<>();
-        for (String key : added) {
-            String[] parts = key.split("\\.");
-            top.add(parts.length > 2 ? parts[0] + "." + parts[1] + "." + parts[2] : key);
-        }
-        getLogger().info("Uzupełniono config.yml o nowe ustawienia (" + added.size() + "): " + String.join(", ", top));
+        getLogger().info("Uzupełniono config.yml o nowe ustawienia (" + added.size() + "): " + String.join(", ", added));
     }
 
     /** Wczytuje config.yml i pliki struktur od nowa. */
@@ -290,7 +310,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 config.getInt("auto-generowanie.min-odleglosc-od-spawnu", 300),
                 config.getInt("auto-generowanie.maks-roznica-wysokosci", 6),
                 config.getDouble("auto-generowanie.maks-woda-procent", 3),
-                weights));
+                weights,
+                Math.max(0, config.getLong("auto-generowanie.maks-czas-graczy-w-chunku", 1200))));
     }
 
     private void configureVeins(FileConfiguration config) {

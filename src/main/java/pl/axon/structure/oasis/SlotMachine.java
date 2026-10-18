@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ final class SlotMachine {
     private final Random random = new Random();
     private final List<Symbol> symbols = new ArrayList<>();
     private final Set<UUID> spinning = new HashSet<>();
+    /** Wygrane z gier, których bębny jeszcze się kręcą (wypłacane przy wyłączaniu pluginu, żeby stawka nie przepadła). */
+    private final Map<UUID, Double> pending = new HashMap<>();
     private double cost = 50;
     private double pairMultiplier = 1;
     private int totalWeight;
@@ -85,6 +88,7 @@ final class SlotMachine {
         }
         Symbol[] result = {roll(), roll(), roll()};
         double win = payout(result);
+        pending.put(player.getUniqueId(), win);
         Menu menu = new Menu(3, "&5Automat &8– stawka " + oasis.vault().format(cost));
         Inventory inv = menu.getInventory();
         for (int i = 0; i < 27; i++) {
@@ -105,6 +109,7 @@ final class SlotMachine {
             }
             task.cancel();
             spinning.remove(player.getUniqueId());
+            pending.remove(player.getUniqueId());
             if (win > 0) {
                 oasis.vault().deposit(player, win);
                 player.sendMessage("§a§lWygrana! §f" + oasis.vault().format(win));
@@ -117,6 +122,21 @@ final class SlotMachine {
                 inv.setItem(22, Menu.icon(Material.BARRIER, "&7Nic tym razem", "&7Kliknij automat jeszcze raz."));
             }
         }, 2L, 2L);
+    }
+
+    /** Przy wyłączaniu: gry w trakcie kończą się od razu wylosowanym wynikiem. */
+    void settleAll() {
+        for (Map.Entry<UUID, Double> e : pending.entrySet()) {
+            if (e.getValue() > 0) {
+                oasis.vault().deposit(Bukkit.getOfflinePlayer(e.getKey()), e.getValue());
+                Player player = Bukkit.getPlayer(e.getKey());
+                if (player != null) {
+                    player.sendMessage("§a§lWygrana! §f" + oasis.vault().format(e.getValue()));
+                }
+            }
+        }
+        pending.clear();
+        spinning.clear();
     }
 
     private double payout(Symbol[] r) {

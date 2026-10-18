@@ -161,7 +161,7 @@ public final class GuardService implements Listener {
             double nearest = Double.MAX_VALUE;
             for (Player player : world.getPlayers()) {
                 Location l = player.getLocation();
-                nearest = Math.min(nearest, instance.distanceSquared(l.getX(), l.getZ()));
+                nearest = Math.min(nearest, instance.edgeDistanceSquared(l.getX(), l.getZ()));
             }
             if (nearest <= activate) {
                 spawnGuards(instance, now);

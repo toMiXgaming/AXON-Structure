@@ -392,10 +392,28 @@ public final class AirdropService {
         removeDisplays();
         World world = target.world();
         Block block = world.getBlockAt(target.x(), target.y(), target.z());
-        if (!block.getType().isAir() && block.getType() != Material.CHEST && block.getType() != Material.BARREL) {
+        if (!block.getType().isAir()) {
+            // zajęte (np. gracz coś postawił albo stoi tam cudza skrzynia, której nie wolno wyczyścić):
+            // szukamy wolnego miejsca w górę, najwyżej kilka bloków
+            Material was = block.getType();
+            Block free = null;
+            for (int up = 1; up <= 8 && block.getY() + up < world.getMaxHeight(); up++) {
+                Block above = block.getRelative(0, up, 0);
+                if (above.getType().isAir()) {
+                    free = above;
+                    break;
+                }
+            }
+            if (free == null) {
+                plugin.getLogger().warning("Zrzut: miejsce " + target.x() + " " + target.y() + " " + target.z()
+                        + " jest zajęte (" + was + ") i nad nim nie ma wolnego miejsca; zrzut przepada.");
+                finish(false);
+                broadcast(format(settings.expired(), target));
+                return;
+            }
             plugin.getLogger().warning("Zrzut: miejsce " + target.x() + " " + target.y() + " " + target.z()
-                    + " jest zajęte (" + block.getType() + "), skrzynia ląduje piętro wyżej.");
-            block = block.getRelative(0, 1, 0);
+                    + " jest zajęte (" + was + "), skrzynia ląduje na wysokości " + free.getY() + ".");
+            block = free;
         }
         block.setBlockData(Bukkit.createBlockData("minecraft:chest[facing=north,type=single]"), false);
         CrateClass crate = pick();

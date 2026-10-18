@@ -299,8 +299,16 @@ final class TradeService {
                 p.sendMessage("§aWymiana zakończona.");
                 p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.4f);
             }
-            oasis.plugin().getLogger().info("Wymiana w oazie: " + left.getName() + " (" + fromLeft.size() + " stosów) ⇄ "
-                    + right.getName() + " (" + fromRight.size() + " stosów)");
+            oasis.plugin().getLogger().info("Wymiana w oazie: " + left.getName() + " " + describe(fromLeft) + " ⇄ "
+                    + right.getName() + " " + describe(fromRight));
+        }
+
+        String describe(List<ItemStack> items) {
+            List<String> parts = new ArrayList<>();
+            for (ItemStack item : items) {
+                parts.add(item.getAmount() + "x " + item.getType().name().toLowerCase(java.util.Locale.ROOT));
+            }
+            return parts.isEmpty() ? "(nic)" : parts.toString();
         }
 
         void cancel(String message) {
@@ -325,13 +333,20 @@ final class TradeService {
                 countdown = null;
             }
             inv.clear();
-            Bukkit.getScheduler().runTask(oasis.plugin(), () -> {
-                for (Player p : List.of(left, right)) {
-                    if (p.getOpenInventory().getTopInventory().equals(inv)) {
-                        p.closeInventory();
-                    }
+            if (!oasis.plugin().isEnabled()) {
+                // wyłączanie pluginu: zadań już nie da się zaplanować, zamykamy od razu
+                closeFor();
+                return;
+            }
+            Bukkit.getScheduler().runTask(oasis.plugin(), this::closeFor);
+        }
+
+        private void closeFor() {
+            for (Player p : List.of(left, right)) {
+                if (p.getOpenInventory().getTopInventory().equals(inv)) {
+                    p.closeInventory();
                 }
-            });
+            }
         }
     }
 }

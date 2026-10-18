@@ -73,4 +73,17 @@ public final class StructureInstance {
         double dz = centerZ - z;
         return dx * dx + dz * dz;
     }
+
+    /**
+     * Kwadrat odległości od krawędzi obrysu (0 w środku). Dla dużych struktur to lepsza miara „gracz jest blisko”
+     * niż odległość od środka; bez znanego obrysu – od środka.
+     */
+    public double edgeDistanceSquared(double x, double z) {
+        if (footprint == null) {
+            return distanceSquared(x, z);
+        }
+        double dx = Math.max(0, Math.max(footprint.minX() - x, x - (footprint.maxX() + 1)));
+        double dz = Math.max(0, Math.max(footprint.minZ() - z, z - (footprint.maxZ() + 1)));
+        return dx * dx + dz * dz;
+    }
 }

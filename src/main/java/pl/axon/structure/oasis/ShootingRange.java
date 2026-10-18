@@ -98,6 +98,12 @@ final class ShootingRange {
         }
     }
 
+    /** Usuwa stare znaczniki trafień (służą tylko do odsiewania kilku zdarzeń z jednego strzału). */
+    void prune() {
+        long now = System.currentTimeMillis();
+        lastHit.values().removeIf(t -> now - t > SAME_TARGET_MS);
+    }
+
     private static Method getter(Class<?> type, Class<?> returns) {
         for (Method m : type.getMethods()) {
             if (m.getParameterCount() == 0 && returns.isAssignableFrom(m.getReturnType())) {
