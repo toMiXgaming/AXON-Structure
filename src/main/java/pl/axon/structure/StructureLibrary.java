@@ -46,9 +46,10 @@ public final class StructureLibrary {
                 structures.put(bp.id().toLowerCase(Locale.ROOT), bp);
                 logger.info("Wczytano strukturę '" + bp.id() + "' z " + file.getName() + " ("
                         + bp.width() + "×" + bp.depth() + "×" + bp.height() + ", "
-                        + bp.spawnPoints().size() + " miejsc na skrzynie)");
-            } catch (IOException e) {
-                logger.severe("Błąd w pliku " + file.getName() + ": " + e.getMessage());
+                        + bp.spawnPoints().size() + " punktów)");
+            } catch (IOException | RuntimeException e) {
+                // zły plik nie może zablokować wczytania reszty struktur
+                logger.severe("Błąd w pliku " + file.getName() + ": " + e);
             }
         }
     }

@@ -41,10 +41,12 @@ public final class AutoGenerator implements Listener {
      * @param maxHeightDiff    maks. różnica wysokości terenu pod strukturą (10. i 90. percentyl)
      * @param maxLiquidPercent maks. udział wody/lawy pod strukturą
      * @param weights          struktura → waga (pusta mapa = wszystkie po równo)
+     * @param maxInhabitedTicks auto-generowanie pomija teren, na którym gracze spędzili już tyle ticków
+     *                          (Chunk#getInhabitedTime), żeby nie zasypać czyjejś bazy; 0 = bez sprawdzania
      */
     public record Settings(boolean enabled, Set<String> worlds, double chancePercent, int minDistance,
                            int minSpawnDistance, int maxHeightDiff, double maxLiquidPercent,
-                           Map<String, Integer> weights) {
+                           Map<String, Integer> weights, long maxInhabitedTicks) {
     }
 
     /** Wynik oceny terenu. */
@@ -139,6 +141,16 @@ public final class AutoGenerator implements Listener {
                         plugin.getLogger().warning("Nie udało się załadować terenu pod strukturę: " + error);
                         done.accept(false);
                         return;
+                    }
+                    if (feedback == null && settings.maxInhabitedTicks() > 0) {
+                        // auto-generowanie: obszar, na którym gracze już byli, może mieć ich budowle
+                        for (CompletableFuture<Chunk> future : futures) {
+                            Chunk chunk = future.join();
+                            if (chunk.getInhabitedTime() > settings.maxInhabitedTicks()) {
+                                done.accept(false);
+                                return;
+                            }
+                        }
                     }
                     Site site = evaluate(world, bp, draft);
                     if (checkTerrain && !site.ok()) {

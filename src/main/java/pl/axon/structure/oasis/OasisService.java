@@ -13,12 +13,17 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.TNTPrimed;
+import org.bukkit.entity.Tameable;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
+import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -148,6 +153,7 @@ public final class OasisService implements Listener {
         range.hookQualityArmory();
         task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             range.rollWeek();
+            range.prune();
             save(false);
         }, 20L * 60, 20L * 60);
     }
@@ -157,8 +163,20 @@ public final class OasisService implements Listener {
             task.cancel();
             task = null;
         }
-        trade.cancelAll();
+        try {
+            trade.cancelAll();
+        } catch (RuntimeException e) {
+            plugin.getLogger().warning("Nie udało się przerwać wymian: " + e);
+        }
+        slots.settleAll();
         stash.saveAll();
+        // otwarte okna oazy (sklep, depozyt, automat) zamykamy, żeby nie zostały martwe po przeładowaniu
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof Menu) {
+                player.closeInventory();
+            }
+        }
+        range.prune();
         save(true);
     }
 
@@ -176,6 +194,11 @@ public final class OasisService implements Listener {
 
     void markDirty() {
         dirty = true;
+    }
+
+    /** Zapisuje oaza.yml od razu (np. po zamknięciu depozytu, żeby awaria serwera nie cofnęła schowka). */
+    void flush() {
+        save(false);
     }
 
     private void save(boolean force) {
@@ -305,6 +328,8 @@ public final class OasisService implements Listener {
             source = cloud.getSource();
         } else if (damager instanceof TNTPrimed tnt && tnt.getSource() instanceof Player p) {
             return p;
+        } else if (damager instanceof Tameable pet && pet.getOwner() instanceof Player p) {
+            return p; // oswojony wilk gracza
         }
         return source instanceof Player p ? p : null;
     }
@@ -326,8 +351,7 @@ public final class OasisService implements Listener {
             }
             return;
         }
-        if (victim instanceof Player && !victim.equals(attacker)
-                && (safeAt(victim.getLocation()) != null || safeAt(attacker.getLocation()) != null)) {
+        if (protectedPair(attacker, victim)) {
             event.setCancelled(true);
             long now = System.currentTimeMillis();
             Long last = lastWarn.get(attacker.getUniqueId());
@@ -335,6 +359,57 @@ public final class OasisService implements Listener {
                 lastWarn.put(attacker.getUniqueId(), now);
                 actionBar(attacker, pvpMessage);
             }
+        }
+    }
+
+    /** Czy gracz {@code attacker} nie może tu działać na gracza {@code victim} (któryś z nich stoi w oazie). */
+    private boolean protectedPair(Player attacker, Entity victim) {
+        return victim instanceof Player && !victim.equals(attacker)
+                && guards.kitOf(attacker) == null && guards.kitOf(victim) == null // strażnicy NPC mają własne zasady
+                && (safeAt(victim.getLocation()) != null || safeAt(attacker.getLocation()) != null);
+    }
+
+    /** Mikstury rzucane: w oazie nie działają na innych graczy (leczenie też, żeby nie było wyjątków). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onSplash(PotionSplashEvent event) {
+        if (!enabled || !(event.getEntity().getShooter() instanceof Player attacker)) {
+            return;
+        }
+        for (LivingEntity victim : event.getAffectedEntities()) {
+            if (protectedPair(attacker, victim)) {
+                event.setIntensity(victim, 0);
+            }
+        }
+    }
+
+    /** Chmury z mikstur trwałych. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onCloud(AreaEffectCloudApplyEvent event) {
+        if (!enabled || !(event.getEntity().getSource() instanceof Player attacker)) {
+            return;
+        }
+        event.getAffectedEntities().removeIf(victim -> protectedPair(attacker, victim));
+    }
+
+    /**
+     * Pociski (śnieżki, jajka, wiatrowe ładunki, strzały) nie trafiają innych graczy w oazie, więc nie dają też
+     * odrzutu, którym dało się zepchnąć kogoś z muru albo za bramę.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onProjectileHitPlayer(ProjectileHitEvent event) {
+        if (enabled && event.getHitEntity() instanceof Player victim
+                && event.getEntity().getShooter() instanceof Player attacker && protectedPair(attacker, victim)) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** Wędka: w oazie nie da się przyciągać innych graczy. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onFish(PlayerFishEvent event) {
+        if (enabled && event.getState() == PlayerFishEvent.State.CAUGHT_ENTITY
+                && protectedPair(event.getPlayer(), event.getCaught())) {
+            event.setCancelled(true);
+            event.getHook().remove();
         }
     }
 

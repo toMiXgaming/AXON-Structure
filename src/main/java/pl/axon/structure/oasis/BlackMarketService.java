@@ -151,7 +151,7 @@ final class BlackMarketService {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 0.8f);
             return;
         }
-        Items.give(player, item);
+        Items.give(player, Items.stacks(item, offer.amount()));
         if (offer.stock() > 0) {
             oasis.data().set("czarny-rynek.sprzedane." + index, sold(index) + 1);
         }

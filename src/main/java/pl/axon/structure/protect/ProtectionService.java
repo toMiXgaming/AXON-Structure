@@ -153,6 +153,19 @@ public final class ProtectionService {
      * Uzupełnia obrys starszych wpisów z dane.yml i odtwarza regiony (np. po zmianie marginesu albo flag).
      */
     public void syncAll() {
+        if (worldGuard != null) {
+            worldGuard.beginBatch();
+        }
+        try {
+            syncInstances();
+        } finally {
+            if (worldGuard != null) {
+                worldGuard.endBatch();
+            }
+        }
+    }
+
+    private void syncInstances() {
         boolean changed = false;
         for (StructureInstance instance : store.all()) {
             if (instance.footprint() == null) {

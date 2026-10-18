@@ -126,7 +126,7 @@ public final class CrateService {
         double limit = (double) radius * radius;
         for (Player player : world.getPlayers()) {
             Location l = player.getLocation();
-            if (instance.distanceSquared(l.getX(), l.getZ()) < limit) {
+            if (instance.edgeDistanceSquared(l.getX(), l.getZ()) < limit) {
                 return true;
             }
         }
@@ -194,6 +194,17 @@ public final class CrateService {
      * Miejsca, które nie są skrzyniami: zrzuty, strażnicy ({@code npc-}) i wszystkie znaczniki {@code punkt-}
      * (stanowiska oazy, żyły rudy {@code punkt-ruda}, zwierzęta {@code punkt-zwierze-*}).
      */
+    /** Ile miejsc w strukturze to skrzynie (bez znaczników, strażników i miejsca zrzutu). */
+    public int crateSlots(pl.axon.structure.core.Blueprint bp) {
+        int n = 0;
+        for (pl.axon.structure.core.Blueprint.SpawnPoint point : bp.spawnPoints()) {
+            if (!isMarker(point.pool())) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     private boolean isMarker(String pool) {
         String p = pool.toLowerCase(Locale.ROOT);
         return p.equalsIgnoreCase(dropPool) || p.startsWith("npc-") || p.startsWith("punkt-");

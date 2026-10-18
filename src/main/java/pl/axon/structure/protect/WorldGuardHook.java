@@ -24,6 +24,8 @@ final class WorldGuardHook {
     private static final int PRIORITY = 10;
 
     private final Logger logger;
+    private final java.util.Set<RegionManager> dirty = new java.util.HashSet<>();
+    private boolean batch;
 
     WorldGuardHook(Logger logger) {
         this.logger = logger;
@@ -90,7 +92,24 @@ final class WorldGuardHook {
             setFlag(region, flag, entry.getValue());
         }
         manager.addRegion(region);
-        save(manager);
+        if (batch) {
+            dirty.add(manager);
+        } else {
+            save(manager);
+        }
+    }
+
+    /** Przy synchronizacji wszystkich struktur: regiony zapisujemy raz na końcu, nie po każdej. */
+    void beginBatch() {
+        batch = true;
+    }
+
+    void endBatch() {
+        batch = false;
+        for (RegionManager manager : dirty) {
+            save(manager);
+        }
+        dirty.clear();
     }
 
     private <T> void setFlag(ProtectedRegion region, Flag<T> flag, String input) {

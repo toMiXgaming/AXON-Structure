@@ -49,9 +49,17 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "straznicy" -> guards(sender, args);
             case "oaza" -> plugin.oasis().status().forEach(sender::sendMessage);
             case "zycie" -> life(sender);
-            case "zrzut" -> sender.sendMessage(plugin.airdrops().isActive() || args.length < 2 || !args[1].equalsIgnoreCase("info")
-                    ? plugin.airdrops().trigger(sender)
-                    : "§eNastępny zrzut: §f" + plugin.airdrops().nextInfo() + "§e.");
+            case "zrzut" -> {
+                // samo „zrzut” tylko informuje; zrzut na żądanie wymaga „teraz”, żeby nie odpalić go przypadkiem
+                if (args.length >= 2 && args[1].equalsIgnoreCase("teraz")) {
+                    sender.sendMessage(plugin.airdrops().trigger(sender));
+                } else if (plugin.airdrops().isActive()) {
+                    sender.sendMessage("§eZrzut już trwa. §7Nowy na żądanie: §e/" + label + " zrzut teraz");
+                } else {
+                    sender.sendMessage("§eNastępny zrzut: §f" + plugin.airdrops().nextInfo()
+                            + "§e. §7Zrzut od razu: §e/" + label + " zrzut teraz");
+                }
+            }
             case "przeladuj" -> {
                 plugin.reload();
                 sender.sendMessage("§aPrzeładowano: " + plugin.library().all().size() + " struktur, "
@@ -73,7 +81,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " najblizsza §7– gdzie jest najbliższa postawiona struktura");
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
-        sender.sendMessage("§e/" + label + " zrzut [info] §7– zrzuca skrzynię z zaopatrzeniem teraz (info: o której następny)");
+        sender.sendMessage("§e/" + label + " zrzut [teraz] §7– o której następny zrzut (teraz: zrzuca skrzynię od razu)");
         sender.sendMessage("§e/" + label + " straznicy [postaw] §7– strażnicy NPC (postaw: od razu we wczytanych strukturach)");
         sender.sendMessage("§e/" + label + " oaza §7– stan oazy: stanowiska, sklep, czy działa Vault");
         sender.sendMessage("§e/" + label + " zycie §7– żyły rudy w kopalni, zwierzęta, odgłosy i czy loot jest pusty");
@@ -91,7 +99,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§6Struktury:");
         for (Blueprint bp : plugin.library().all()) {
             sender.sendMessage("§e" + bp.id() + " §f– " + bp.name() + " §7(" + bp.width() + "×" + bp.depth() + "×"
-                    + bp.height() + ", " + bp.spawnPoints().size() + " miejsc na skrzynie)");
+                    + bp.height() + ", " + plugin.crates().crateSlots(bp) + " miejsc na skrzynie)");
         }
     }
 
@@ -210,7 +218,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§cStruktura §e" + instance.structureId() + "§c nie jest wczytana.");
         } else {
             sender.sendMessage("§aWylosowano skrzynie w §e" + instance.structureId() + "§a: " + placed + " z "
-                    + plugin.library().get(instance.structureId()).spawnPoints().size() + " miejsc.");
+                    + plugin.crates().crateSlots(plugin.library().get(instance.structureId())) + " miejsc.");
         }
     }
 
@@ -239,6 +247,12 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         } else {
             instance = nearestTo(sender);
             if (instance == null) {
+                return;
+            }
+            Location l = ((Player) sender).getLocation();
+            if (instance.edgeDistanceSquared(l.getX(), l.getZ()) > FORGET_DISTANCE * FORGET_DISTANCE) {
+                sender.sendMessage("§cNajbliższa struktura (§e" + instance.structureId() + "§c, id " + instance.id()
+                        + ") jest dalej niż " + FORGET_DISTANCE + " bloków. Podejdź bliżej albo podaj id: §e/struktury usun <id>");
                 return;
             }
         }
@@ -289,6 +303,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
                 + "; zwierzęta " + animals.activeCount() + "/" + animals.spotCount()
                 + "; loot " + (plugin.crates().emptyLoot() ? "pusty" : "losowany"));
     }
+
+    private static final int FORGET_DISTANCE = 64;
 
     private StructureInstance nearestTo(CommandSender sender) {
         if (!(sender instanceof Player player)) {
@@ -345,6 +361,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             for (Blueprint bp : plugin.library().all()) {
                 options.add(bp.id());
             }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("zrzut")) {
+            options.add("teraz");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("usun")) {
             for (StructureInstance instance : plugin.store().all()) {
                 options.add(instance.id());

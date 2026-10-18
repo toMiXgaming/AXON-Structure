@@ -6,6 +6,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -40,19 +42,29 @@ final class Items {
     }
 
     /**
-     * Czy przedmiot z ekwipunku to ten sam towar: ten sam typ i ta sama nazwa (bronie QualityArmory różnią się nazwą,
-     * a ich amunicja i zużycie siedzą w danych, więc nie porównujemy całych danych).
+     * Czy przedmiot z ekwipunku to ten sam towar. Zwykłe przedmioty muszą być identyczne (bez zaklęć, uszkodzeń,
+     * nazw i zawartości), żeby nie dało się sprzedać zaklętego miecza albo pełnej skrzynki jako zwykłego towaru.
+     * Bronie QualityArmory różnią się nazwą, a ich amunicja i zużycie siedzą w danych, więc dla nich liczy się typ,
+     * nazwa, model i zaklęcia.
      */
     @SuppressWarnings("deprecation")
     static boolean same(ItemStack have, ItemStack wanted) {
         if (have == null || wanted == null || have.getType() != wanted.getType()) {
             return false;
         }
-        ItemMeta a = have.getItemMeta();
         ItemMeta b = wanted.getItemMeta();
-        String nameA = a != null && a.hasDisplayName() ? a.getDisplayName() : "";
-        String nameB = b != null && b.hasDisplayName() ? b.getDisplayName() : "";
-        return nameA.equals(nameB);
+        if (b == null || !b.hasDisplayName()) {
+            return have.isSimilar(wanted);
+        }
+        ItemMeta a = have.getItemMeta();
+        if (a == null || !a.hasDisplayName() || !a.getDisplayName().equals(b.getDisplayName())) {
+            return false;
+        }
+        if (a.hasCustomModelData() != b.hasCustomModelData()
+                || (a.hasCustomModelData() && a.getCustomModelData() != b.getCustomModelData())) {
+            return false;
+        }
+        return a.getEnchants().equals(b.getEnchants());
     }
 
     static int count(Player player, ItemStack wanted) {
@@ -83,6 +95,18 @@ final class Items {
             }
         }
         inv.setStorageContents(contents);
+    }
+
+    /** Towar w ilości {@code total} rozłożony na pełne stosy (np. 128 strzał to dwa stosy po 64). */
+    static ItemStack[] stacks(ItemStack proto, int total) {
+        int max = Math.max(1, proto.getMaxStackSize());
+        List<ItemStack> out = new ArrayList<>();
+        for (int left = Math.max(1, total); left > 0; left -= max) {
+            ItemStack item = proto.clone();
+            item.setAmount(Math.min(max, left));
+            out.add(item);
+        }
+        return out.toArray(new ItemStack[0]);
     }
 
     /** Daje przedmioty, a to, co się nie zmieści, wyrzuca pod nogi. */

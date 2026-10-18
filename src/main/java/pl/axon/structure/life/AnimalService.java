@@ -138,7 +138,7 @@ public final class AnimalService implements Listener {
             }
             for (Player player : world.getPlayers()) {
                 Location l = player.getLocation();
-                if (instance.distanceSquared(l.getX(), l.getZ()) <= activate) {
+                if (instance.edgeDistanceSquared(l.getX(), l.getZ()) <= activate) {
                     spawnAnimals(instance, world, now);
                     break;
                 }
