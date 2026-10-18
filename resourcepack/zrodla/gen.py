@@ -504,7 +504,8 @@ def build_ak():
     B('rs_notch_l', (22.45, 22.9), (2.55, 3.0), (-0.6, -0.12), 'blued')
     B('rs_notch_r', (22.45, 22.9), (2.55, 3.0), (0.12, 0.6), 'blued')
     # --- receiver
-    B('receiver', (22.1, 32.6), (-1.9, 1.2), 1.1, 'blued')
+    # receiver runs forward to the handguard retainer (front trunnion under the rear sight)
+    B('receiver', (19.65, 32.6), (-1.9, 1.2), 1.1, 'blued')
     B('rear_trunnion', (32.6, 33.4), (-1.0, 1.0), 1.0, 'blued')
     B('dust_cover', (22.9, 32.95), (1.2, 2.0), 1.0, 'blued')
     B('dust_cover_top', (22.9, 32.7), (2.0, 2.35), 0.66, 'blued')
@@ -562,7 +563,7 @@ def build_ak():
     D(stripes('RL', 'b', 0.9, 0.18, els=['hg_swell_*'], mul=0.8, offset=0.1))
     D(stripes('B', 'a', 1.2, 0.25, a=(13.5, 18.8), els=['hg_lower'], mul=0.8))
     # receiver rivets, pins, magwell dimple
-    for (a, b) in ((22.55, -1.35), (22.55, 0.35), (23.35, -1.4), (31.95, -0.6), (31.95, 0.45),
+    for (a, b) in ((20.2, -1.3), (20.2, 0.25), (22.55, -1.35), (22.55, 0.35), (23.35, -1.4), (31.95, -0.6), (31.95, 0.45),
                    (28.9, -1.15), (29.85, -0.5), (30.6, -1.25)):
         D(rivet('RL', a, b, 0.2, els=['receiver']))
     D(oval('RL', 25.1, -0.35, 0.75, 0.32, els=['receiver'], col=(36, 37, 41)))
@@ -643,11 +644,12 @@ def build_m4():
     B('port_cover', (25.0, 28.4), (-0.15, 0.95), (1.05, 1.13), 'black')
     B('deflector', (28.55, 29.85), (0.3, 1.2), (1.05, 1.45), 'black')
     # rear flip-up sight (BUIS) with real aperture
+    # low flip-up rear sight: thin open ring with a big aperture centred on the sight line (v 3.0)
     B('buis_base', (31.0, 32.9), (1.78, 2.15), 0.58, 'black')
-    B('buis_l', (32.15, 32.55), (2.15, 3.42), (-0.55, -0.15), 'black')
-    B('buis_r', (32.15, 32.55), (2.15, 3.42), (0.15, 0.55), 'black')
-    B('buis_top', (32.15, 32.55), (3.15, 3.42), (-0.15, 0.15), 'black')
-    B('buis_bot', (32.15, 32.55), (2.15, 2.85), (-0.15, 0.15), 'black')
+    B('buis_l', (32.25, 32.5), (2.15, 3.5), (-0.58, -0.4), 'black')
+    B('buis_r', (32.25, 32.5), (2.15, 3.5), (0.4, 0.58), 'black')
+    B('buis_top', (32.25, 32.5), (3.36, 3.5), (-0.4, 0.4), 'black')
+    B('buis_bot', (32.25, 32.5), (2.15, 2.64), (-0.4, 0.4), 'black')
     # --- lower receiver
     B('lower', (24.0, 33.9), (-2.4, -0.65), 1.0, 'black')
     B('magwell', (24.0, 27.65), (-3.55, -2.4), 1.05, 'black')
@@ -729,7 +731,8 @@ def build_m4():
     D(stripes('RLK', 'b', 0.35, 0.14, els=['buttpad'], mul=0.55))
 
     g.sight = dict(rear=(32.35, 3.0), front=(12.2, 3.0))
-    g.ads = dict(cam=(53.5, 3.0), front=(12.2, 3.0))
+    # classic ADS like the AK: eye just behind the aperture, 2.5deg cant
+    g.ads = dict(cam=(37.0, 3.0), front=(12.2, 3.0), roll=2.5, sxyz=(1.0, 1.3, 0.72))
     g.grip = (32.2, -4.2)
     return g
 
