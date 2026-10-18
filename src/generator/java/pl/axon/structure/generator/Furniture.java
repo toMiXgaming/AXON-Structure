@@ -261,33 +261,142 @@ final class Furniture {
     }
 
     /**
-     * Ślady po ludziach na podłodze w prostokącie: zaschnięta krew (kropki redstone) i porozrzucane kartki
-     * (biały i szary dywan). Nie blokują przejścia; trafiają tylko na wolną podłogę.
+     * Ślady po ludziach na podłodze w prostokącie, ułożone w sceny, które od razu wiadomo, co znaczą:
+     * {@code blood} to liczba plam krwi (smuga zaschniętej krwi ciągnąca się po podłodze, czasem kończąca się
+     * czaszką), {@code papers} to liczba porzuconych stosów papierów (pulpit z otwartą księgą, wybebeszona
+     * beczka albo teczka, a wokół rozrzucone kartki). Trafiają tylko na wolną podłogę i nie blokują przejść.
      */
     void traces(int x1, int z1, int x2, int z2, int y, int blood, int papers) {
-        for (int k = 0; k < (blood + papers) * 10 && blood + papers > 0; k++) {
+        int bloodScenes = (blood + 1) / 2;
+        int paperScenes = (papers + 1) / 2;
+        for (int k = 0; k < 300 && bloodScenes + paperScenes > 0; k++) {
             int x = x1 + rnd.nextInt(x2 - x1 + 1);
             int z = z1 + rnd.nextInt(z2 - z1 + 1);
             if (!freeFloor(x, y, z)) {
                 continue;
             }
-            if (blood > 0 && (papers == 0 || rnd.nextBoolean())) {
-                set(x, y, z, "redstone_wire[east=none,north=none,power=0,south=none,west=none]");
-                blood--;
-            } else {
-                set(x, y, z, rnd.nextDouble() < 0.75 ? "white_carpet" : "light_gray_carpet");
-                papers--;
+            if (bloodScenes > 0 && (paperScenes == 0 || rnd.nextBoolean())) {
+                if (bloodTrail(x, y, z, x1, z1, x2, z2)) {
+                    bloodScenes--;
+                }
+            } else if (paperPile(x, y, z, x1, z1, x2, z2)) {
+                paperScenes--;
             }
         }
     }
 
+    private boolean inRect(int x, int z, int x1, int z1, int x2, int z2) {
+        return x >= x1 && x <= x2 && z >= z1 && z <= z2;
+    }
+
+    /** Smuga krwi: 4–7 połączonych kratek zaschniętej krwi (jak ciągnięte ciało), na końcu kałuża albo czaszka. */
+    private boolean bloodTrail(int x, int y, int z, int x1, int z1, int x2, int z2) {
+        String[] dirs = {"north", "south", "east", "west"};
+        String dir = dirs[rnd.nextInt(4)];
+        java.util.List<int[]> cells = new java.util.ArrayList<>();
+        cells.add(new int[]{x, z});
+        int cx = x;
+        int cz = z;
+        int len = 4 + rnd.nextInt(4);
+        for (int i = 1; i < len; i++) {
+            String d = rnd.nextDouble() < 0.7 ? dir : dirs[rnd.nextInt(4)];
+            int nx = cx + dx(d);
+            int nz = cz + dz(d);
+            boolean taken = false;
+            for (int[] c : cells) {
+                taken |= c[0] == nx && c[1] == nz;
+            }
+            if (taken || !inRect(nx, nz, x1, z1, x2, z2) || !freeFloor(nx, y, nz)) {
+                continue;
+            }
+            cells.add(new int[]{nx, nz});
+            cx = nx;
+            cz = nz;
+        }
+        if (cells.size() < 3) {
+            return false;
+        }
+        // Kałuża na początku smugi: dodatkowe kratki wokół pierwszej.
+        int[] first = cells.get(0);
+        for (String d : dirs) {
+            int nx = first[0] + dx(d);
+            int nz = first[1] + dz(d);
+            if (rnd.nextBoolean() && inRect(nx, nz, x1, z1, x2, z2) && freeFloor(nx, y, nz)
+                    && cells.stream().noneMatch(c -> c[0] == nx && c[1] == nz)) {
+                cells.add(new int[]{nx, nz});
+            }
+        }
+        for (int[] c : cells) {
+            StringBuilder state = new StringBuilder("redstone_wire[");
+            for (String d : new String[]{"east", "north", "south", "west"}) {
+                int nx = c[0] + dx(d);
+                int nz = c[1] + dz(d);
+                boolean link = cells.stream().anyMatch(o -> o[0] == nx && o[1] == nz);
+                state.append(d).append('=').append(link ? "side" : "none").append(',');
+                if (d.equals("north")) {
+                    state.append("power=0,");
+                }
+            }
+            state.setLength(state.length() - 1);
+            set(c[0], y, c[1], state.append(']').toString());
+        }
+        // Na końcu smugi: czaszka (tu skończył) albo nic (ktoś go zabrał).
+        if (rnd.nextDouble() < 0.5) {
+            int nx = cx + dx(dir);
+            int nz = cz + dz(dir);
+            if (inRect(nx, nz, x1, z1, x2, z2) && freeFloor(nx, y, nz)) {
+                set(nx, y, nz, "skeleton_skull[powered=false,rotation=" + rnd.nextInt(16) + "]");
+            }
+        }
+        return true;
+    }
+
+    /** Porzucone papiery: pulpit z otwartą księgą, wywrócona beczka albo teczka, a wokół 3–6 rozrzuconych kartek. */
+    private boolean paperPile(int x, int y, int z, int x1, int z1, int x2, int z2) {
+        String[] faces = {"north", "south", "east", "west"};
+        String face = faces[rnd.nextInt(4)];
+        double r = rnd.nextDouble();
+        if (r < 0.45) {
+            set(x, y, z, "lectern[facing=" + face + ",has_book=true,powered=false]");
+        } else if (r < 0.75) {
+            set(x, y, z, "barrel[facing=" + face + ",open=true]");
+        } else {
+            set(x, y, z, "chiseled_bookshelf[facing=" + face + ",slot_0_occupied=true,slot_1_occupied=false,"
+                    + "slot_2_occupied=true,slot_3_occupied=false,slot_4_occupied=false,slot_5_occupied=true]");
+        }
+        int sheets = 3 + rnd.nextInt(4);
+        for (int k = 0; k < 30 && sheets > 0; k++) {
+            int nx = x + rnd.nextInt(5) - 2;
+            int nz = z + rnd.nextInt(5) - 2;
+            if ((nx != x || nz != z) && inRect(nx, nz, x1, z1, x2, z2) && freeFloor(nx, y, nz)) {
+                set(nx, y, nz, rnd.nextDouble() < 0.7 ? "white_carpet" : "light_gray_carpet");
+                sheets--;
+            }
+        }
+        return true;
+    }
+
+    private static boolean paintable(String state) {
+        String n = state.replace("minecraft:", "");
+        return Weathering.isFullBlock(state) && !(n.contains("ore") || n.contains("barrel") || n.contains("shulker")
+                || n.contains("lamp") || n.contains("glowstone") || n.contains("tnt") || n.contains("spawner")
+                || n.contains("furnace") || n.contains("smoker") || n.contains("table") || n.contains("bookshelf")
+                || n.contains("dispenser") || n.contains("dropper") || n.contains("observer") || n.contains("piston")
+                || n.contains("jukebox") || n.contains("note_block") || n.contains("beehive") || n.contains("crafter"));
+    }
+
     /**
-     * Napis ocalałych na ścianie: tabliczka na pierwszej wolnej ścianie w prostokącie (losowo szukanej),
-     * czytelna od strony pustej kratki. Zwraca, czy się udało.
+     * Napis ocalałych na ścianie: tabliczka z tekstem na wysokości oczu, a wokół niej na ścianie farba w sprayu
+     * (kilka pomalowanych bloków ściany, z zaciekami w dół), żeby z daleka było widać, że ktoś tu coś napisał.
+     * Ściana musi być pełna i grubsza niż jeden blok tam, gdzie leży farba, żeby nie przebiła na drugą stronę.
+     * Zwraca, czy się udało.
      */
     boolean graffiti(int x1, int z1, int x2, int z2, int y, String... lines) {
         String[] faces = {"north", "south", "east", "west"};
-        for (int k = 0; k < 200; k++) {
+        String[] paints = {"red_terracotta", "black_concrete", "red_concrete", "white_concrete"};
+        // Najpierw szukamy ściany, na której zmieści się cały napis; jak nie ma, wystarczy sama tabliczka.
+        for (int k = 0; k < 600; k++) {
+            int minPaint = k < 400 ? 5 : 0;
             int x = x1 + rnd.nextInt(x2 - x1 + 1);
             int z = z1 + rnd.nextInt(z2 - z1 + 1);
             int ay = y + yOffset;
@@ -299,27 +408,62 @@ final class Furniture {
             int bz = z - dz(face);
             int fx = x + dx(face);
             int fz = z + dz(face);
-            if (Weathering.isFullBlock(bp.get(bx, ay, bz)) && bp.isAir(fx, ay, fz)) {
-                String[] padded = new String[4];
-                for (int i = 0; i < 4; i++) {
-                    padded[i] = i < lines.length ? lines[i] : "";
-                }
-                bp.sign(x, ay, z, "dark_oak_wall_sign[facing=" + face + ",waterlogged=false]", padded);
-                return true;
+            if (!Weathering.isFullBlock(bp.get(bx, ay, bz)) || !bp.isAir(fx, ay, fz)) {
+                continue;
             }
+            // Pas ściany 5 × 3 wokół tabliczki (wzdłuż ściany: u, w pionie: v).
+            int ux = dz(face) != 0 ? 1 : 0;
+            int uz = dx(face) != 0 ? 1 : 0;
+            String paint = paints[rnd.nextInt(paints.length)];
+            java.util.List<int[]> spray = new java.util.ArrayList<>();
+            for (int u = -2; u <= 2; u++) {
+                for (int v = -1; v <= 1; v++) {
+                    boolean stroke = v == 1 || v == 0 && Math.abs(u) == 2 || v == -1 && rnd.nextDouble() < 0.35
+                            || u == 0 && v == 0;
+                    if (!stroke) {
+                        continue;
+                    }
+                    int wx = bx + u * ux;
+                    int wz = bz + u * uz;
+                    int wy = ay + v;
+                    int frontX = wx + dx(face);
+                    int frontZ = wz + dz(face);
+                    int backX = wx - dx(face);
+                    int backZ = wz - dz(face);
+                    if (bp.inBounds(wx, wy, wz) && paintable(bp.get(wx, wy, wz)) && bp.inBounds(frontX, wy, frontZ)
+                            && bp.isAir(frontX, wy, frontZ) && bp.inBounds(backX, wy, backZ)
+                            && !bp.isAir(backX, wy, backZ)) {
+                        spray.add(new int[]{wx, wy, wz});
+                    }
+                }
+            }
+            if (spray.size() < minPaint) {
+                continue;
+            }
+            for (int[] c : spray) {
+                bp.set(c[0], c[1], c[2], paint);
+            }
+            String[] padded = new String[4];
+            for (int i = 0; i < 4; i++) {
+                padded[i] = i < lines.length ? lines[i] : "";
+            }
+            bp.sign(x, ay, z, "dark_oak_wall_sign[facing=" + face + ",waterlogged=false]", padded);
+            return true;
         }
         return false;
     }
 
     /**
-     * Zawalony namiot na wolnym kawałku podłogi w prostokącie: płachta (dywany) z jednym zwałem, złamany
-     * maszt i zgaszone ognisko obok, jeśli jest miejsce. Zwraca, czy się udało.
+     * Na pół zawalony namiot 3 × 4 na wolnym kawałku podłogi: od wejścia jeszcze stoi (maszt z płótnem na górze,
+     * płótno opada po bokach), dalej płachta sflaczała do ziemi, z tyłu złamany maszt. Obok zgaszone ognisko
+     * z pieńkiem do siedzenia i porzucony plecak (beczka). Zwraca, czy się udało.
      */
     boolean collapsedTent(int x1, int z1, int x2, int z2, int y, String color) {
-        for (int k = 0; k < 200; k++) {
+        for (int k = 0; k < 300; k++) {
             boolean alongX = rnd.nextBoolean();
-            int w = alongX ? 4 : 3;
-            int d = alongX ? 3 : 4;
+            // Namiot leży wzdłuż osi a (4 kratki), w poprzek b (3 kratki); przed wejściem 2 kratki na ognisko.
+            int w = alongX ? 6 : 3;
+            int d = alongX ? 3 : 6;
             int x0 = x1 + rnd.nextInt(Math.max(1, x2 - x1 - w + 2));
             int z0 = z1 + rnd.nextInt(Math.max(1, z2 - z1 - d + 2));
             boolean ok = x0 + w - 1 <= x2 && z0 + d - 1 <= z2;
@@ -331,20 +475,45 @@ final class Furniture {
             if (!ok) {
                 continue;
             }
-            for (int x = x0; x < x0 + w; x++) {
-                for (int z = z0; z < z0 + d; z++) {
-                    if (rnd.nextDouble() < 0.85) {
-                        set(x, y, z, color + "_carpet");
+            // (a, b) -> (x, z): a = 0..3 namiot od wejścia, a = 4..5 przedpole; b = 0..2, środek b = 1.
+            java.util.function.BiFunction<Integer, Integer, int[]> at = (a, b) ->
+                    alongX ? new int[]{x0 + a, z0 + b} : new int[]{x0 + b, z0 + a};
+            String along = alongX ? "x" : "z";
+            String side0 = alongX ? "north" : "west";
+            String side2 = alongX ? "south" : "east";
+            // Wejście: maszt (płot) i płótno na nim, po bokach płótno opadające do ziemi.
+            int[] c = at.apply(3, 1);
+            set(c[0], y, c[1], "oak_fence[east=false,north=false,south=false,waterlogged=false,west=false]");
+            set(c[0], y + 1, c[1], color + "_wool");
+            for (int b : new int[]{0, 2}) {
+                int[] s = at.apply(3, b);
+                set(s[0], y, s[1], color + "_wool");
+            }
+            // Środek: płótno zapadnięte, ale jeszcze trzyma kształt (blok na środku, boki płasko).
+            int[] m = at.apply(2, 1);
+            set(m[0], y, m[1], color + "_wool");
+            for (int b : new int[]{0, 2}) {
+                int[] s = at.apply(2, b);
+                set(s[0], y, s[1], color + "_carpet");
+            }
+            // Tył: płachta całkiem na ziemi, z dziurami, i złamany maszt leżący w poprzek.
+            for (int a = 0; a <= 1; a++) {
+                for (int b = 0; b <= 2; b++) {
+                    int[] s = at.apply(a, b);
+                    if (a == 0 && b == 1) {
+                        set(s[0], y, s[1], "lightning_rod[facing=" + side2 + ",powered=false,waterlogged=false]");
+                    } else if (rnd.nextDouble() < 0.85) {
+                        set(s[0], y, s[1], color + "_carpet");
                     }
                 }
             }
-            set(x0 + 1, y, z0 + 1, color + "_wool");
-            set(x0 + w - 1, y, z0 + d - 1, "lightning_rod[facing=" + (alongX ? "east" : "south") + ",powered=false,waterlogged=false]");
-            int cx = alongX ? x0 + w : x0 + 1;
-            int cz = alongX ? z0 + 1 : z0 + d;
-            if (cx <= x2 && cz <= z2 && freeFloor(cx, y, cz)) {
-                set(cx, y, cz, "campfire[facing=north,lit=false,signal_fire=false,waterlogged=false]");
-            }
+            // Przedpole: zgaszone ognisko, pieniek do siedzenia i porzucony plecak.
+            int[] fire = at.apply(5, 1);
+            set(fire[0], y, fire[1], "campfire[facing=north,lit=false,signal_fire=false,waterlogged=false]");
+            int[] log = at.apply(5, rnd.nextBoolean() ? 0 : 2);
+            set(log[0], y, log[1], "stripped_spruce_log[axis=" + along + "]");
+            int[] pack = at.apply(4, rnd.nextBoolean() ? 0 : 2);
+            set(pack[0], y, pack[1], "barrel[facing=" + (rnd.nextBoolean() ? side0 : "up") + ",open=false]");
             return true;
         }
         return false;
