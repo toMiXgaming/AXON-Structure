@@ -14,7 +14,7 @@ lateral centre), so QA's tuned display transforms keep working.
 
 Run:  python3 gen.py  -> writes into ./build/<gun>.json + ./build/<gun>.png
 """
-import json, math, os
+import json, math, os, zlib
 import numpy as np
 from PIL import Image
 
@@ -235,7 +235,7 @@ def base_color(mat, G, side, el):
     m = MATS[mat]
     w, v, u = G[:, 0], G[:, 1], G[:, 2]
     k = m['kind']
-    seed = hash(el.name) & 0xFFFF
+    seed = zlib.crc32(el.name.encode()) & 0xFFFF
     if k in ('metal', 'supp', 'poly', 'flat'):
         base = np.array(m['base'], float)
         var = m.get('var', 0.05)
@@ -593,7 +593,9 @@ def build_ak():
     D(rivet('RL', 37.5, -0.3, 0.17, els=['stock_comb'], cols=((120, 110, 100), (40, 20, 10))))
 
     g.sight = dict(rear=(22.6, 2.95), front=(5.1, 2.95))
-    g.ads = dict(cam=(56.0, 2.95), front=(5.1, 2.95))
+    # classic rear-sight ADS: eye 8 units behind the notch, 2.5deg cant, vertical/lateral
+    # display scale tweak (x1.7 / x0.72) so the receiver stays low and narrow on screen
+    g.ads = dict(cam=(30.6, 2.95), front=(5.1, 2.95), roll=2.5, sxyz=(1.0, 1.7, 0.72))
     g.grip = (30.9, -4.0)
     return g
 
@@ -1023,17 +1025,23 @@ def ads_display(g, disp):
     d = json.loads(json.dumps(disp))
     lh = d.get('firstperson_lefthand', {})
     S = np.array(lh.get('scale', d.get('firstperson_righthand', {}).get('scale', [1, 1, 1])), float)
+    S = S * g.ads.get('sf', 1.0) * np.array(g.ads.get('sxyz', (1.0, 1.0, 1.0)), float)
     yaw_json = ADS_YAW[g.name]
     to = lambda uv: g.to_mc(np.array([[0, uv[1], uv[0]]]))[0]
     C, F = to(g.ads['cam']), to(g.ads['front'])
     R0 = _R('y', -yaw_json)
     dvec = R0 @ ((F - C) * S)
     alpha = math.degrees(math.atan(dvec[1] / dvec[2]))
-    Reff = _R('x', alpha) @ R0
+    Reff = _R('z', g.ads.get('roll', 0.0)) @ _R('x', alpha) @ R0
     arm = np.array([-0.56, -0.52, -0.72])
     teff = -(arm + Reff @ ((C / 16.0 - 0.5) * S)) * 16.0
     assert np.all(np.abs(teff) <= 80), teff
-    lh = {'rotation': [round(alpha, 3) + 0.0, yaw_json, 0],
+    eb = math.asin(max(-1.0, min(1.0, Reff[0, 2])))
+    ec = math.atan2(-Reff[0, 1], Reff[0, 0])
+    ea = math.atan2(-Reff[1, 2], Reff[2, 2])
+    e_eff = [math.degrees(ea), math.degrees(eb), math.degrees(ec)]
+    assert np.allclose(_R('x', e_eff[0]) @ _R('y', e_eff[1]) @ _R('z', e_eff[2]), Reff, atol=1e-6)
+    lh = {'rotation': [round(e_eff[0], 3) + 0.0, round(-e_eff[1], 3) + 0.0, round(-e_eff[2], 3) + 0.0],
           'translation': [round(float(-teff[0]), 3), round(float(teff[1]), 3), round(float(teff[2]), 3)],
           'scale': [float(x) for x in S]}
     d['firstperson_lefthand'] = lh
