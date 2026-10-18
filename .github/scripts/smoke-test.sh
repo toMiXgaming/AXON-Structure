@@ -100,7 +100,7 @@ cmd "struktury oaza"
 cmd "struktury zycie"
 sleep 5
 # Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
-cmd "struktury zrzut"
+cmd "struktury zrzut teraz"
 sleep 14
 # Wybuch TNT nad środkiem stacji nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
 CX=$(awk '/srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
