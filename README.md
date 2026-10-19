@@ -29,6 +29,8 @@ Plugin na serwer **Paper 1.21.4** (Java 21) do stawiania struktur w stylu monume
 Z konsoli: `wklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]` i `generuj <nazwa> <świat> <x> <z> [obrót 0-3]`.
 Alias: `/axs`. Uprawnienie: `axonstructure.use` (domyślnie OP).
 
+Dla graczy: `/oaza` (co jest w oazie), `/oaza ranking` (strzelnica) i `/oaza gui` (okna oazy na pełnym ekranie albo jako skrzynia, patrz [GUI](#okna-oazy-na-pełnym-ekranie-gui)).
+
 ## Skrzynie
 
 - **Klasa skrzyni** (`klasy:` w configu) – nazwa, blok (`skrzynia`, `beczka` albo `ramka`), opcjonalna dekoracja na wieku, opcjonalny `model` z paczki zasobów i lista lootu z ilościami i szansami.
@@ -107,6 +109,19 @@ Zapisuje je do plików:
 ```bash
 ./gradlew generujStruktury   # -> build/struktury/*.axs
 ```
+
+## Okna oazy na pełnym ekranie (GUI)
+
+Sklep, automaty, wymiana, paser czarnego rynku i tablica zleceń otwierają się jako pełnoekranowy ekran w stylu Rusta (sekcja `gui:` w configu, pakiet `pl.axon.structure.gui`). To ten sam silnik co w AxonMap: gracz siada na niewidzialnym stojaku, przed kamerą stają niby-ramki z 15 mapami (5 × 3, 640 × 384 piksele) widoczne tylko dla niego, a shadery `rendertype_text` i `position_tex_color` z paczki zasobów serwera rozpoznają znacznik w pierwszym wierszu map, rozciągają je na cały ekran i chowają HUD (po czasie gry, który dostaje tylko ten gracz). Kursor to obrót głowy (mysz), LPM i PPM klikają, scroll przewija listy, Shift zamyka; w pierwszej osobie nie widać ręki ani hotbara.
+
+- **Sklep i paser** – lista towarów z ilością, ceną (i skupem albo stanem u pasera), przyciskiem *Kup*, szczegółami wybranego towaru (opis, zaklęcia, ile masz) i saldem z Vaulta na pasku tytułu; w sklepie *Kup / Sprzedaj ×1 i ×4* jak LPM, PPM i shift w skrzyni.
+- **Automat** – trzy bębny z rysowanymi symbolami, animacja kręcenia, stawka, saldo, wynik i tabela wypłat; *Zagraj* gra jeszcze raz.
+- **Wymiana** – własny ekwipunek jako lista (LPM kładzie na ladę cały stos, PPM jedną sztukę), własna oferta (klik zabiera), oferta drugiego gracza z opisem w dymku, zatwierdzenie i odliczanie. Każdy ruch idzie przez te same metody `TradeService` co kliknięcia w skrzyni, więc zmiana dalej kasuje oba zatwierdzenia; drugi gracz może mieć skrzynię.
+- **Tablica zleceń** – co przynieść, nagroda, ile już masz i przycisk *Oddaj*. Depozyt zostaje skrzynią (przekłada się w nim przedmioty).
+
+Zasady, ceny i loot się nie zmieniają: oba widoki wołają te same metody kupna, gry i wymiany.
+
+**Tryb awaryjny – okno skrzyni**, jak dotąd, gdy: na serwerze nie ma pluginu [PacketEvents](https://modrinth.com/plugin/packetevents) (opcjonalny, `softdepend`; klasy z nim wczytują się tylko, gdy jest), `gui.shader: false`, gracz nie wczytał paczki zasobów (`PlayerResourcePackStatusEvent` = `SUCCESSFULLY_LOADED`; `gui.wymagaj-paczki: false` to pomija), gracz wybrał skrzynię komendą `/oaza gui` (przełącznik zapisany w `gui.yml`) albo nie da się go teraz posadzić (pojazd, skok, kucanie). Na każdym ekranie przycisk **Tryb skrzyni** otwiera to samo okno jako skrzynię (wymiana i kręcący się automat trwają dalej). Ekran zamyka się sam przy obrażeniach, śmierci, teleporcie, zmianie świata, wyjściu z serwera i wyłączeniu pluginu – gracz zawsze wstaje i odzyskuje HUD. Gracze, którzy byli online przed `/reload`, dostają skrzynię aż do ponownego wejścia (serwer nie wie, czy mają paczkę).
 
 ## Kopalnia, zwierzęta i odgłosy
 

@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Paser w kryjówkach czarnego rynku (struktura {@code czarny-rynek}): kilka drogich towarów losowanych z listy
  * {@code czarny-rynek.lista} co {@code odswiezanie-godzin}, opcjonalnie z limitem sztuk na okres (wspólnym dla
  * wszystkich kryjówek). Tylko kupno, za pieniądze z Vaulta. Losowanie jest zapisane w oaza.yml, więc restart
- * serwera go nie zmienia.
+ * serwera go nie zmienia. Ekran GUI ({@link BlackMarketScreen}) kupuje tym samym {@link #buy}.
  */
 final class BlackMarketService {
 
@@ -63,6 +63,19 @@ final class BlackMarketService {
         return pool.size();
     }
 
+    String title() {
+        return title;
+    }
+
+    Offer offer(int index) {
+        return pool.get(index);
+    }
+
+    /** Ile milisekund do nowego towaru. */
+    long untilRefresh() {
+        return periodMillis - System.currentTimeMillis() % periodMillis;
+    }
+
     /** Oferty w bieżącym okresie (indeksy listy), losowane na nowo po jego końcu. */
     private List<Integer> current() {
         long period = System.currentTimeMillis() / periodMillis;
@@ -86,7 +99,7 @@ final class BlackMarketService {
         return chosen;
     }
 
-    private int sold(int index) {
+    int sold(int index) {
         return oasis.data().getInt("czarny-rynek.sprzedane." + index, 0);
     }
 
@@ -100,6 +113,15 @@ final class BlackMarketService {
             return;
         }
         List<Integer> offers = current();
+        if (oasis.openScreen(player, new BlackMarketScreen(oasis, this, player, offers))) {
+            player.playSound(player.getLocation(), Sound.BLOCK_BARREL_OPEN, 0.6f, 0.8f);
+            return;
+        }
+        openChest(player, offers);
+    }
+
+    /** Towar pasera jako okno skrzyni (tryb awaryjny GUI). */
+    void openChest(Player player, List<Integer> offers) {
         Menu menu = new Menu(1, title);
         draw(menu, offers);
         menu.onClick(event -> {
@@ -134,7 +156,7 @@ final class BlackMarketService {
         }
     }
 
-    private void buy(Player player, int index) {
+    void buy(Player player, int index) {
         Offer offer = pool.get(index);
         if (offer.stock() > 0 && sold(index) >= offer.stock()) {
             player.sendMessage("§8Paser: §7Tego już nie mam. Wróć, jak przyjdzie nowy towar.");

@@ -15,7 +15,8 @@ import java.util.logging.Logger;
 
 /**
  * Tablica zleceń w oazie: kilka zleceń „przynieś N sztuk X” losowanych z configu co {@code odswiezanie-godzin}.
- * Każdy gracz może wykonać każde zlecenie raz w danym okresie i dostaje nagrodę z Vaulta.
+ * Każdy gracz może wykonać każde zlecenie raz w danym okresie i dostaje nagrodę z Vaulta. Ekran GUI
+ * ({@link JobScreen}) oddaje towar tym samym {@link #complete}.
  */
 final class JobBoard {
 
@@ -50,6 +51,20 @@ final class JobBoard {
             }
             pool.add(new Job(spec, item, amount, reward));
         }
+    }
+
+    Job job(int index) {
+        return pool.get(index);
+    }
+
+    /** Ile milisekund do nowych zleceń. */
+    long untilRefresh() {
+        return periodMillis - System.currentTimeMillis() % periodMillis;
+    }
+
+    /** Czy gracz wykonał już to zlecenie w tym okresie. */
+    boolean done(Player player, int index) {
+        return oasis.data().getIntegerList(doneKey(player)).contains(index);
     }
 
     /** Aktualne zlecenia: losowane na nowo, gdy minie okres (zapis w oaza.yml, żeby restart ich nie zmieniał). */
@@ -89,6 +104,14 @@ final class JobBoard {
             return;
         }
         List<Integer> jobs = current();
+        if (oasis.openScreen(player, new JobScreen(oasis, this, player, jobs))) {
+            return;
+        }
+        openChest(player, jobs);
+    }
+
+    /** Tablica jako okno skrzyni (tryb awaryjny GUI). */
+    void openChest(Player player, List<Integer> jobs) {
         Menu menu = new Menu((jobs.size() + 8) / 9, "&8Tablica zleceń");
         draw(menu, player, jobs);
         menu.onClick(event -> {
@@ -120,7 +143,7 @@ final class JobBoard {
         }
     }
 
-    private void complete(Player player, int index) {
+    void complete(Player player, int index) {
         List<Integer> done = new ArrayList<>(oasis.data().getIntegerList(doneKey(player)));
         if (done.contains(index)) {
             player.sendMessage("§7To zlecenie już wykonałeś. Nowe pojawią się po odświeżeniu tablicy.");

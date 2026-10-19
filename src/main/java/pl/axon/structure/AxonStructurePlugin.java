@@ -6,6 +6,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.axon.structure.command.StrukturyCommand;
+import pl.axon.structure.gui.ShaderGui;
 import pl.axon.structure.loot.AirdropService;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
@@ -41,6 +42,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private AirdropService airdrops;
     private GuardService guards;
     private OasisService oasis;
+    private ShaderGui gui;
     private PasteService paster;
     private PropService props;
     private AutoGenerator autoGenerator;
@@ -58,6 +60,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
         airdrops = new AirdropService(this, library, store, crates);
         guards = new GuardService(this, library, store, crates);
         oasis = new OasisService(this, library, store, guards, airdrops);
+        gui = new ShaderGui(this);
+        oasis.gui(gui);
         protection = new ProtectionService(this, library, store);
         veins = new OreVeinService(this, library, store);
         protection.veins(veins);
@@ -75,6 +79,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         airdrops.start();
         guards.start();
         oasis.start();
+        gui.start();
         veins.start();
         animals.start();
         ambient.start();
@@ -109,6 +114,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
         safely("zwierzęta", animals == null ? null : animals::stop);
         safely("kopalnia", veins == null ? null : veins::stop);
         safely("oaza", oasis == null ? null : oasis::stop);
+        // po oazie: wymiany już oddały towar, zostaje zsadzić graczy sprzed ekranów
+        safely("gui", gui == null ? null : gui::stop);
         safely("strażnicy", guards == null ? null : guards::stop);
         safely("zrzuty", airdrops == null ? null : airdrops::stop);
         safely("skrzynie", crates == null ? null : crates::stop);
@@ -266,6 +273,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
         oasis.configure(config.getConfigurationSection("oaza"), zone(config.getString("zrzuty.strefa-czasowa", "Europe/Warsaw")));
         oasis.configureBlackMarket(config.getConfigurationSection("czarny-rynek"));
+        gui.configure(config.getConfigurationSection("gui"));
 
         animals.configure(new AnimalService.Settings(
                 config.getBoolean("zwierzeta.wlaczone", true),
@@ -380,6 +388,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public GuardService guards() {
         return guards;
+    }
+
+    public ShaderGui gui() {
+        return gui;
     }
 
     public OasisService oasis() {

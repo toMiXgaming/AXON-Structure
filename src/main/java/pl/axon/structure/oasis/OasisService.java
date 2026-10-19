@@ -39,6 +39,8 @@ import pl.axon.structure.StructureLibrary;
 import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.Box;
 import pl.axon.structure.core.StructureInstance;
+import pl.axon.structure.gui.GuiScreen;
+import pl.axon.structure.gui.ShaderGui;
 import pl.axon.structure.loot.AirdropService;
 import pl.axon.structure.loot.LootConfig;
 import pl.axon.structure.npc.GuardService;
@@ -54,6 +56,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Oaza: struktury ze {@code strefa: bezpieczna}. W ich obrysie nie ma PvP, strażnicy bronią tylko przed potworami,
@@ -97,6 +100,8 @@ public final class OasisService implements Listener {
     private final SlotMachine slots = new SlotMachine(this);
     private final ShootingRange range = new ShootingRange(this);
     private final BlackMarketService blackMarket = new BlackMarketService(this);
+    /** Pełnoekranowe GUI; bez niego (null) wszystkie okna są skrzyniami. */
+    private ShaderGui gui;
 
     private boolean enabled = true;
     private String enterTitle = "";
@@ -182,6 +187,22 @@ public final class OasisService implements Listener {
 
     JavaPlugin plugin() {
         return plugin;
+    }
+
+    /** Okna oazy otwierają się jako ekrany z shaderem, gdy gracz może je dostać (patrz {@link ShaderGui}). */
+    public void gui(ShaderGui gui) {
+        this.gui = gui;
+    }
+
+    /** Pokazuje ekran GUI; false = trzeba otworzyć zwykłe okno skrzyni (tryb awaryjny). */
+    boolean openScreen(Player player, GuiScreen screen) {
+        return gui != null && gui.open(player, screen);
+    }
+
+    void closeScreen(Player player, Predicate<GuiScreen> which) {
+        if (gui != null) {
+            gui.closeIf(player, which);
+        }
     }
 
     Vault vault() {
@@ -453,6 +474,9 @@ public final class OasisService implements Listener {
         }
         Block block = event.getClickedBlock();
         Player player = event.getPlayer();
+        if (gui != null && gui.isOpen(player)) {
+            return; // przed ekranem GUI kliknięcia nie trafiają w świat
+        }
         if (pointAt(block, BLACK_MARKET_COUNTER, 1.0) != null) {
             event.setCancelled(true);
             blackMarket.open(player);
@@ -491,6 +515,9 @@ public final class OasisService implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onInteractEntity(PlayerInteractEntityEvent event) {
         if (!enabled || event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+        if (gui != null && gui.isOpen(event.getPlayer())) {
             return;
         }
         GuardService.Kit kit = guards.kitOf(event.getRightClicked());

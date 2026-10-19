@@ -4,7 +4,7 @@ main: pl.axon.structure.AxonStructurePlugin
 api-version: '1.21'
 description: Struktury w stylu Rusta wklejane jedną komendą.
 author: toMiXgaming
-softdepend: [WorldGuard, Citizens, Sentinel, QualityArmory, Vault]
+softdepend: [WorldGuard, Citizens, Sentinel, QualityArmory, Vault, packetevents]
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
@@ -12,8 +12,8 @@ commands:
     aliases: [axs]
     permission: axonstructure.use
   oaza:
-    description: Co jest w oazie i ranking strzelnicy.
-    usage: /oaza [ranking]
+    description: Co jest w oazie, ranking strzelnicy i wybór okien (ekran albo skrzynia).
+    usage: /oaza [ranking|gui]
     permission: axonstructure.oaza
 permissions:
   axonstructure.oaza:

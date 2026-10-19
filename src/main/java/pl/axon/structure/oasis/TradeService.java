@@ -16,11 +16,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Bezpieczna wymiana na stanowisku w oazie. Pierwszy gracz klika ladę i czeka, drugi klika tę samą ladę: obaj
  * widzą jedno okno, każdy kładzie towar po swojej stronie. Wymiana rusza dopiero, gdy obaj zatwierdzą, a każda
  * zmiana w ofercie kasuje oba zatwierdzenia i odliczanie, więc nie da się podmienić towaru w ostatniej chwili.
+ * Gracz z ekranem GUI ({@link TradeScreen}) przekłada towar metodami {@link Trade#offer}, {@link Trade#withdraw}
+ * i {@link Trade#toggleConfirm}, które robią to samo co kliknięcia w oknie skrzyni; drugi gracz może mieć skrzynię.
  */
 final class TradeService {
 
@@ -93,7 +96,7 @@ final class TradeService {
         return slot < 45 && slot % 9 > 4;
     }
 
-    private final class Trade {
+    final class Trade {
         final Player left;
         final Player right;
         final Menu menu;
@@ -102,6 +105,8 @@ final class TradeService {
         boolean rightOk;
         boolean finished;
         BukkitTask countdown;
+        /** Ile sekund zostało do wymiany (dla ekranu GUI); -1, gdy odliczanie nie trwa. */
+        int secondsLeft = -1;
 
         Trade(Player left, Player right) {
             this.left = left;
@@ -119,11 +124,95 @@ final class TradeService {
         }
 
         void open() {
-            left.openInventory(inv);
-            right.openInventory(inv);
             for (Player p : List.of(left, right)) {
+                // ekran GUI, a gdy się nie da (brak paczki, wybór gracza...) zwykłe okno skrzyni
+                if (!oasis.openScreen(p, new TradeScreen(oasis, this, p))) {
+                    p.openInventory(inv);
+                }
                 p.playSound(p.getLocation(), Sound.BLOCK_CHEST_OPEN, 0.6f, 1.2f);
             }
+        }
+
+        boolean involves(Player who) {
+            return left.equals(who) || right.equals(who);
+        }
+
+        Player partner(Player who) {
+            return left.equals(who) ? right : left;
+        }
+
+        boolean confirmed(Player who) {
+            return left.equals(who) ? leftOk : rightOk;
+        }
+
+        /** Sloty okna wymiany z towarem po stronie gracza (lewa albo prawa). */
+        List<Integer> slots(boolean me) {
+            List<Integer> out = new ArrayList<>();
+            for (int slot = 0; slot < 45; slot++) {
+                if (me ? leftSlot(slot) : rightSlot(slot)) {
+                    ItemStack item = inv.getItem(slot);
+                    if (item != null && !item.getType().isAir()) {
+                        out.add(slot);
+                    }
+                }
+            }
+            return out;
+        }
+
+        /**
+         * Z ekranu GUI: kładzie stos z ekwipunku gracza (slot 0-35) na jego stronę, jak shift+klik w oknie skrzyni;
+         * {@code one} = tylko jedną sztukę. Co się nie zmieści, zostaje w ekwipunku.
+         */
+        void offer(Player who, int invSlot, boolean one) {
+            if (finished || !involves(who) || invSlot < 0 || invSlot >= 36) {
+                return;
+            }
+            ItemStack moving = who.getInventory().getItem(invSlot);
+            if (moving == null || moving.getType().isAir()) {
+                return;
+            }
+            boolean me = isLeft(who);
+            if (one) {
+                ItemStack single = moving.clone();
+                single.setAmount(1);
+                if (putOnSide(me, single) != null) {
+                    return; // strona pełna
+                }
+                ItemStack rest = moving.clone();
+                rest.setAmount(moving.getAmount() - 1);
+                who.getInventory().setItem(invSlot, rest.getAmount() > 0 ? rest : null);
+            } else {
+                ItemStack rest = putOnSide(me, moving.clone());
+                who.getInventory().setItem(invSlot, rest);
+            }
+            changed();
+        }
+
+        /** Z ekranu GUI: zabiera stos ze swojej strony do ekwipunku; co się nie zmieści, zostaje na ladzie. */
+        void withdraw(Player who, int tradeSlot) {
+            if (finished || !involves(who) || tradeSlot < 0 || !(isLeft(who) ? leftSlot(tradeSlot) : rightSlot(tradeSlot))) {
+                return;
+            }
+            ItemStack item = inv.getItem(tradeSlot);
+            if (item == null || item.getType().isAir()) {
+                return;
+            }
+            Map<Integer, ItemStack> rest = who.getInventory().addItem(item.clone());
+            inv.setItem(tradeSlot, rest.isEmpty() ? null : rest.values().iterator().next());
+            changed();
+        }
+
+        /** Z ekranu GUI: to samo co klik w swoją wełnę (zatwierdź albo cofnij). */
+        void toggleConfirm(Player who) {
+            if (finished || !involves(who)) {
+                return;
+            }
+            if (isLeft(who)) {
+                leftOk = !leftOk;
+            } else {
+                rightOk = !rightOk;
+            }
+            refresh();
         }
 
         boolean isLeft(Object who) {
@@ -239,6 +328,7 @@ final class TradeService {
                     countdown.cancel();
                     countdown = null;
                 }
+                secondsLeft = -1;
                 inv.setItem(STATUS, Menu.icon(Material.PAPER, "&eUłóż towar po swojej stronie",
                         "&7Lewa strona: &f" + left.getName(), "&7Prawa strona: &f" + right.getName(),
                         "&7Wymiana ruszy, gdy obaj zatwierdzicie.", "&7Każda zmiana kasuje zatwierdzenia."));
@@ -264,6 +354,7 @@ final class TradeService {
                     complete();
                     return;
                 }
+                secondsLeft = left3[0];
                 inv.setItem(STATUS, Menu.icon(Material.CLOCK, "&aWymiana za " + left3[0] + " s",
                         "&7Zmień coś, żeby przerwać."));
                 for (Player p : List.of(this.left, right)) {
@@ -342,10 +433,12 @@ final class TradeService {
         }
 
         private void closeFor() {
+            Predicate<pl.axon.structure.gui.GuiScreen> mine = screen -> screen instanceof TradeScreen ts && ts.trade == this;
             for (Player p : List.of(left, right)) {
                 if (p.getOpenInventory().getTopInventory().equals(inv)) {
                     p.closeInventory();
                 }
+                oasis.closeScreen(p, mine);
             }
         }
     }

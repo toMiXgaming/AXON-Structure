@@ -377,6 +377,18 @@ czarny-rynek:
     - {przedmiot: netherite_scrap, ilosc: 2, cena: 3500, sztuk: 2}
     - {przedmiot: experience_bottle, ilosc: 32, cena: 1000, sztuk: 4}
 
+gui:
+  # Okna oazy (sklep, automaty, wymiana, paser, tablica zleceń) jako pełnoekranowy ekran w stylu Rusta: obraz z map
+  # w niewidzialnych ramkach, który shader z paczki zasobów serwera (ten sam co w AxonMap) rozciąga na cały ekran.
+  # Kursor to mysz, LPM/PPM klikają, scroll przewija listy, Shift zamyka. Wymaga pluginu PacketEvents.
+  # Tryb awaryjny: zwykłe okno skrzyni, gdy nie ma PacketEvents, shader: false, gracz nie wczytał paczki,
+  # wybrał skrzynię (/oaza gui albo przycisk "Tryb skrzyni" na ekranie) albo nie da się go posadzić (pojazd, skok).
+  # Depozyt zawsze jest skrzynią (przekłada się w nim przedmioty). Wybór graczy i numery map: gui.yml.
+  shader: true
+  # true = ekran tylko dla graczy, od których klient zgłosił wczytaną paczkę zasobów; false, gdy paczkę wysyła
+  # proxy albo inny plugin i serwer tego nie widzi (wtedy gracz bez paczki zobaczy ramki z mapami zamiast ekranu)
+  wymagaj-paczki: true
+
 loot:
   # Loot jeszcze nieustalony: true = skrzynie i beczki stoją w strukturach, ale są puste, skrzynia zrzutu spada pusta
   # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z kartami nie ma. Tabele (pule:, klasy:, loot
