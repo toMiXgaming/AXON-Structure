@@ -9,6 +9,7 @@ import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.Box;
 import pl.axon.structure.core.StructureInstance;
 import pl.axon.structure.world.InstanceStore;
+import pl.axon.structure.world.OreVeinService;
 
 import java.util.Map;
 
@@ -38,6 +39,7 @@ public final class ProtectionService {
     private final InstanceStore store;
     private WorldGuardHook worldGuard;
     private Settings settings;
+    private OreVeinService veins;
 
     public ProtectionService(JavaPlugin plugin, StructureLibrary library, InstanceStore store) {
         this.plugin = plugin;
@@ -51,6 +53,16 @@ public final class ProtectionService {
 
     public Settings settings() {
         return settings;
+    }
+
+    /** Żyły rudy w kopalni: jedyne bloki struktur, które gracze mogą niszczyć. */
+    public void veins(OreVeinService veins) {
+        this.veins = veins;
+    }
+
+    /** Czy ten blok wolno wykopać mimo ochrony (ruda w miejscu {@code punkt-ruda}). */
+    public boolean breakable(Block block) {
+        return veins != null && veins.isMineable(block);
     }
 
     /** Podpina WorldGuarda, jeśli jest włączony. Wywoływane raz przy starcie. */
@@ -111,7 +123,23 @@ public final class ProtectionService {
 
     public void onPlaced(StructureInstance instance) {
         if (worldGuard != null) {
-            worldGuard.ensureRegion(instance, area(instance), settings.regionFlags());
+            Map<String, String> flags = settings.regionFlags();
+            Blueprint bp = library.get(instance.structureId());
+            if (bp != null && bp.safeZone()) {
+                // oaza: WorldGuard też blokuje PvP (plugin i tak je blokuje sam)
+                flags = new java.util.LinkedHashMap<>(flags);
+                flags.put("pvp", "deny");
+            }
+            if (bp != null && veins != null && veins.enabled() && OreVeinService.hasVeins(bp)
+                    && !flags.containsKey("block-break")) {
+                // kopalnia: WorldGuard nie może blokować kopania rud (np. gdy w configu nie ma passthrough: allow
+                // albo __global__ ma build: deny). block-break: allow w regionie o wyższym priorytecie wygrywa
+                // z blokadą członkostwa i z build: deny; resztę struktury dalej chroni ProtectionListener,
+                // który anuluje zdarzenie na LOWEST, zanim zobaczy je WorldGuard.
+                flags = new java.util.LinkedHashMap<>(flags);
+                flags.put("block-break", "allow");
+            }
+            worldGuard.ensureRegion(instance, area(instance), flags);
         }
     }
 
@@ -125,6 +153,19 @@ public final class ProtectionService {
      * Uzupełnia obrys starszych wpisów z dane.yml i odtwarza regiony (np. po zmianie marginesu albo flag).
      */
     public void syncAll() {
+        if (worldGuard != null) {
+            worldGuard.beginBatch();
+        }
+        try {
+            syncInstances();
+        } finally {
+            if (worldGuard != null) {
+                worldGuard.endBatch();
+            }
+        }
+    }
+
+    private void syncInstances() {
         boolean changed = false;
         for (StructureInstance instance : store.all()) {
             if (instance.footprint() == null) {

@@ -65,9 +65,11 @@ public final class GasStationStructure implements StructureDefinition {
         private final Palette yard;
         private final Palette sidewalk;
         private final Palette crates;
+        private final Furniture furniture;
 
         Builder(Random rnd) {
             this.rnd = rnd;
+            this.furniture = new Furniture(bp, 0, rnd);
             asphalt = new Palette(rnd)
                     .add("gray_concrete", 14).add("andesite", 3).add("gravel", 2)
                     .add("tuff", 2).add("coarse_dirt", 1).add("cobblestone", 1);
@@ -103,6 +105,8 @@ public final class GasStationStructure implements StructureDefinition {
             backYard();
             sideRamp();
             weathering();
+            furnish();
+            lifeSigns();
             return bp;
         }
 
@@ -536,8 +540,7 @@ public final class GasStationStructure implements StructureDefinition {
 
             // toalety
             for (int x : new int[]{8, 12}) {
-                bp.set(x, 1, 42, "cauldron");
-                bp.set(x, 1, 43, "smooth_quartz_stairs[facing=north,half=bottom]");
+                furniture.toilet(x, 1, 43, "south");
                 bp.set(x, 4, BZ2, "white_stained_glass");
                 for (int z = 39; z <= 43; z++) {
                     for (int dx = -1; dx <= 1; dx++) {
@@ -581,7 +584,7 @@ public final class GasStationStructure implements StructureDefinition {
             }
             bp.fill(BX2 - 1, 1, 36, BX2 - 1, 4, 36, "stripped_spruce_log[axis=y]");
             bp.set(BX2 - 1, 2, 38, "barrel[facing=west,open=false]");
-            bp.crate(BX2 - 1, 4, 40, "west", "magazyn");
+            bp.crate(BX2 - 1, 2, 40, "west", "magazyn");
             // beczki i paliwo w magazynie
             bp.crate(23, 1, 37, "north", "magazyn");
             bp.crate(24, 1, 37, "north", "paliwo");
@@ -765,6 +768,93 @@ public final class GasStationStructure implements StructureDefinition {
             bp.set(3, 2, 41, "spruce_slab[type=bottom]");
             bp.set(3, 3, 41, "barrel[facing=up,open=false]");
             bp.crate(2, 2, 42, "north", "zaplecze");
+        }
+
+        // ------------------------------------------------------------------ wyposażenie, dodatkowe skrzynki, klimat
+
+        /** Rozpoznawalne meble, drobne skrzynki w pomieszczeniach i ślady ludzi, którzy tu koczowali. */
+        private void furnish() {
+            // --- sala sklepowa: kącik kawowy przy witrynie, ekspres na ladzie
+            furniture.dining(13, 1, 22, true, "spruce");
+            bp.set(11, 2, 22, "brewing_stand[has_bottle_0=false,has_bottle_1=false,has_bottle_2=false]"); // ekspres
+            bp.set(12, 1, 21, "lectern[facing=south,has_book=false,powered=false]"); // stojak z gazetami
+            bp.crate(17, 1, 21, "south", "sklep");
+            bp.crate(35, 1, 21, "south", "parter");
+            bp.crate(23, 1, 24, "west", "sklep");
+            bp.crate(BX2 - 2, 1, 28, "west", "lodowki");
+            bp.crate(12, 1, 34, "north", "parter");
+            bp.crate(BX2 - 2, 1, 34, "north", "parter");
+            bp.crate(19, 1, 33, "north", "sklep");
+
+            // --- dziki lokator zabarykadował się za ladą
+            squatterCamp();
+
+            // --- toalety: umywalki przy ścianie od korytarza, światło
+            furniture.sink(9, 1, 39, "north");
+            furniture.sink(11, 1, 39, "north");
+            furniture.hangingLamp(8, 6, 41);
+            furniture.hangingLamp(12, 6, 42);
+            bp.set(13, 1, 43, "cobweb");
+
+            // --- korytarz
+            bp.crate(20, 1, 36, "north", "zaplecze");
+            bp.sign(19, 3, 37, "oak_wall_sign[facing=north]", "NA DACH ↓", "UWAŻAJ!", "snajper na", "wiacie");
+
+            // --- pokój socjalny przy drabinie: prycza, stolik, krzesło, lampka na beczce
+            furniture.bed(15, 1, 40, "south", "gray");
+            furniture.table(20, 1, 40, "spruce");
+            furniture.chair(19, 1, 40, "west", "spruce");
+            furniture.lamp(20, 2, 42);
+            bp.crate(20, 1, 39, "north", "parter");
+
+            // --- magazyn: warsztat pod ścianą, świeczki na regale, skrzynki
+            bp.set(22, 1, 40, "anvil[facing=north]");
+            bp.set(22, 1, 41, "crafting_table");
+            bp.crate(22, 1, 39, "east", "magazyn");
+            bp.crate(35, 1, 36, "south", "magazyn");
+            bp.set(BX2 - 1, 2, 37, "candle[candles=3,lit=true,waterlogged=false]");
+            bp.set(BX2 - 1, 4, 41, "candle[candles=2,lit=true,waterlogged=false]");
+            bp.set(BX2 - 1, 1, 43, "cobweb");
+
+            // --- rampa, podwórko i plac
+            bp.crate(4, 1, 35, "east", "zaplecze");
+            bp.crate(30, 1, 49, "north", "plac");
+            bp.crate(12, 1, 49, "north", "plac");
+            bp.crate(8, 1, 18, "north", "plac");
+            bp.crate(43, 1, 7, "west", "plac");
+            bp.crate(40, 1, 13, "west", "plac");
+            bp.crate(3, 1, 22, "east", "plac");
+            bp.sign(24, 3, BZ2 + 1, "oak_wall_sign[facing=south]", "PALIWA BRAK", "WODY BRAK", "NADZIEI BRAK", "");
+        }
+
+        /**
+         * Ślady dawnego życia: napisy ocalałych na ścianach, zaschnięta krew, porozrzucane kartki
+         * i zawalony namiot. Wszystko leży płasko albo na ścianach, więc nie zamyka przejść ani osłon.
+         */
+        private void lifeSigns() {
+            furniture.traces(BX1 + 1, BZ1 + 1, BX2 - 1, 34, 1, 4, 6);
+            furniture.traces(BX1 + 1, 36, BX2 - 1, BZ2 - 1, 1, 2, 3);
+            furniture.traces(0, 3, WIDTH - 1, 17, 1, 2, 0);
+            furniture.graffiti(BX1 + 1, BZ1 + 1, BX2 - 1, 34, 2, "DZIEŃ 47", "JESZCZE", "ŻYJĘ", "- R.");
+            furniture.graffiti(BX1 + 1, 36, BX2 - 1, BZ2 - 1, 2, "NIE PIJ", "WODY", "Z KRANU!", "");
+            furniture.graffiti(0, BZ2 + 1, WIDTH - 1, DEPTH - 1, 2, "OAZA ŚWIT", "NA POŁUDNIE", "ZA LASEM", "");
+            furniture.collapsedTent(0, BZ2 + 1, WIDTH - 1, DEPTH - 1, 1, "green");
+        }
+
+        /** Obozowisko za ladą kasową: śpiwór, wygaszone ognisko, garnek, świeczki i barykada na ladzie. */
+        private void squatterCamp() {
+            furniture.bed(7, 1, 28, "north", "brown");
+            bp.set(8, 1, 26, "campfire[facing=north,lit=false,signal_fire=false,waterlogged=false]");
+            bp.set(8, 1, 28, "cauldron");
+            bp.set(7, 1, 26, "candle[candles=3,lit=true,waterlogged=false]");
+            bp.crate(7, 1, 24, "east", "lada");
+            bp.sign(BX1 + 1, 3, 28, "oak_wall_sign[facing=east]", "MOJE MIEJSCE", "NIE RUSZAĆ", "bo kulka", "- Zbychu");
+            // barykada na ladzie, przejście w szczelinie x = 9 zostaje
+            bp.set(7, 2, 30, "spruce_fence");
+            bp.set(8, 2, 30, "spruce_fence");
+            bp.set(10, 2, 30, "crafting_table");
+            // ten, który próbował się dostać
+            furniture.skeleton(7, 1, 31, "east");
         }
 
         // ------------------------------------------------------------------ zniszczenia

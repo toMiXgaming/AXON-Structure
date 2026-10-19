@@ -41,10 +41,12 @@ public final class AutoGenerator implements Listener {
      * @param maxHeightDiff    maks. różnica wysokości terenu pod strukturą (10. i 90. percentyl)
      * @param maxLiquidPercent maks. udział wody/lawy pod strukturą
      * @param weights          struktura → waga (pusta mapa = wszystkie po równo)
+     * @param maxInhabitedTicks auto-generowanie pomija teren, na którym gracze spędzili już tyle ticków
+     *                          (Chunk#getInhabitedTime), żeby nie zasypać czyjejś bazy; 0 = bez sprawdzania
      */
     public record Settings(boolean enabled, Set<String> worlds, double chancePercent, int minDistance,
                            int minSpawnDistance, int maxHeightDiff, double maxLiquidPercent,
-                           Map<String, Integer> weights) {
+                           Map<String, Integer> weights, long maxInhabitedTicks) {
     }
 
     /** Wynik oceny terenu. */
@@ -140,6 +142,16 @@ public final class AutoGenerator implements Listener {
                         done.accept(false);
                         return;
                     }
+                    if (feedback == null && settings.maxInhabitedTicks() > 0) {
+                        // auto-generowanie: obszar, na którym gracze już byli, może mieć ich budowle
+                        for (CompletableFuture<Chunk> future : futures) {
+                            Chunk chunk = future.join();
+                            if (chunk.getInhabitedTime() > settings.maxInhabitedTicks()) {
+                                done.accept(false);
+                                return;
+                            }
+                        }
+                    }
                     Site site = evaluate(world, bp, draft);
                     if (checkTerrain && !site.ok()) {
                         if (feedback != null) {
@@ -148,7 +160,7 @@ public final class AutoGenerator implements Listener {
                         done.accept(false);
                         return;
                     }
-                    Placement placement = new Placement(draft.world(), draft.originX(), site.baseY(),
+                    Placement placement = new Placement(draft.world(), draft.originX(), site.baseY() - bp.ground(),
                             draft.originZ(), steps);
                     boolean started = paster.paste(bp, placement, feedback, undoOwner, feedback == null, instance -> {
                         if (instance == null) {
@@ -221,6 +233,9 @@ public final class AutoGenerator implements Listener {
         List<Integer> weights = new ArrayList<>();
         int total = 0;
         for (Blueprint bp : library.all()) {
+            if (bp.safeZone()) {
+                continue; // oaza stoi tylko tam, gdzie postawi ją admin
+            }
             int weight = settings.weights().isEmpty()
                     ? 1
                     : settings.weights().getOrDefault(bp.id().toLowerCase(Locale.ROOT), 0);

@@ -74,6 +74,8 @@ public final class PasteService {
     private final ProtectionService protection;
     private final Map<UUID, Deque<PasteRecord>> history = new HashMap<>();
     private final Map<String, BlockData> dataCache = new HashMap<>();
+    private final List<Map<String, BlockData>> rotatedCache = List.of(new HashMap<>(), new HashMap<>(),
+            new HashMap<>(), new HashMap<>());
     private Settings settings;
     private boolean busy;
 
@@ -123,41 +125,53 @@ public final class PasteService {
             return false;
         }
 
+        // Teren planujemy od razu (kolumny wokół obrysu), a bloki samej struktury dopiero w trakcie stawiania,
+        // warstwa po warstwie w ramach limitu na tick, żeby duża struktura nie dawała skoku na jednym ticku.
+        // Teren nie nachodzi na bryłę struktury (pas wygładzania jest poza obrysem, fundament pod, wycinka nad),
+        // więc kolejność nie zmienia wyniku.
         Map<Long, Op> ops = new LinkedHashMap<>();
         planTerrain(world, bp, placement, ops);
         int steps = placement.steps();
-        for (int y = 0; y < bp.height(); y++) {
-            for (int x = 0; x < bp.width(); x++) {
-                for (int z = 0; z < bp.depth(); z++) {
-                    int[] w = placement.toWorld(x, y, z);
-                    put(ops, w[0], w[1], w[2], resolve(Rotation.rotateState(bp.get(x, y, z), steps)));
-                }
-            }
-        }
         List<Op> list = new ArrayList<>(ops.values());
+        int volume = bp.width() * bp.depth() * bp.height();
+        int total = list.size() + volume;
 
         busy = true;
         PasteRecord record = new PasteRecord(bp.name(), world);
-        send(feedback, "§7Stawiam §e" + bp.name() + "§7 (" + list.size() + " bloków)...");
+        send(feedback, "§7Stawiam §e" + bp.name() + "§7 (" + total + " bloków)...");
 
         new BukkitRunnable() {
             private int index;
+            private int cell;
+
+            private void set(int x, int y, int z, BlockData data) {
+                Block block = world.getBlockAt(x, y, z);
+                BlockData current = block.getBlockData();
+                if (current.equals(data)) {
+                    return;
+                }
+                record.snapshots.add(new Snapshot(x, y, z, current));
+                block.setBlockData(data, false);
+            }
 
             @Override
             public void run() {
                 try {
-                    int end = Math.min(index + settings.blocksPerTick(), list.size());
-                    for (; index < end; index++) {
+                    int budget = settings.blocksPerTick();
+                    for (; index < list.size() && budget > 0; index++, budget--) {
                         Op op = list.get(index);
-                        Block block = world.getBlockAt(op.x(), op.y(), op.z());
-                        BlockData current = block.getBlockData();
-                        if (current.equals(op.data())) {
-                            continue;
-                        }
-                        record.snapshots.add(new Snapshot(op.x(), op.y(), op.z(), current));
-                        block.setBlockData(op.data(), false);
+                        set(op.x(), op.y(), op.z(), op.data());
                     }
-                    if (index >= list.size()) {
+                    int plane = bp.width() * bp.depth();
+                    for (; cell < volume && budget > 0; cell++, budget--) {
+                        int y = cell / plane;
+                        int rest = cell % plane;
+                        int x = rest / bp.depth();
+                        int z = rest % bp.depth();
+                        int[] w = placement.toWorld(x, y, z);
+                        set(w[0], w[1], w[2], rotated(bp.get(x, y, z), steps));
+                    }
+                    if (index >= list.size() && cell >= volume) {
                         cancel();
                         StructureInstance instance = finish(bp, placement, record, automatic);
                         busy = false;
@@ -166,7 +180,7 @@ public final class PasteService {
                         }
                         int[] c = placement.center(bp);
                         send(feedback, "§aGotowe! §e" + bp.name() + "§a stoi na §f" + c[0] + " " + c[1] + " " + c[2]
-                                + "§a, skrzynie: §f" + record.cratesPlaced + "/" + bp.spawnPoints().size()
+                                + "§a, skrzynie: §f" + record.cratesPlaced + "/" + crates.crateSlots(bp)
                                 + (undoOwner != null ? "§a. Cofnięcie: §e/struktury cofnij" : "§a."));
                         if (onDone != null) {
                             onDone.accept(instance);
@@ -187,6 +201,12 @@ public final class PasteService {
             }
         }.runTaskTimer(plugin, 1L, 1L);
         return true;
+    }
+
+    /** Stan bloku po obrocie; obrócone stany są zapamiętywane, bo struktura powtarza te same bloki tysiące razy. */
+    private BlockData rotated(String state, int steps) {
+        int s = ((steps % 4) + 4) % 4;
+        return rotatedCache.get(s).computeIfAbsent(state, k -> resolve(Rotation.rotateState(k, s)));
     }
 
     private StructureInstance finish(Blueprint bp, Placement placement, PasteRecord record, boolean automatic) {
@@ -265,8 +285,9 @@ public final class PasteService {
      * </ul>
      */
     private void planTerrain(World world, Blueprint bp, Placement placement, Map<Long, Op> ops) {
-        int baseY = placement.originY();
-        int topY = baseY + bp.height();
+        int bottomY = placement.originY();
+        int baseY = bottomY + bp.ground();
+        int topY = bottomY + bp.height();
         int margin = Math.max(0, settings.smoothing());
         BlockData air = resolve("minecraft:air");
         BlockData stone = resolve("minecraft:stone");
@@ -290,14 +311,14 @@ public final class PasteService {
                             put(ops, x, y, z, air);
                         }
                     }
-                    // pod strukturą: fundament do litego gruntu
+                    // pod strukturą (albo pod jej podziemiem): fundament do litego gruntu
                     for (int depth = 1; depth <= settings.maxFoundation(); depth++) {
-                        int y = baseY - depth;
+                        int y = bottomY - depth;
                         Material type = world.getBlockAt(x, y, z).getType();
                         if (Terrain.isGround(type)) {
                             break;
                         }
-                        put(ops, x, y, z, depth <= 3 ? under : stone);
+                        put(ops, x, y, z, depth <= 3 && bp.ground() == 0 ? under : stone);
                     }
                     continue;
                 }

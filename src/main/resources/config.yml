@@ -39,6 +39,8 @@ ochrona:
   komunikat: "&cTej struktury nie można niszczyć ani rozbudowywać."
   # Flagi regionu WorldGuard struktura_<id>. Niszczenie blokuje sam plugin, więc passthrough zostaje
   # na allow (inaczej WorldGuard zablokowałby też otwieranie skrzyń), a pvp na allow włącza walkę.
+  # Region kopalni (struktury z żyłami punkt-ruda) dostaje sam block-break: allow, żeby WorldGuard nie blokował
+  # kopania rud – chyba że wpiszesz tu block-break sam.
   flagi-worldguard:
     pvp: allow
     passthrough: allow
@@ -58,6 +60,9 @@ auto-generowanie:
   maks-roznica-wysokosci: 6
   # Maks. udział wody/lawy/lodu pod strukturą w %.
   maks-woda-procent: 3
+  # Pomija teren, na którym gracze spędzili już łącznie więcej ticków (20 = 1 s), żeby nie postawić struktury
+  # na czyjejś bazie, gdy nowy chunk pojawi się obok starego. 0 = bez sprawdzania.
+  maks-czas-graczy-w-chunku: 1200
   # Które struktury i jak często (wagi). Puste {} = wszystkie wczytane po równo.
   # Przykład:
   #   struktury:
@@ -65,11 +70,417 @@ auto-generowanie:
   #     magazyn: 1
   struktury: {}
 
+zrzuty:
+  # Kilka razy dziennie, o losowej porze w podanych godzinach, nad jedną z postawionych struktur spada
+  # na spadochronie skrzynia z rzadkim lootem. Miejsca zrzutów są w plikach struktur (lądowisko jednostki,
+  # dach szpitala). Komenda: /struktury zrzut teraz (od razu), /struktury zrzut (o której następny).
+  wlaczone: true
+  # Ile zrzutów dziennie. Okno godzin dzielone jest na tyle równych części, w każdej jeden zrzut o losowej porze
+  # (przy 2 i 12-22: raz między 12 a 17, raz między 17 a 22).
+  dziennie: 2
+  godziny-od: 12
+  godziny-do: 22
+  strefa-czasowa: Europe/Warsaw
+  # Zrzut tylko, gdy online jest co najmniej tylu graczy (czeka do końca swojej części okna, potem przepada).
+  min-graczy: 2
+  # Pula lootu (sekcja pule:) i zarazem nazwa miejsc zrzutu w plikach .axs.
+  pula: zrzut
+  # Po ilu minutach nieopróżniona skrzynia znika.
+  znika-po-minutach: 15
+  # Skrzynia spada powoli na spadochronie z tej wysokości (bloki nad miejscem lądowania) przez tyle sekund.
+  wysokosc-spadania: 60
+  czas-spadania-sekund: 45
+  nazwa-skrzyni: "&4&lZrzut zaopatrzenia"
+  # {nazwa} = nazwa struktury, {x} {y} {z} = współrzędne, {minuty} = znika-po-minutach. "" = bez komunikatu.
+  # Domyślnie komunikat nie zdradza miejsca: wie to tylko radiostacja w oazie (za opłatą, sekcja oaza.radio).
+  # Miejsce w komunikacie: "&4&l[ZRZUT] &fNad strukturą &e{nazwa} &fspada skrzynia z zaopatrzeniem! &7({x}, {y}, {z})"
+  komunikat: "&4&l[ZRZUT] &fNad jedną ze struktur spada skrzynia z zaopatrzeniem! &7Gdzie? Radiostacja w oazie wie."
+  komunikat-wyladowal: "&4&l[ZRZUT] &fSkrzynia wylądowała. Zniknie za &e{minuty} min&f."
+  komunikat-zniknal: "&4&l[ZRZUT] &7Nikt nie zabrał zrzutu, skrzynia zniknęła."
+  # Zrzut widać z daleka (miejsca dalej nie ma na czacie): za spadającą skrzynią smuga czerwonego dymu, a nad
+  # wylądowaną wysoki czerwony słup dymu (widoczny do ~500 bloków), czerwony fajerwerk i huk przy lądowaniu
+  # (słychać w promieniu 300 bloków, z kierunku zrzutu).
+  dym-sygnalowy: true
+  # Co ile sekund nad skrzynią wybucha czerwona flara (0 = bez flar).
+  flara-co-sekund: 5
+  # Spadająca skrzynia i spadochron świecą na czerwono (obrys widać przez ściany).
+  swiecenie: true
+
+straznicy:
+  # Strażnicy NPC w strukturach (żołnierze w jednostce, szabrownicy w szpitalu). Wymagają pluginów Citizens
+  # i Sentinel (darmowe: ci.citizensnpcs.co). Broń z QualityArmory: "qa:<nazwa broni z QA>"; gdy QA jej nie zna,
+  # strażnik dostaje kuszę. Bez Citizens i Sentinela miejsca strażników zostają puste.
+  # Komenda: /struktury straznicy (ilu stoi), /struktury straznicy postaw (od razu, bez czekania na graczy).
+  wlaczeni: true
+  # Strażnicy pojawiają się, gdy gracz podejdzie bliżej niż tyle bloków do środka struktury,
+  # i znikają, gdy nikogo nie ma w 1,5 × tej odległości (nie obciążają serwera, gdy nikt nie gra w okolicy).
+  promien-aktywacji: 64
+  # Po ilu minutach zabity strażnik wraca na swoje miejsce.
+  odradzanie-minut: 10
+  # celnosc: rozrzut strzałów – 0 = trafia zawsze; przy broni QualityArmory mnoży rozrzut samej broni,
+  # więc już 1 to sporo pudeł, a 3+ to strzelanie prawie na ślepo
+  zestawy:
+    zolnierz:
+      nazwa: "&2Żołnierz"
+      # Skin z mineskin.org: "Texture Value" i "Texture Signature". Albo skin-gracza: nick gracza z takim skinem.
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:ak47"
+      # hełm, napierśnik, spodnie, buty
+      zbroja: [iron_helmet, chainmail_chestplate, chainmail_leggings, iron_boots]
+      zycie: 30
+      # -1 = obrażenia broni
+      obrazenia: -1
+      # z jakiej odległości widzi i strzela
+      zasieg: 28
+      # rozrzut strzałów: 0 = idealnie celny, im więcej, tym częściej pudłuje
+      celnosc: 0.8
+      # klasa skrzyni (sekcja klasy:), z której losuje się loot po zabiciu; "" = nic
+      loot: lepsza-skrzynia
+      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
+      cele: [players]
+      # czy chodzi po okolicy, gdy nie walczy (domyślnie tak, handlarz i paser stoją za ladą), i jak daleko
+      # od swojego miejsca w strukturze może odejść (w blokach)
+      chodzi: true
+      promien-chodzenia: 8
+    szabrownik:
+      nazwa: "&6Szabrownik"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:remington"
+      zbroja: [leather_helmet, leather_chestplate, air, leather_boots]
+      zycie: 24
+      obrazenia: -1
+      zasieg: 20
+      celnosc: 1.2
+      loot: mala-skrzynka
+      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
+      cele: [players]
+    ochroniarz:
+      # strażnik oazy: broni przed potworami, do graczy nie strzela i nie da się go zranić
+      nazwa: "&aOchrona Oazy"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:m4a1s"
+      zbroja: [iron_helmet, iron_chestplate, leather_leggings, iron_boots]
+      zycie: 40
+      obrazenia: -1
+      zasieg: 24
+      celnosc: 0.4
+      loot: ""
+      cele: [monsters]
+    handlarz:
+      # handlarz w sklepie oazy (punkt-handlarz): stoi za ladą, prawy klik otwiera sklep
+      nazwa: "&6Handlarz Zdzich"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+    paser:
+      # paser w kryjówce czarnego rynku (punkt-czarny-rynek): stoi za ladą, nie walczy, nie da się go zranić
+      nazwa: "&8Paser"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [leather_helmet, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+    osadnik:
+      # osadnik w oazie (npc-osadnik): uprawia ogródki – podchodzi do dojrzałych roślin, zbiera je i sadzi od nowa
+      nazwa: "&aOsadnik"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "iron_hoe"
+      zbroja: [leather_helmet, air, leather_leggings, leather_boots]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      chodzi: true
+      promien-chodzenia: 6
+      uprawia: true
+    ocalaly:
+      # ocalały w oazie (npc-ocalaly): chodzi po okolicy, przy kuchni, ognisku i po korytarzach noclegowni
+      nazwa: "&7Ocalały"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      chodzi: true
+      promien-chodzenia: 6
+    spiacy:
+      # śpiący w noclegowni (npc-spiacy): leży w najbliższym łóżku, nie chodzi
+      nazwa: "&7Ocalały"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, air, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      spi: true
+
+oaza:
+  # Oaza Świt (struktura "oaza"): strefa bez PvP, stawiana tylko komendą (/struktury generuj oaza), nigdy sama.
+  # W jej obrysie gracze nie zranią się nawzajem, a strażnicy (zestaw ochroniarz) strzelają tylko do potworów.
+  # Płatne rzeczy (sklep, zlecenia, automaty, radio) biorą pieniądze z pluginu ekonomii przez Vault.
+  # Dane graczy: plugins/AXON-Structure/oaza.yml. Komendy: /oaza (dla graczy), /struktury oaza (stan).
+  wlaczona: true
+  tytul-wejscie: "&a&lOaza Świt"
+  podtytul-wejscie: "&7Strefa bez przemocy. Broń w kaburze."
+  tytul-wyjscie: "&c&lOpuszczasz oazę"
+  podtytul-wyjscie: "&7Dalej już strzelają."
+  komunikat-pvp: "&cW oazie się nie strzela do ludzi."
+  sklep:
+    nazwa: "&6Sklep u Zdzicha"
+    # przedmiot: nazwa z Minecrafta albo qa:<broń z QualityArmory>; ilosc: ile w jednej paczce;
+    # kupno: cena dla gracza (0 = nie sprzedaje), skup: ile handlarz płaci (0 = nie skupuje). Do 45 towarów.
+    oferty:
+      - {przedmiot: bread, ilosc: 8, kupno: 40, skup: 10}
+      - {przedmiot: cooked_beef, ilosc: 8, kupno: 80, skup: 20}
+      - {przedmiot: golden_apple, ilosc: 1, kupno: 400, skup: 100}
+      - {przedmiot: torch, ilosc: 16, kupno: 30, skup: 0}
+      - {przedmiot: oak_planks, ilosc: 32, kupno: 60, skup: 10}
+      - {przedmiot: iron_ingot, ilosc: 8, kupno: 240, skup: 60}
+      - {przedmiot: gold_ingot, ilosc: 4, kupno: 300, skup: 80}
+      - {przedmiot: diamond, ilosc: 1, kupno: 600, skup: 150}
+      - {przedmiot: leather_chestplate, ilosc: 1, kupno: 120, skup: 20}
+      - {przedmiot: iron_chestplate, ilosc: 1, kupno: 900, skup: 150}
+      - {przedmiot: iron_helmet, ilosc: 1, kupno: 550, skup: 90}
+      - {przedmiot: shield, ilosc: 1, kupno: 200, skup: 30}
+      - {przedmiot: bow, ilosc: 1, kupno: 150, skup: 25}
+      - {przedmiot: arrow, ilosc: 32, kupno: 80, skup: 10}
+      - {przedmiot: crossbow, ilosc: 1, kupno: 250, skup: 40}
+      - {przedmiot: ender_pearl, ilosc: 2, kupno: 300, skup: 60}
+      - {przedmiot: experience_bottle, ilosc: 8, kupno: 200, skup: 0}
+      # Bronie z QualityArmory (nazwy jak w Twoim QA):
+      # - {przedmiot: "qa:ak47", ilosc: 1, kupno: 3000, skup: 700}
+  depozyt:
+    # ile rzędów po 9 miejsc ma prywatny schowek (1-6); opłata za każde otwarcie (0 = darmowy)
+    rzedy: 3
+    oplata: 0
+  zlecenia:
+    # ile zleceń wisi naraz i co ile godzin losują się nowe; każdy gracz wykonuje każde raz na okres
+    ile: 5
+    odswiezanie-godzin: 24
+    lista:
+      - {przedmiot: iron_ingot, ilosc: 16, nagroda: 300}
+      - {przedmiot: gold_ingot, ilosc: 8, nagroda: 350}
+      - {przedmiot: coal, ilosc: 64, nagroda: 150}
+      - {przedmiot: leather, ilosc: 24, nagroda: 200}
+      - {przedmiot: wheat, ilosc: 64, nagroda: 120}
+      - {przedmiot: oak_log, ilosc: 64, nagroda: 150}
+      - {przedmiot: string, ilosc: 32, nagroda: 180}
+      - {przedmiot: gunpowder, ilosc: 16, nagroda: 250}
+      - {przedmiot: redstone, ilosc: 32, nagroda: 200}
+      - {przedmiot: diamond, ilosc: 2, nagroda: 500}
+      - {przedmiot: rotten_flesh, ilosc: 48, nagroda: 100}
+      - {przedmiot: bone, ilosc: 32, nagroda: 120}
+  automaty:
+    # stawka za jedną grę; 3 takie same symbole = stawka × mnoznik, 2 takie same = stawka × para-mnoznik
+    # symbol z mnoznik: 0 to pudło (nie płaci nawet w parze). Przy tych wagach wygrywa ok. 31% gier,
+    # a automat oddaje średnio ok. 59% stawek (reszta znika z ekonomii).
+    stawka: 50
+    para-mnoznik: 1.5
+    symbole:
+      - {przedmiot: dead_bush, waga: 10, mnoznik: 0}
+      - {przedmiot: coal, waga: 8, mnoznik: 4}
+      - {przedmiot: iron_ingot, waga: 5, mnoznik: 8}
+      - {przedmiot: gold_ingot, waga: 3, mnoznik: 20}
+      - {przedmiot: emerald, waga: 2, mnoznik: 40}
+      - {przedmiot: diamond, waga: 1, mnoznik: 150}
+  radio:
+    # ile kosztuje namiar na najbliższy zrzut (nad czym i o której spadnie)
+    cena: 500
+  strzelnica:
+    # seria trwa tyle sekund od pierwszego trafienia; dalsza tarcza = więcej punktów (1 + co 10 bloków)
+    czas-serii-sekund: 60
+    # najlepszy wynik tygodnia dostaje tyle pieniędzy (wypłata w poniedziałek)
+    nagroda-tygodnia: 1000
+
+czarny-rynek:
+  # Kryjówki czarnego rynku (struktura "czarny-rynek") stawiają się same jak inne struktury i PvP w nich działa.
+  # W piwnicy stoi paser (zestaw paser): klik w niego albo w beczkę-ladę przed nim otwiera towar.
+  # Co odswiezanie-godzin paser losuje "ile" ofert z listy; ten sam towar jest we wszystkich kryjówkach.
+  # przedmiot: nazwa z Minecrafta albo qa:<broń z QualityArmory>; ilosc: ile w paczce; cena: z Vaulta;
+  # sztuk: ile paczek można kupić w jednym okresie na cały serwer (0 albo brak = bez limitu).
+  wlaczony: true
+  nazwa: "&8Paser &7– towar spod lady"
+  ile: 4
+  odswiezanie-godzin: 3
+  lista:
+    - {przedmiot: "qa:ak47", ilosc: 1, cena: 4500, sztuk: 2}
+    - {przedmiot: "qa:m4a1s", ilosc: 1, cena: 5500, sztuk: 2}
+    - {przedmiot: "qa:remington", ilosc: 1, cena: 3000, sztuk: 3}
+    - {przedmiot: diamond_chestplate, ilosc: 1, cena: 4000, sztuk: 2}
+    - {przedmiot: diamond_helmet, ilosc: 1, cena: 2500, sztuk: 2}
+    - {przedmiot: totem_of_undying, ilosc: 1, cena: 6000, sztuk: 1}
+    - {przedmiot: enchanted_golden_apple, ilosc: 1, cena: 5000, sztuk: 1}
+    - {przedmiot: golden_apple, ilosc: 4, cena: 1200, sztuk: 5}
+    - {przedmiot: ender_pearl, ilosc: 8, cena: 900, sztuk: 5}
+    - {przedmiot: tnt, ilosc: 8, cena: 1500, sztuk: 3}
+    - {przedmiot: netherite_scrap, ilosc: 2, cena: 3500, sztuk: 2}
+    - {przedmiot: experience_bottle, ilosc: 32, cena: 1000, sztuk: 4}
+
+loot:
+  # Loot jeszcze nieustalony: true = skrzynie i beczki stoją w strukturach, ale są puste, skrzynia zrzutu spada pusta
+  # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z kartami nie ma. Tabele (pule:, klasy:, loot
+  # w zestawach strażników) zostają niżej na później – gdy będą gotowe, ustaw false i /struktury przeladuj.
+  puste: true
+
+kopalnia:
+  # Żyły rudy: punkty punkt-ruda w pliku struktury (kopalnia) leżą na blokach rudy. Te bloki – i tylko one – gracze
+  # mogą kopać mimo ochrony struktury (region WorldGuard kopalni dostaje sam block-break: allow, resztę dalej chroni
+  # plugin). Z rudy miedzi wypada Surowa Siarka taka jak z głazów AxonOre (AxonPlot przyjmie ją do rdzenia),
+  # z innych rud zwykły drop (fortuna i jedwabny dotyk działają) i doświadczenie – także w świecie AxonOre
+  # z mining.block-natural-ores: true. Wykopane miejsce zamienia się w kamień i po odnawianie-minut odrasta w nim
+  # losowa ruda (głęboka, jeśli w pliku była głęboka). Kolejka przeżywa restart (plik kopalnia.yml).
+  wlaczone: true
+  odnawianie-minut: 15
+  # Co zostaje po wykopaniu, zanim ruda odrośnie: kamien (kamień / łupek), bruk albo powietrze.
+  po-wykopaniu: kamien
+  # Ruda nie odrasta, gdy gracz stoi bliżej niż tyle bloków (nie pojawi się nikomu w twarz ani w nogach).
+  blokada-gdy-gracz-blizej-niz: 3
+  # Doświadczenie z rud jak w zwykłym Minecrafcie.
+  doswiadczenie: true
+  # Co odrasta (wagi jak w AxonOre, liczą się proporcjonalnie). copper = ruda miedzi, z której wypada siarka.
+  # Żeby ruda w ogóle nie odrastała, daj jej 0 (usunięta pozycja wróci przy następnym starcie).
+  rudy:
+    coal: 35
+    iron: 25
+    copper: 15
+    gold: 10
+    redstone: 8
+    lapis: 4
+    diamond: 2
+    emerald: 1
+  siarka:
+    # false = z rudy miedzi zwykła surowa miedź
+    wlaczona: true
+    # Musi być taka sama jak sulfur.name w configu AxonOre, inaczej siarka z kopalni nie złączy się w stos z tą
+    # z głazów. AxonPlot rozpoznaje siarkę po custom-model-data 10001 – nie zmieniaj go.
+    nazwa: "<#FDE047>&lSurowa Siarka"
+    opis: []
+    custom-model-data: 10001
+    min: 1
+    max: 2
+
+zwierzeta:
+  # Zwierzęta w strukturach: punkty punkt-zwierze-<typ> w pliku struktury (np. punkt-zwierze-chicken, -cow, -sheep,
+  # -pig, -cat, -wolf, -fox, -horse). Gdy gracz podejdzie do struktury, na każdym punkcie stoi jedno zwierzę.
+  # Nie zapisują się ze światem, więc nie mnożą się po restartach. Oswojone albo wzięte na smycz zostają u gracza
+  # (a na punkcie po czasie pojawia się nowe). W oazie gracze nie mogą ich ranić.
+  wlaczone: true
+  # Zwierzęta pojawiają się, gdy gracz jest bliżej niż tyle bloków od środka struktury.
+  promien-aktywacji: 64
+  # Po ilu minutach zabite (oswojone, zabrane) zwierzę wraca na swój punkt.
+  odradzanie-minut: 10
+  # Zwierzę, które odejdzie dalej niż tyle bloków od punktu, wraca na miejsce (0 = może chodzić, gdzie chce).
+  maks-odejscie: 24
+
+zycie:
+  # Odgłosy w strukturach: gracz w obrysie struktury co jakiś czas słyszy (tylko on) dźwięk z listy dla tej
+  # struktury, gdzieś obok siebie. Jeden zegar na cały serwer, liczą się tylko gracze w strukturach.
+  wlaczone: true
+  # Co ile sekund losować odgłos dla każdego gracza w strukturze i z jaką szansą (%) coś zabrzmi.
+  co-ile-sekund: 12
+  szansa-procent: 35
+  # Głośność wszystkich odgłosów (mnożona przez głośność z listy).
+  glosnosc: 0.7
+  # Lista dla id struktury (stacja, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek);
+  # struktury bez listy biorą "domyslne", pusta lista [] = cisza. Wpis: "nazwa dźwięku [wysokość] [głośność]",
+  # nazwy z Minecrafta (https://minecraft.wiki/w/Sounds.json) albo z paczki zasobów.
+  odglosy:
+    # ruiny: wiatr, skrzypienie, coś się sypie
+    domyslne:
+      - "minecraft:item.elytra.flying 0.6 0.3"
+      - "minecraft:block.wooden_door.open 0.5"
+      - "minecraft:block.wooden_trapdoor.close 0.6"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:block.iron_trapdoor.close 0.5 0.6"
+      - "minecraft:block.gravel.fall 0.8"
+      - "minecraft:ambient.cave 1.0 0.5"
+    # kopalnia: kapanie wody, osypujący się kamień, łańcuchy w szybie
+    kopalnia:
+      - "minecraft:ambient.cave 1.0 0.6"
+      - "minecraft:block.pointed_dripstone.drip_water 1.0"
+      - "minecraft:block.pointed_dripstone.drip_water 0.8"
+      - "minecraft:block.gravel.fall 0.7"
+      - "minecraft:block.stone.break 0.6 0.5"
+      - "minecraft:block.chain.step 0.6"
+      - "minecraft:block.anvil.land 0.5 0.15"
+    # jednostka: trzaski radia, buczenie, daleka strzelanina
+    jednostka:
+      - "minecraft:block.fire.extinguish 1.8 0.3"
+      - "minecraft:block.note_block.bit 0.6 0.5"
+      - "minecraft:block.note_block.bit 0.9 0.4"
+      - "minecraft:block.redstone_torch.burnout 1.4 0.4"
+      - "minecraft:block.beacon.ambient 0.7"
+      - "minecraft:entity.firework_rocket.blast_far 0.6 0.8"
+      - "minecraft:block.iron_door.close 0.7 0.6"
+      - "minecraft:item.elytra.flying 0.6 0.3"
+    # szpital: trzaśnięcia drzwi, szkło, ktoś (coś) jęczy w oddali
+    szpital:
+      - "minecraft:ambient.cave 1.0 0.5"
+      - "minecraft:block.iron_door.close 0.6 0.6"
+      - "minecraft:block.wooden_door.open 0.5"
+      - "minecraft:block.glass.break 0.8 0.3"
+      - "minecraft:entity.zombie.ambient 0.7 0.3"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:item.elytra.flying 0.6 0.3"
+    # oaza: szum agregatu, gwar ludzi, ognisko, warsztat, kury
+    oaza:
+      - "minecraft:block.beacon.ambient 0.6 0.8"
+      - "minecraft:block.beacon.ambient 0.5 0.8"
+      - "minecraft:entity.villager.ambient 1.0 0.6"
+      - "minecraft:entity.villager.trade 1.0 0.6"
+      - "minecraft:entity.villager.yes 1.0 0.5"
+      - "minecraft:block.campfire.crackle 1.0"
+      - "minecraft:block.anvil.use 1.0 0.3"
+      - "minecraft:block.smithing_table.use 1.0 0.4"
+      - "minecraft:entity.chicken.ambient 1.0 0.6"
+      - "minecraft:block.note_block.bit 0.7 0.3"
+
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.
 #  Pula losuje klasę skrzyni według wag. "brak" = w tym miejscu nic się nie pojawi.
 # ------------------------------------------------------------
 pule:
+  # kryjówka czarnego rynku: składzik w piwnicy i skrzynia za ladą pasera
+  czarny-rynek:
+    lepsza-skrzynia: 40
+    skrzynia-broni: 25
+    mala-skrzynka: 20
+    brak: 15
   paliwo:
     beczka-paliwa: 65
     beczka: 20
@@ -114,6 +525,163 @@ pule:
     brazowa: 45
     narzedziowa: 35
     brak: 20
+  # --- gospodarstwo Agro-Pol (beczki na podwórzu i przy bece paliwowej: pule plac i paliwo) ---
+  # parter domu
+  parter:
+    mala-skrzynka: 50
+    skrzynka-jedzenie: 25
+    skrzynka-medyczna: 10
+    brak: 15
+  # klepisko stodoły
+  klepisko:
+    mala-skrzynka: 55
+    narzedziowa: 15
+    brak: 30
+  # strych stodoły (parkour po kombajnie)
+  strych:
+    lepsza-skrzynia: 70
+    brazowa: 15
+    brak: 15
+  # piętro domu (przez szopę i balkon)
+  pietro:
+    lepsza-skrzynia: 70
+    skrzynka-medyczna: 15
+    brak: 15
+  # szczyt silosu – pojedyncza rzadka skrzynia
+  silos:
+    rzadka-skrzynia: 90
+    lepsza-skrzynia: 10
+  # --- kombinat Przyszłość (beczki: plac, paliwo; małe skrzynki: parter, klepisko; piętro paszarni: strych) ---
+  # magazyn nawozów – jedyne pewne skrzynki medyczne
+  magazyn-nawozow:
+    skrzynka-medyczna: 60
+    narzedziowa: 25
+    brak: 15
+  # pomost suwnicy w bazie maszynowej
+  suwnica:
+    lepsza-skrzynia: 65
+    narzedziowa: 20
+    brak: 15
+  # pomost wieży ciśnień
+  wieza:
+    lepsza-skrzynia: 75
+    brazowa: 10
+    brak: 15
+  # maszynownia na szczycie wieży elewatora – dwie rzadkie skrzynie
+  elewator:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
+  # --- kopalnia Jedność (beczki: plac, paliwo; cechownia i portiernia: parter; najwyższe piętro sortowni: strych) ---
+  # sztolnia w hałdzie – skrzynki narzędziowe w komorze na końcu chodnika
+  sztolnia:
+    narzedziowa: 60
+    mala-skrzynka: 15
+    brak: 25
+  # podszybie i komora pomp pod ziemią (jedyne wyjście to drabina w szybie)
+  podszybie:
+    narzedziowa: 55
+    mala-skrzynka: 15
+    lepsza-skrzynia: 10
+    brak: 20
+  # skład materiałów wybuchowych za kratą w podszybiu
+  podszybie-sklad:
+    lepsza-skrzynia: 75
+    narzedziowa: 10
+    brak: 15
+  # pulpit maszynisty w maszynowni wyciągowej
+  maszynownia:
+    lepsza-skrzynia: 70
+    narzedziowa: 15
+    brak: 15
+  # budka na szczycie wieży szybowej
+  wieza-szybowa:
+    rzadka-skrzynia: 90
+    lepsza-skrzynia: 10
+  # --- jednostka wojskowa (beczki: plac, paliwo; koszary, kantyna, magazyny: parter, lada, klepisko;
+  #     strych garaży i regały magazynu sprzętu: strych; wieża desantowa na torze przeszkód: wieza) ---
+  # izba chorych – szafki z lekami
+  izba-chorych:
+    skrzynka-medyczna: 70
+    mala-skrzynka: 10
+    brak: 20
+  # gabinet dowódcy i kancelaria tajna w sztabie
+  sztab:
+    lepsza-skrzynia: 55
+    skrzynia-broni: 15
+    brazowa: 15
+    brak: 15
+  # cztery wieże wartownicze w rogach ogrodzenia
+  wieze-wartownicze:
+    skrzynia-broni: 45
+    lepsza-skrzynia: 35
+    brak: 20
+  # wrak Mi-8 na lądowisku
+  wrak:
+    skrzynia-broni: 40
+    skrzynka-medyczna: 30
+    narzedziowa: 15
+    brak: 15
+  # kosz dźwigu nad placem
+  dzwig:
+    lepsza-skrzynia: 70
+    narzedziowa: 15
+    brak: 15
+  # schron, poziom 1 – sala dowodzenia i pokój szyfranta
+  schron-1:
+    lepsza-skrzynia: 50
+    skrzynia-broni: 25
+    skrzynka-medyczna: 10
+    brak: 15
+  # bunkry magazynu uzbrojenia za siatką
+  magazyn-broni:
+    skrzynia-broni: 60
+    brazowa: 20
+    brak: 20
+  # zbrojownia za kratą na poziomie 2 schronu
+  zbrojownia:
+    skrzynia-broni: 80
+    lepsza-skrzynia: 10
+    brak: 10
+  # pomost na szczycie komina kotłowni
+  komin:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
+  # kabina wieży kontroli lotów
+  wieza-lotow:
+    rzadka-skrzynia: 85
+    skrzynia-broni: 15
+  # skarbiec na dnie schronu (tylko przez szyb wentylacyjny)
+  skarbiec:
+    rzadka-skrzynia: 100
+  # --- szpital Pod Lipami (beczki: plac; sale i gabinety: parter, izba-chorych; kuchnia: lada) ---
+  # apteka szpitalna (tylko kanałem wentylacyjnym z dachu pawilonu)
+  apteka:
+    lepsza-skrzynia: 45
+    skrzynka-medyczna: 45
+    brak: 10
+  # blok operacyjny (tylko łącznikiem z 1 piętra)
+  blok-operacyjny:
+    lepsza-skrzynia: 55
+    skrzynka-medyczna: 30
+    brak: 15
+  # gabinet dyrektora na 4 piętrze (szyb windy albo właz z dachu)
+  dyrekcja:
+    lepsza-skrzynia: 75
+    brazowa: 10
+    brak: 15
+  # kostnica w piwnicy
+  kostnica:
+    lepsza-skrzynia: 60
+    skrzynka-medyczna: 20
+    brak: 20
+  # lądowisko na dachu
+  ladowisko:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
+  # zrzut zaopatrzenia (sekcja zrzuty: wskazuje tę pulę)
+  zrzut:
+    rzadka-skrzynia: 75
+    skrzynia-broni: 25
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
@@ -216,6 +784,74 @@ klasy:
       - {przedmiot: compass, ilosc: "1", szansa: 10}
       - {przedmiot: spyglass, ilosc: "1", szansa: 10}
       - {przedmiot: crossbow, ilosc: "1", szansa: 8}
+
+  mala-skrzynka:
+    nazwa: "&7Mała drewniana skrzynka"
+    blok: skrzynia
+    min-przedmiotow: 1
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "3-10", szansa: 100, nazwa: "&fZłom"}
+      - {przedmiot: wheat, ilosc: "2-6", szansa: 40}
+      - {przedmiot: bread, ilosc: "1-2", szansa: 30}
+      - {przedmiot: leather, ilosc: "1-3", szansa: 25}
+      - {przedmiot: string, ilosc: "1-3", szansa: 25, nazwa: "&fLina"}
+      - {przedmiot: torch, ilosc: "2-6", szansa: 25}
+      - {przedmiot: flint, ilosc: "1-3", szansa: 20}
+      - {przedmiot: coal, ilosc: "1-4", szansa: 20}
+      - {przedmiot: stone_axe, ilosc: "1", szansa: 8}
+      - {przedmiot: shears, ilosc: "1", szansa: 5}
+
+  lepsza-skrzynia:
+    nazwa: "&9Lepsza skrzynia"
+    blok: skrzynia
+    min-przedmiotow: 2
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "10-24", szansa: 100, nazwa: "&fZłom"}
+      - {przedmiot: iron_ingot, ilosc: "2-6", szansa: 70}
+      - {przedmiot: gold_ingot, ilosc: "1-3", szansa: 30}
+      - {przedmiot: arrow, ilosc: "6-16", szansa: 40}
+      - {przedmiot: gunpowder, ilosc: "2-4", szansa: 20}
+      - {przedmiot: bow, ilosc: "1", szansa: 15}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 10}
+      - {przedmiot: iron_sword, ilosc: "1", szansa: 12}
+      - {przedmiot: chainmail_chestplate, ilosc: "1", szansa: 10}
+      - {przedmiot: iron_helmet, ilosc: "1", szansa: 10}
+      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 6}
+      - {przedmiot: golden_apple, ilosc: "1", szansa: 8, nazwa: "&fApteczka"}
+
+  rzadka-skrzynia:
+    nazwa: "&5Rzadka skrzynia"
+    blok: skrzynia
+    min-przedmiotow: 3
+    loot:
+      - {przedmiot: iron_ingot, ilosc: "4-10", szansa: 100}
+      - {przedmiot: diamond, ilosc: "1-3", szansa: 50}
+      - {przedmiot: golden_apple, ilosc: "1-2", szansa: 30, nazwa: "&fApteczka"}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_leggings, ilosc: "1", szansa: 25}
+      - {przedmiot: gunpowder, ilosc: "3-8", szansa: 30}
+      - {przedmiot: spyglass, ilosc: "1", szansa: 25, nazwa: "&fLornetka"}
+      - {przedmiot: ender_pearl, ilosc: "1-2", szansa: 20}
+      - {przedmiot: emerald, ilosc: "1-3", szansa: 20}
+      - {przedmiot: diamond_sword, ilosc: "1", szansa: 8}
+
+  skrzynia-broni:
+    nazwa: "&2Skrzynia z bronią"
+    blok: skrzynia
+    min-przedmiotow: 2
+    loot:
+      - {przedmiot: arrow, ilosc: "8-24", szansa: 80, nazwa: "&fAmunicja"}
+      - {przedmiot: bow, ilosc: "1", szansa: 35}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_sword, ilosc: "1", szansa: 25, nazwa: "&fBagnet"}
+      - {przedmiot: shield, ilosc: "1", szansa: 20}
+      - {przedmiot: gunpowder, ilosc: "2-6", szansa: 35}
+      - {przedmiot: firework_rocket, ilosc: "1-3", szansa: 15, nazwa: "&fRaca"}
+      - {przedmiot: tnt, ilosc: "1", szansa: 5, nazwa: "&fŁadunek wybuchowy"}
+      - {przedmiot: chainmail_chestplate, ilosc: "1", szansa: 15, nazwa: "&fKamizelka"}
+      - {przedmiot: iron_helmet, ilosc: "1", szansa: 15, nazwa: "&fHełm wz. 67"}
+      - {przedmiot: spyglass, ilosc: "1", szansa: 8, nazwa: "&fLornetka"}
 
   zielona-karta:
     nazwa: "&aZielona karta dostępu"
