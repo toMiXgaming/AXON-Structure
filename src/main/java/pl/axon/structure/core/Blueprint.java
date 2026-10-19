@@ -36,6 +36,10 @@ public final class Blueprint {
     public record SignSpec(Pos pos, String[] lines) {
     }
 
+    /** Model z paczki zasobów: środek modelu w układzie struktury, skala wyświetlacza i obrót w stopniach. */
+    public record PropSpec(double x, double y, double z, String model, float scale, float yaw) {
+    }
+
     private String id = "struktura";
     private String name = "Struktura";
     private String description = "";
@@ -47,6 +51,7 @@ public final class Blueprint {
     private final Map<Pos, String> blocks = new HashMap<>();
     private final List<SpawnPoint> spawnPoints = new ArrayList<>();
     private final List<SignSpec> signs = new ArrayList<>();
+    private final List<PropSpec> props = new ArrayList<>();
 
     public Blueprint(int width, int height, int depth) {
         this.width = width;
@@ -188,6 +193,14 @@ public final class Blueprint {
 
     public List<SpawnPoint> spawnPoints() {
         return spawnPoints;
+    }
+
+    public void prop(PropSpec prop) {
+        props.add(prop);
+    }
+
+    public List<PropSpec> props() {
+        return props;
     }
 
     public List<SignSpec> signs() {

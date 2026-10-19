@@ -23,6 +23,32 @@ stawianie:
   # Ile bloków ponad strukturą wycinać (drzewa, pagórki).
   czyszczenie-nad: 24
 
+# Meble z paczki zasobów serwera (QualityArmory-texturepack). Przy stawianiu struktury te bloki zamieniają się
+# na niewidzialną barierę, a w ich miejscu staje model (obrócony jak blok). "" = zwykły blok z Minecrafta.
+meble:
+  lozko: "axon:lozko"
+  bloki:
+    bookshelf: "axon:regal"              # metalowy regał z segregatorami
+    chiseled_bookshelf: "axon:kartoteka" # szafa kartotekowa
+    cauldron: "axon:umywalka"            # umywalka z kranem
+    water_cauldron: "axon:umywalka"
+    crafting_table: "axon:warsztat"      # stół warsztatowy z imadłem
+    smoker: "axon:kuchenka"              # stara kuchenka gazowa
+    furnace: "axon:piecyk"               # żeliwna koza
+    observer: "axon:radiostacja"         # wojskowa radiostacja
+    lectern: "axon:biurko"               # biurko ze starym komputerem
+    brewing_stand: "axon:kroplowka"      # stojak z kroplówką
+    composter: "axon:kosz"               # blaszany kosz na śmieci
+    grindstone: "axon:szlifierka"        # szlifierka stołowa
+  # Drzwi zostają prawdziwymi drzwiami (otwierają się), model idzie za nimi przy otwieraniu.
+  drzwi:
+    spruce_door: "axon:drzwi_drewniane"
+    birch_door: "axon:drzwi_drewniane"
+    dark_oak_door: "axon:drzwi_drewniane"
+    iron_door: "axon:drzwi_stalowe"
+  # Struktury, w których meble zostają zwykłe (np. kolorowe łóżka w oazie).
+  bez-zamiany: [oaza]
+
 ochrona:
   # Gracze nie mogą niszczyć ani budować w obrębie struktury (cała wysokość świata, też pod ziemią).
   # Wolno: otwierać skrzynie, drzwi, przyciski i zabierać karty z ramek. PvP działa normalnie.
@@ -351,6 +377,18 @@ czarny-rynek:
     - {przedmiot: netherite_scrap, ilosc: 2, cena: 3500, sztuk: 2}
     - {przedmiot: experience_bottle, ilosc: 32, cena: 1000, sztuk: 4}
 
+gui:
+  # Okna oazy (sklep, automaty, wymiana, paser, tablica zleceń) jako pełnoekranowy ekran w stylu Rusta: obraz z map
+  # w niewidzialnych ramkach, który shader z paczki zasobów serwera (ten sam co w AxonMap) rozciąga na cały ekran.
+  # Kursor to mysz, LPM/PPM klikają, scroll przewija listy, Shift zamyka. Wymaga pluginu PacketEvents.
+  # Tryb awaryjny: zwykłe okno skrzyni, gdy nie ma PacketEvents, shader: false, gracz nie wczytał paczki,
+  # wybrał skrzynię (/oaza gui albo przycisk "Tryb skrzyni" na ekranie) albo nie da się go posadzić (pojazd, skok).
+  # Depozyt zawsze jest skrzynią (przekłada się w nim przedmioty). Wybór graczy i numery map: gui.yml.
+  shader: true
+  # true = ekran tylko dla graczy, od których klient zgłosił wczytaną paczkę zasobów; false, gdy paczkę wysyła
+  # proxy albo inny plugin i serwer tego nie widzi (wtedy gracz bez paczki zobaczy ramki z mapami zamiast ekranu)
+  wymagaj-paczki: true
+
 loot:
   # Loot jeszcze nieustalony: true = skrzynie i beczki stoją w strukturach, ale są puste, skrzynia zrzutu spada pusta
   # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z kartami nie ma. Tabele (pule:, klasy:, loot
@@ -524,6 +562,7 @@ pule:
   dach:
     brazowa: 45
     narzedziowa: 35
+    zrzut: 5
     brak: 20
   # --- gospodarstwo Agro-Pol (beczki na podwórzu i przy bece paliwowej: pule plac i paliwo) ---
   # parter domu
@@ -687,6 +726,7 @@ pule:
 #  KLASY SKRZYŃ
 #  blok: skrzynia | beczka | ramka (ramka = przedmiot w ramce, np. karta dostępu)
 #  dekoracja: blok stawiany na wieku (np. czerwona świeczka na beczce paliwa), "" = brak
+#  model: model przedmiotu z paczki zasobów rysowany zamiast bloku (np. "axon:zrzut"), "" = zwykły blok
 #  min-przedmiotow: gdy nic nie wylosuje się z szans, dobierz tyle losowych pozycji
 #  loot: każda pozycja losowana osobno
 #    przedmiot: nazwa z Minecrafta (np. iron_ingot)
@@ -852,6 +892,23 @@ klasy:
       - {przedmiot: chainmail_chestplate, ilosc: "1", szansa: 15, nazwa: "&fKamizelka"}
       - {przedmiot: iron_helmet, ilosc: "1", szansa: 15, nazwa: "&fHełm wz. 67"}
       - {przedmiot: spyglass, ilosc: "1", szansa: 8, nazwa: "&fLornetka"}
+
+  # Model z paczki QualityArmory-texturepack (axon:zrzut); beczka w środku jest niewidoczna.
+  zrzut:
+    nazwa: "&4Zrzut"
+    blok: beczka
+    model: "axon:zrzut"
+    min-przedmiotow: 4
+    loot:
+      - {przedmiot: iron_ingot, ilosc: "6-16", szansa: 100}
+      - {przedmiot: gold_ingot, ilosc: "2-6", szansa: 60}
+      - {przedmiot: diamond, ilosc: "1-3", szansa: 35}
+      - {przedmiot: golden_apple, ilosc: "1-2", szansa: 40}
+      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_helmet, ilosc: "1", szansa: 30}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 25}
+      - {przedmiot: gunpowder, ilosc: "4-10", szansa: 50}
+      - {przedmiot: cooked_beef, ilosc: "6-12", szansa: 70, nazwa: "&fRacja żywnościowa"}
 
   zielona-karta:
     nazwa: "&aZielona karta dostępu"

@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 /**
  * Sklep w oazie: towary z configu ({@code oaza.sklep.oferty}) za pieniądze z Vaulta. Lewy klik kupuje,
- * prawy sprzedaje (skup), shift mnoży razy 4.
+ * prawy sprzedaje (skup), shift mnoży razy 4. Ekran GUI ({@link ShopScreen}) woła te same {@link #buy} i {@link #sell}.
  */
 final class ShopService {
 
@@ -52,8 +52,12 @@ final class ShopService {
         }
     }
 
+    String title() {
+        return title;
+    }
+
     /** Uzupełnia oferty, których przedmiot nie istniał przy wczytaniu configu; zwraca te, które da się pokazać. */
-    private List<Offer> available() {
+    List<Offer> available() {
         List<Offer> out = new ArrayList<>();
         for (int i = 0; i < offers.size(); i++) {
             Offer o = offers.get(i);
@@ -95,6 +99,14 @@ final class ShopService {
             player.sendMessage("§cHandlarz nie ma dziś nic na sprzedaż.");
             return;
         }
+        if (oasis.openScreen(player, new ShopScreen(oasis, this, player, offers))) {
+            return;
+        }
+        openChest(player, offers);
+    }
+
+    /** Sklep jako okno skrzyni (tryb awaryjny GUI). */
+    void openChest(Player player, List<Offer> offers) {
         int rows = Math.min(6, (offers.size() + 8) / 9 + 1);
         Menu menu = new Menu(rows, title);
         draw(menu, player, offers);
@@ -133,7 +145,7 @@ final class ShopService {
         }
     }
 
-    private void buy(Player player, Offer offer, int times) {
+    void buy(Player player, Offer offer, int times) {
         if (offer.buy() <= 0) {
             return;
         }
@@ -149,7 +161,7 @@ final class ShopService {
         player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_YES, 0.7f, 1f);
     }
 
-    private void sell(Player player, Offer offer, int times) {
+    void sell(Player player, Offer offer, int times) {
         if (offer.sell() <= 0) {
             return;
         }

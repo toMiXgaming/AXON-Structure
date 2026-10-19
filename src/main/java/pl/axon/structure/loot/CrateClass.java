@@ -10,8 +10,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-/** Klasa skrzyni z configu: jaki blok, jaka nazwa i jaki loot. */
-public record CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
+/**
+ * Klasa skrzyni z configu: jaki blok, jaka nazwa i jaki loot. {@code model} to klucz modelu przedmiotu
+ * z paczki zasobów (np. {@code axon:zrzut}), rysowanego w miejscu bloku; pusty = zwykły blok.
+ */
+public record CrateClass(String id, String displayName, Kind kind, String decoration, String model, int minItems,
                          List<LootEntry> loot) {
 
     public enum Kind {

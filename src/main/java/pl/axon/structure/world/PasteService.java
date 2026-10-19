@@ -57,7 +57,11 @@ public final class PasteService {
         final String structureName;
         final World world;
         final List<Snapshot> snapshots = new ArrayList<>();
+        final List<PropService.WorldProp> props = new ArrayList<>();
         String instanceId;
+        Box footprint;
+        int minY;
+        int maxY;
         int cratesPlaced;
 
         PasteRecord(String structureName, World world) {
@@ -72,6 +76,7 @@ public final class PasteService {
     private final InstanceStore store;
     private final CrateService crates;
     private final ProtectionService protection;
+    private final PropService props;
     private final Map<UUID, Deque<PasteRecord>> history = new HashMap<>();
     private final Map<String, BlockData> dataCache = new HashMap<>();
     private final List<Map<String, BlockData>> rotatedCache = List.of(new HashMap<>(), new HashMap<>(),
@@ -79,7 +84,9 @@ public final class PasteService {
     private Settings settings;
     private boolean busy;
 
-    public PasteService(JavaPlugin plugin, InstanceStore store, CrateService crates, ProtectionService protection) {
+    public PasteService(JavaPlugin plugin, InstanceStore store, CrateService crates, ProtectionService protection,
+                        PropService props) {
+        this.props = props;
         this.plugin = plugin;
         this.store = store;
         this.crates = crates;
@@ -131,13 +138,18 @@ public final class PasteService {
         // więc kolejność nie zmienia wyniku.
         Map<Long, Op> ops = new LinkedHashMap<>();
         planTerrain(world, bp, placement, ops);
+        PasteRecord record = new PasteRecord(bp.name(), world);
+        boolean furniture = props.replacesFurniture(bp);
         int steps = placement.steps();
+        props.fromBlueprint(world, bp, placement, record.props);
+        record.footprint = Box.of(bp, placement);
+        record.minY = placement.originY();
+        record.maxY = placement.originY() + bp.height();
         List<Op> list = new ArrayList<>(ops.values());
         int volume = bp.width() * bp.depth() * bp.height();
         int total = list.size() + volume;
 
         busy = true;
-        PasteRecord record = new PasteRecord(bp.name(), world);
         send(feedback, "§7Stawiam §e" + bp.name() + "§7 (" + total + " bloków)...");
 
         new BukkitRunnable() {
@@ -169,7 +181,11 @@ public final class PasteService {
                         int x = rest / bp.depth();
                         int z = rest % bp.depth();
                         int[] w = placement.toWorld(x, y, z);
-                        set(w[0], w[1], w[2], rotated(bp.get(x, y, z), steps));
+                        BlockData data = rotated(bp.get(x, y, z), steps);
+                        if (furniture) {
+                            data = props.furniture(world, w[0], w[1], w[2], data, record.props);
+                        }
+                        set(w[0], w[1], w[2], data);
                     }
                     if (index >= list.size() && cell >= volume) {
                         cancel();
@@ -215,6 +231,7 @@ public final class PasteService {
         for (Blueprint.SignSpec spec : bp.signs()) {
             writeSign(world, placement, spec);
         }
+        props.spawn(record.props);
         int[] center = placement.center(bp);
         String id = UUID.randomUUID().toString().substring(0, 8);
         StructureInstance instance = new StructureInstance(id, bp.id(), placement, center[0], center[2],
@@ -242,6 +259,9 @@ public final class PasteService {
                 protection.onRemoved(instance);
                 store.remove(instance.id());
             }
+        }
+        if (!record.props.isEmpty()) {
+            props.remove(record.world, record.footprint, record.minY, record.maxY);
         }
         List<Snapshot> snapshots = record.snapshots;
         send(feedback, "§7Cofam §e" + record.structureName + "§7 (" + snapshots.size() + " bloków)...");

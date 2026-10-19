@@ -3,6 +3,7 @@ package pl.axon.structure.loot;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -10,11 +11,16 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import pl.axon.structure.StructureLibrary;
 import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.Placement;
@@ -29,6 +35,9 @@ import java.util.Set;
 
 /** Losuje i odświeża skrzynie w postawionych strukturach. */
 public final class CrateService {
+
+    /** Znacznik wyświetlaczy z modelem skrzyni, żeby dało się je potem znaleźć i usunąć. */
+    private static final String MODEL_TAG = "axs_model";
 
     /**
      * @param emptyLoot skrzynie stoją, ale są puste (loot jeszcze nieustalony); dotyczy też zrzutów i zabitych NPC
@@ -264,7 +273,55 @@ public final class CrateService {
                 }
             }
         }
+        if (!crate.model().isBlank()) {
+            removeModels(block);
+            spawnModel(block, crate, horizontal);
+        }
         return true;
+    }
+
+    /**
+     * Stawia wyświetlacz przedmiotu z modelem z paczki zasobów. Model jest odrobinę większy od bloku
+     * i zakrywa go, a kliknięcie trafia w blok pod nim, więc pojemnik dalej się otwiera. Wyświetlacz
+     * stoi blok wyżej i jest przesunięty w dół, bo w środku pełnego bloku światło wynosi 0 i model byłby czarny.
+     */
+    private void spawnModel(Block block, CrateClass crate, String facing) {
+        NamespacedKey key = NamespacedKey.fromString(crate.model());
+        if (key == null) {
+            plugin.getLogger().warning("Zły model w klasie '" + crate.id() + "': " + crate.model());
+            return;
+        }
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta meta = item.getItemMeta();
+        meta.setItemModel(key);
+        item.setItemMeta(meta);
+        Location location = block.getLocation().add(0.5, 1.5, 0.5);
+        location.setYaw(switch (facing) {
+            case "north" -> 180f;
+            case "east" -> -90f;
+            case "west" -> 90f;
+            default -> 0f;
+        });
+        block.getWorld().spawn(location, ItemDisplay.class, display -> {
+            display.setItemStack(item);
+            display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+            display.setTransformation(new Transformation(new Vector3f(0f, -1f, 0f), new Quaternionf(),
+                    new Vector3f(1f, 1f, 1f), new Quaternionf()));
+            display.setDisplayWidth(1.2f);
+            display.setDisplayHeight(1.5f);
+            display.setViewRange(1.5f);
+            display.addScoreboardTag(MODEL_TAG);
+            display.setPersistent(true);
+        });
+    }
+
+    private static void removeModels(Block block) {
+        Location center = block.getLocation().add(0.5, 1.5, 0.5);
+        for (ItemDisplay display : block.getWorld().getNearbyEntitiesByType(ItemDisplay.class, center, 0.6)) {
+            if (display.getScoreboardTags().contains(MODEL_TAG)) {
+                display.remove();
+            }
+        }
     }
 
     private boolean refreshFrame(World world, int[] w, String facing, String poolId, boolean force) {
@@ -325,6 +382,7 @@ public final class CrateService {
             container.getInventory().clear();
         }
         block.setBlockData(Bukkit.createBlockData(Material.AIR), false);
+        removeModels(block);
         Block above = block.getRelative(BlockFace.UP);
         if (decorationTypes.contains(above.getType())) {
             above.setBlockData(Bukkit.createBlockData(Material.AIR), false);
