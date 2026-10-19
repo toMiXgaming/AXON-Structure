@@ -47,7 +47,7 @@ public final class Blueprint {
     private final int height;
     private final int depth;
     private int ground;
-    private boolean safeZone;
+    private Traits traits = Traits.defaults();
     private final Map<Pos, String> blocks = new HashMap<>();
     private final List<SpawnPoint> spawnPoints = new ArrayList<>();
     private final List<SignSpec> signs = new ArrayList<>();
@@ -108,11 +108,21 @@ public final class Blueprint {
      * a strażnicy strzelają wyłącznie do potworów.
      */
     public boolean safeZone() {
-        return safeZone;
+        return traits.safe();
     }
 
     public Blueprint safeZone(boolean safeZone) {
-        this.safeZone = safeZone;
+        this.traits = traits.withSafe(safeZone);
+        return this;
+    }
+
+    /** Pozostałe pola nagłówka (wjazdy, mapa, strefy, klimat, tagi) dla AxonMapGenerator. */
+    public Traits traits() {
+        return traits;
+    }
+
+    public Blueprint traits(Traits traits) {
+        this.traits = traits;
         return this;
     }
 

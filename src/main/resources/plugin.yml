@@ -1,6 +1,8 @@
 name: AXON-Structure
 version: '${version}'
 main: pl.axon.structure.AxonStructurePlugin
+# STARTUP, żeby AxonMapGenerator (depend na nas) mógł pobrać API przed wczytaniem świata.
+load: STARTUP
 api-version: '1.21'
 description: Struktury w stylu Rusta wklejane jedną komendą.
 author: toMiXgaming

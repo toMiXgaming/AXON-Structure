@@ -4,7 +4,9 @@ import org.bukkit.Material;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import pl.axon.structure.api.AxonStructureApi;
 import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.gui.ShaderGui;
 import pl.axon.structure.loot.AirdropService;
@@ -73,16 +75,11 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
         reload();
         store.load();
-        protection.hookWorldGuard();
-        protection.syncAll();
-        crates.start();
-        airdrops.start();
-        guards.start();
-        oasis.start();
-        gui.start();
-        veins.start();
-        animals.start();
-        ambient.start();
+        // Przy load: STARTUP świat i pluginy POSTWORLD (WorldGuard, Citizens, QualityArmory, PacketEvents…)
+        // jeszcze nie działają. Usługi startują na pierwszym ticku, gdy wszystko już jest włączone.
+        getServer().getScheduler().runTask(this, this::startServices);
+        getServer().getServicesManager().register(AxonStructureApi.class, new AxonStructureApiImpl(this), this,
+                ServicePriority.Normal);
         getServer().getPluginManager().registerEvents(guards, this);
         getServer().getPluginManager().registerEvents(veins, this);
         getServer().getPluginManager().registerEvents(animals, this);
@@ -107,8 +104,23 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 + ", klas skrzyń: " + crates.loot().classes().size());
     }
 
+    /** Start usług, które dotykają światów albo soft-zależności. Wywoływane z pierwszego ticka serwera. */
+    private void startServices() {
+        protection.hookWorldGuard();
+        protection.syncAll();
+        crates.start();
+        airdrops.start();
+        guards.start();
+        oasis.start();
+        gui.start();
+        veins.start();
+        animals.start();
+        ambient.start();
+    }
+
     @Override
     public void onDisable() {
+        getServer().getServicesManager().unregisterAll(this);
         // każda usługa osobno: błąd jednej nie może zablokować zapisu reszty (depozyty, wymiany, dane.yml)
         safely("odgłosy", ambient == null ? null : ambient::stop);
         safely("zwierzęta", animals == null ? null : animals::stop);

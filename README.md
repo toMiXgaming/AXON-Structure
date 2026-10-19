@@ -71,6 +71,36 @@ Tekstowy: nagłówek (`id`, `nazwa`, `opis`, `rozmiar`, opcjonalnie `grunt`), pa
 
 `grunt: N` oznacza, że warstwa `N` leży na poziomie terenu, a warstwy `0 .. N-1` to podziemie wklejane pod powierzchnię (bez tego pola grunt to warstwa 0, jak dotąd). Wysokość podawana w `/struktury wklej` i wyliczana przy auto-generowaniu to zawsze poziom gruntu.
 
+Strefa bezpieczna (oaza) to `strefa: bezpieczna` albo `bezpieczna: tak`; stare `strefa: bezpieczna` działa jak `strefa: srodek` + `bezpieczna: tak`.
+
+Opcjonalne pola dla AxonMapGenerator (brak pola = wartość domyślna, stare pliki działają bez zmian):
+
+| Pole | Wartości | Domyślnie |
+| --- | --- | --- |
+| `wjazdy` | `x z kierunek; x z kierunek` (kierunek `north/south/east/west`, punkty na krawędzi) | brak |
+| `rozmiar-klasa` | `duza`, `srednia`, `mala` | liczona z wymiarów: dłuższy bok ≥ 100 duża, ≥ 50 średnia |
+| `mapa` | `tak`, `nie` | `tak` |
+| `strefa` | `rownina`, `przy-gorach`, `las`, `ustronnie`, `srodek`, `plaza`, `dowolna` (lista po przecinku) | `dowolna` |
+| `klimat` | `snieg`, `umiarkowany`, `suchy` (lista po przecinku) | wszystkie |
+| `bezpieczna` | `tak`, `nie` | `nie` |
+
+Błędna wartość przerywa wczytywanie pliku i pokazuje w logu nazwę pola. Zapis zachowuje pola i nieznane klucze nagłówka.
+
+Struktury z kodu (`src/generator`) ustawiają pola przez `StructureDefinition.traits()`. Stacja ma `mapa: nie`, bo to struktura testowa.
+
+### Preferencje monumentów dla AxonMapGenerator
+
+Pliki tych struktur nie są w tym repo. Dopisz linie do nagłówka każdego pliku `.axs` (po linii `rozmiar:`):
+
+```
+oaza:         strefa: srodek     bezpieczna: tak
+kopalnia:     strefa: przy-gorach
+gospodarstwo: strefa: rownina
+czarny-rynek: strefa: ustronnie
+```
+
+`jednostka`, `szpital` i `kombinat` nie mają preferencji, więc zostają z domyślnymi wartościami.
+
 Struktury opisane w kodzie (`src/generator`):
 
 | Plik | Struktura | Pule skrzyń |
@@ -96,7 +126,7 @@ W szpitalu: 4 piętro (dyrekcja) – schody kończą się na 3 piętrze, dalej s
 
 **Strażnicy NPC** (`straznicy:` w configu, wymagają pluginów [Citizens](https://ci.citizensnpcs.co/job/Citizens2/) i [Sentinel](https://ci.citizensnpcs.co/job/Sentinel/)): w jednostce 4 żołnierzy (plac apelowy, lądowisko), w szpitalu 3 szabrowników (dach, hol, piwnica). Każdy zestaw ma skin (z mineskin.org albo nick gracza), broń (`qa:<nazwa>` z QualityArmory albo zwykły przedmiot), zbroję, życie, zasięg, celność i klasę skrzyni, z której losuje się loot po zabiciu. Strażnicy pojawiają się, gdy gracz podejdzie do struktury, znikają, gdy w okolicy nikogo nie ma, a zabici wracają po 10 minutach. Bez Citizens i Sentinela miejsca zostają puste.
 
-**Oaza Świt** (`oaza.axs`, sekcja `oaza:` w configu): dawna jednostka przejęta przez przetrwańców, 150 × 140 bloków, z murem, bramą, targowiskiem, sklepem, depozytem, barem z automatami, radiostacją, strzelnicą, noclegownią, ogrodami i lądowiskiem. Plik ma `strefa: bezpieczna`, więc oaza nie pojawia się sama (stawia ją admin: `/struktury generuj oaza`), w jej obrysie gracze nie ranią się nawzajem (też region WorldGuard z `pvp: deny`), a strażnicy z zestawu `ochroniarz` strzelają tylko do potworów i są nietykalni. Stanowiska to punkty `punkt-*` w pliku: 8 lad wymiany (pierwszy gracz klika ladę, drugi tę samą; okno wymiany z potwierdzeniem obu stron i odliczaniem, każda zmiana kasuje potwierdzenia), sklep (lada albo handlarz NPC; ceny w Vaulcie), prywatny depozyt, tablica zleceń (przynieś towar za zapłatę), automaty, radiostacja (gdzie i kiedy spadnie zrzut) i strzelnica z tygodniowym rankingiem i nagrodą (`/oaza ranking`). Płatności idą przez Vault; bez niego płatne stanowiska grzecznie odmawiają.
+**Oaza Świt** (`oaza.axs`, sekcja `oaza:` w configu): dawna jednostka przejęta przez przetrwańców, 150 × 140 bloków, z murem, bramą, targowiskiem, sklepem, depozytem, barem z automatami, radiostacją, strzelnicą, noclegownią, ogrodami i lądowiskiem. Plik ma `bezpieczna: tak` (dawniej `strefa: bezpieczna`, nadal czytane), więc oaza nie pojawia się sama (stawia ją admin: `/struktury generuj oaza`), w jej obrysie gracze nie ranią się nawzajem (też region WorldGuard z `pvp: deny`), a strażnicy z zestawu `ochroniarz` strzelają tylko do potworów i są nietykalni. Stanowiska to punkty `punkt-*` w pliku: 8 lad wymiany (pierwszy gracz klika ladę, drugi tę samą; okno wymiany z potwierdzeniem obu stron i odliczaniem, każda zmiana kasuje potwierdzenia), sklep (lada albo handlarz NPC; ceny w Vaulcie), prywatny depozyt, tablica zleceń (przynieś towar za zapłatę), automaty, radiostacja (gdzie i kiedy spadnie zrzut) i strzelnica z tygodniowym rankingiem i nagrodą (`/oaza ranking`). Płatności idą przez Vault; bez niego płatne stanowiska grzecznie odmawiają.
 
 **Życie w oazie i chodzący strażnicy**: wszyscy NPC poza handlarzem i paserem chodzą po okolicy swojego miejsca (`chodzi`, `promien-chodzenia` w zestawie; Citizens „wander” ograniczony do kwadratu wokół punktu). W oazie są też osadnicy: `osadnik` (4, przy grządkach i w szklarni) podchodzi do dojrzałych roślin, zbiera je i sadzi od nowa (`uprawia: true`, sam wygląd, nic nie wypada), `ocalaly` (5) kręci się przy kuchni polowej, ognisku i po korytarzach noclegowni, a `spiacy` (3) leży w łóżkach w pokojach noclegowni (`spi: true`, kładzie się w najbliższym łóżku). Wszyscy są nietykalni i nie walczą. Stary `config.yml` dostaje te zestawy sam przy starcie.
 
@@ -135,6 +165,26 @@ AxonOre: jego `mining.block-natural-ores` zabiera drop rud spoza głazów (prior
 **Zwierzęta** (`zwierzeta:`): punkty `punkt-zwierze-<typ>` (`chicken`, `cow`, `sheep`, `pig`, `cat`, `wolf`, `fox`, `horse`, … albo po polsku: `kura`, `krowa`, `owca`, `swinia`, `kot`, `wilk`, `lis`, `kon`). Gdy gracz podejdzie do struktury, na każdym punkcie stoi jedno zwierzę; zabite wraca po `odradzanie-minut`. Zwierzęta nie zapisują się ze światem (i mają znacznik), więc nie mnożą się po restartach; oswojone albo wzięte na smycz zostają u gracza. Zwierzę, które odejdzie dalej niż `maks-odejscie`, wraca na punkt. W oazie gracze nie mogą ich ranić.
 
 **Odgłosy** (`zycie:`): gracz w obrysie struktury co `co-ile-sekund` z szansą `szansa-procent` słyszy (tylko on) dźwięk z listy tej struktury – wiatr i skrzypienie w ruinach, kapanie wody i osypujący się kamień w kopalni, trzaski radia i daleką strzelaninę w jednostce, szum agregatu i gwar w oazie. Jeden zegar na serwer i tylko gracze w strukturach; `wlaczone: false` wyłącza wszystko, pusta lista wycisza jedną strukturę.
+
+## API dla innych pluginów
+
+AXON-Structure rejestruje w ServicesManager interfejs `pl.axon.structure.api.AxonStructureApi`. Pobranie:
+
+```java
+AxonStructureApi api = AxonStructureApi.get(); // null, gdy AXON-Structure nie działa
+```
+
+Plugin musi mieć `depend: [AXON-Structure]` (AXON-Structure ładuje się przy `load: STARTUP`).
+
+| Metoda | Wątek | Opis |
+| --- | --- | --- |
+| `templates()` / `template(id)` | dowolny | niemutowalne szablony (`StructureTemplate`): wymiary, `blockAt(x, y, z)`, `groundLevel()`, wjazdy, tagi, klasa rozmiaru, `mapAllowed()`, strefy, klimaty, `safe()` |
+| `register(key, templateId, world, x, y, z, rotation)` | serwer | rejestruje strukturę, której bloki już stoją: skrzynie, napisy, modele, szyby i płoty łączą się z sąsiadami, ochrona, region WorldGuard, zapis w `dane.yml`. Nic nie stawia. `y` to dno szablonu. Idempotentne po `key` |
+| `isRegistered(key)` | dowolny | czy klucz jest już zarejestrowany |
+| `unregisterWorld(world)` | serwer | zapomina wszystkie struktury w świecie (przy wipe) |
+| `claimWorld(world)` | dowolny | wyłącza auto-generowanie AXON-Structure w tym świecie |
+
+`RotationUtil` (ten sam pakiet) obraca współrzędne i stany bloków tak samo jak wklejanie. Obrót 0–3 × 90°, liczby spoza zakresu są sprowadzane modulo 4.
 
 ## Budowanie
 

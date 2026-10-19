@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -59,6 +60,8 @@ public final class AutoGenerator implements Listener {
     private final PasteService paster;
     private final ProtectionService protection;
     private final Random random = new Random();
+    /** Światy, w których struktury stawia kto inny (AxonMapGenerator). */
+    private final Set<String> claimedWorlds = ConcurrentHashMap.newKeySet();
     private Settings settings;
     private boolean attemptInProgress;
 
@@ -75,13 +78,18 @@ public final class AutoGenerator implements Listener {
         this.settings = settings;
     }
 
+    /** Oddaje świat innemu pluginowi: auto-generowanie przestaje w nim stawiać struktury. */
+    public void claimWorld(String world) {
+        claimedWorlds.add(world);
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkLoad(ChunkLoadEvent event) {
         if (!settings.enabled() || !event.isNewChunk() || attemptInProgress || paster.isBusy()) {
             return;
         }
         World world = event.getWorld();
-        if (!settings.worlds().contains(world.getName())) {
+        if (claimedWorlds.contains(world.getName()) || !settings.worlds().contains(world.getName())) {
             return;
         }
         if (random.nextDouble() * 100.0 >= settings.chancePercent()) {

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "pl.axon"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     // Repo Papera ma też kopię Maven Central, więc idzie pierwsze (Central potrafi odpowiadać 429).
@@ -39,6 +39,14 @@ dependencies {
     ).forEach { compileOnly(it) { isTransitive = false } }
     // Opcjonalnie: okna oazy jako ekran z shaderem (bez PacketEvents zostają skrzynie).
     compileOnly("com.github.retrooper:packetevents-spigot:2.7.0")
+
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 java {

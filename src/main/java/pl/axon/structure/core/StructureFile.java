@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +20,8 @@ import java.util.Map;
  * opis: ...
  * rozmiar: 45 16 52          (szerokość wysokość głębokość)
  * grunt: 12                  (opcjonalnie: która warstwa leży na poziomie terenu, niższe idą pod ziemię)
- * strefa: bezpieczna         (opcjonalnie: oaza bez PvP, stawiana tylko komendą)
+ * bezpieczna: tak           (opcjonalnie: oaza bez PvP, stawiana tylko komendą; stara "strefa: bezpieczna" też działa)
+ * strefa: rownina,las       (opcjonalnie: preferencje AxonMapGenerator, patrz {@link Traits})
  * paleta:
  * 0 minecraft:air
  * 1 minecraft:stone
@@ -68,8 +70,8 @@ public final class StructureFile {
         if (bp.ground() > 0) {
             out.write("grunt: " + bp.ground() + "\n");
         }
-        if (bp.safeZone()) {
-            out.write("strefa: bezpieczna\n");
+        for (String line : bp.traits().toHeaderLines()) {
+            out.write(line + "\n");
         }
         out.write("paleta:\n");
         for (int i = 0; i < palette.size(); i++) {
@@ -132,7 +134,7 @@ public final class StructureFile {
 
     public static Blueprint read(Reader in) throws IOException {
         BufferedReader reader = in instanceof BufferedReader b ? b : new BufferedReader(in);
-        Map<String, String> meta = new HashMap<>();
+        Map<String, String> meta = new LinkedHashMap<>();
         List<String> palette = new ArrayList<>();
         Blueprint bp = null;
         String section = "";
@@ -227,13 +229,7 @@ public final class StructureFile {
                 throw new IOException("zły 'grunt': " + e.getMessage());
             }
         }
-        String zone = meta.get("strefa");
-        if (zone != null) {
-            if (!zone.equalsIgnoreCase("bezpieczna")) {
-                throw new IOException("nieznana 'strefa': " + zone + " (dozwolona: bezpieczna)");
-            }
-            created.safeZone(true);
-        }
+        created.traits(Traits.parse(meta, created.width(), created.depth()));
         return created;
     }
 
