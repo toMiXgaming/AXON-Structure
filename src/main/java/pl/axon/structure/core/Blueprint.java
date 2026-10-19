@@ -44,6 +44,7 @@ public final class Blueprint {
     private final Map<Pos, String> blocks = new HashMap<>();
     private final List<SpawnPoint> spawnPoints = new ArrayList<>();
     private final List<SignSpec> signs = new ArrayList<>();
+    private Traits traits = Traits.defaults();
 
     public Blueprint(int width, int height, int depth) {
         this.width = width;
@@ -67,6 +68,16 @@ public final class Blueprint {
         this.id = id;
         this.name = name;
         this.description = description;
+        return this;
+    }
+
+    /** Opcjonalne pola nagłówka (grunt, wjazdy, mapa, strefa, …). */
+    public Traits traits() {
+        return traits;
+    }
+
+    public Blueprint traits(Traits traits) {
+        this.traits = traits;
         return this;
     }
 

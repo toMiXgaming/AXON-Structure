@@ -3,7 +3,9 @@ package pl.axon.structure;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import pl.axon.structure.api.AxonStructureApi;
 import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
@@ -40,11 +42,16 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
         reload();
         store.load();
-        protection.hookWorldGuard();
-        protection.syncAll();
+        // Przy load: STARTUP świat jeszcze nie istnieje, a WorldGuard może nie być włączony – czekamy na pierwszy tick.
+        getServer().getScheduler().runTask(this, () -> {
+            protection.hookWorldGuard();
+            protection.syncAll();
+        });
         crates.start();
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
+        getServer().getServicesManager().register(AxonStructureApi.class, new AxonStructureApiImpl(this), this,
+                ServicePriority.Normal);
 
         StrukturyCommand command = new StrukturyCommand(this);
         PluginCommand pluginCommand = getCommand("struktury");
@@ -58,6 +65,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        getServer().getServicesManager().unregisterAll(this);
         if (crates != null) {
             crates.stop();
         }

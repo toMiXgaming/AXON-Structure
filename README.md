@@ -54,11 +54,62 @@ Auto-generowanie stawia strukturę tylko tam, gdzie pod nią jest mało wody (`m
 
 Tekstowy: nagłówek (`id`, `nazwa`, `opis`, `rozmiar`), paleta bloków, warstwy (`y z: indeks*ile ...`), a na końcu sekcje `skrzynie:` i `ramki:` (`x y z kierunek pula`) oraz `napisy:`. Szczegóły w `StructureFile.java`.
 
+Opcjonalne pola nagłówka (brak pola = wartość domyślna, stare pliki działają bez zmian). Używa ich AxonMapGenerator, a zapis z `StructureFile` zachowuje je i przepuszcza nieznane:
+
+| Pole | Wartości | Domyślnie |
+| --- | --- | --- |
+| `grunt` | liczba: wysokość poziomu terenu wewnątrz szablonu | `0` |
+| `wjazdy` | `x z kierunek; x z kierunek` (kierunek `north/south/east/west`, punkty na krawędzi) | brak |
+| `rozmiar-klasa` | `duza`, `srednia`, `mala` | liczona z wymiarów: dłuższy bok ≥ 100 duża, ≥ 50 średnia |
+| `mapa` | `tak`, `nie` | `tak` |
+| `strefa` | `rownina`, `przy-gorach`, `las`, `ustronnie`, `srodek`, `plaza`, `dowolna` (lista po przecinku) | `dowolna` |
+| `klimat` | `snieg`, `umiarkowany`, `suchy` (lista po przecinku) | wszystkie |
+| `bezpieczna` | `tak`, `nie` (strefa bez PvP) | `nie` |
+
+Stare `strefa: bezpieczna` jest czytane jako `strefa: srodek` + `bezpieczna: tak`.
+
+Błędna wartość przerywa wczytywanie pliku i pokazuje w logu nazwę pola.
+
+Struktury z kodu (`src/generator`) ustawiają pola przez `StructureDefinition.traits()`. Stacja ma `mapa: nie`, bo to struktura testowa.
+
+### Preferencje monumentów dla AxonMapGenerator
+
+Pliki tych struktur nie są w tym repo. Dopisz poniższe linie do nagłówka każdego pliku `.axs` (po linii `rozmiar:`):
+
+```
+oaza:         strefa: srodek     bezpieczna: tak
+kopalnia:     strefa: przy-gorach
+gospodarstwo: strefa: rownina
+czarny-rynek: strefa: ustronnie
+```
+
+`jednostka`, `szpital` i `kombinat` nie mają preferencji, więc zostają z domyślnymi wartościami. `stacja` ma już `mapa: nie`.
+
 Struktury opisane w kodzie (`src/generator`) zapisuje do plików:
 
 ```bash
 ./gradlew generujStruktury   # -> build/struktury/*.axs
 ```
+
+## API dla innych pluginów
+
+AXON-Structure rejestruje w ServicesManager interfejs `pl.axon.structure.api.AxonStructureApi`. Pobranie:
+
+```java
+AxonStructureApi api = AxonStructureApi.get(); // null, gdy AXON-Structure nie działa
+```
+
+Plugin musi mieć `depend: [AXON-Structure]` (AXON-Structure ładuje się przy `load: STARTUP`).
+
+| Metoda | Wątek | Opis |
+| --- | --- | --- |
+| `templates()` / `template(id)` | dowolny | niemutowalne szablony (`StructureTemplate`): wymiary, `blockAt(x, y, z)`, wjazdy, tagi, klasa rozmiaru, `mapAllowed()`, strefy, klimaty, `safe()` |
+| `register(key, templateId, world, x, y, z, rotation)` | serwer | rejestruje strukturę, której bloki już stoją: skrzynie, napisy, ramki, szyby i płoty łączą się z sąsiadami, ochrona, region WorldGuard, zapis w `dane.yml`. Nic nie stawia. Idempotentne po `key` |
+| `isRegistered(key)` | dowolny | czy klucz jest już zarejestrowany |
+| `unregisterWorld(world)` | serwer | zapomina wszystkie struktury w świecie (przy wipe) |
+| `claimWorld(world)` | dowolny | wyłącza auto-generowanie AXON-Structure w tym świecie |
+
+`RotationUtil` (ten sam pakiet) obraca współrzędne i stany bloków tak samo jak wklejanie. Obrót 0–3 × 90°, liczby spoza zakresu są sprowadzane modulo 4.
 
 ## Budowanie
 

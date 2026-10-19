@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "pl.axon"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     // Repo Papera ma też kopię Maven Central, więc idzie pierwsze (Central potrafi odpowiadać 429).
@@ -30,6 +30,14 @@ dependencies {
         "com.sk89q.worldedit:worldedit-core:7.3.0",
         "com.sk89q.worldedit:worldedit-bukkit:7.3.0",
     ).forEach { compileOnly(it) { isTransitive = false } }
+
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 java {

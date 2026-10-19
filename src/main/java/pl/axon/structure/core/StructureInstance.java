@@ -11,6 +11,7 @@ public final class StructureInstance {
     private final boolean automatic;
     private long lastRefresh;
     private Box footprint;
+    private String externalKey;
 
     public StructureInstance(String id, String structureId, Placement placement, int centerX, int centerZ,
                              boolean automatic, long lastRefresh) {
@@ -66,6 +67,15 @@ public final class StructureInstance {
 
     public void footprint(Box footprint) {
         this.footprint = footprint;
+    }
+
+    /** Klucz nadany przez pluginy zewnętrzne przy rejestracji (np. AxonMapGenerator); null dla ręcznych. */
+    public String externalKey() {
+        return externalKey;
+    }
+
+    public void externalKey(String externalKey) {
+        this.externalKey = externalKey;
     }
 
     public double distanceSquared(double x, double z) {

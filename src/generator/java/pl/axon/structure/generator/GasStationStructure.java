@@ -2,6 +2,7 @@ package pl.axon.structure.generator;
 
 import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.Palette;
+import pl.axon.structure.core.Traits;
 
 import java.util.Random;
 
@@ -51,6 +52,12 @@ public final class GasStationStructure implements StructureDefinition {
     @Override
     public Blueprint build(Random random) {
         return new Builder(random).build();
+    }
+
+    /** Stacja to struktura testowa, więc AxonMapGenerator jej nie stawia. */
+    @Override
+    public Traits traits() {
+        return Traits.defaults().withMapAllowed(false);
     }
 
     private static final class Builder {

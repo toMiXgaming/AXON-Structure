@@ -28,7 +28,8 @@ public final class StructureExporter {
         Files.createDirectories(out);
         for (StructureDefinition definition : STRUCTURES) {
             Blueprint bp = definition.build(new Random(seed))
-                    .meta(definition.id(), definition.displayName(), definition.description());
+                    .meta(definition.id(), definition.displayName(), definition.description())
+                    .traits(definition.traits());
             Path file = out.resolve(definition.id() + StructureFile.EXTENSION);
             try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
                 StructureFile.write(bp, writer);

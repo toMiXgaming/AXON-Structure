@@ -50,6 +50,7 @@ public final class InstanceStore {
             if (area.size() == 4) {
                 instance.footprint(new Box(area.get(0), area.get(1), area.get(2), area.get(3)));
             }
+            instance.externalKey(s.getString("klucz"));
             instances.put(id, instance);
         }
     }
@@ -73,6 +74,9 @@ public final class InstanceStore {
             if (box != null) {
                 yaml.set(path + "obrys", List.of(box.minX(), box.minZ(), box.maxX(), box.maxZ()));
             }
+            if (instance.externalKey() != null) {
+                yaml.set(path + "klucz", instance.externalKey());
+            }
         }
         try {
             yaml.save(file);
@@ -94,6 +98,16 @@ public final class InstanceStore {
 
     public StructureInstance get(String id) {
         return instances.get(id);
+    }
+
+    /** Instancja zarejestrowana z podanym kluczem zewnętrznym albo null. */
+    public StructureInstance findByKey(String key) {
+        for (StructureInstance instance : instances.values()) {
+            if (key.equals(instance.externalKey())) {
+                return instance;
+            }
+        }
+        return null;
     }
 
     public Collection<StructureInstance> all() {

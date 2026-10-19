@@ -189,6 +189,44 @@ public final class PasteService {
         return true;
     }
 
+    /** Wynik {@link #registerPlaced}: instancja i ile skrzyń wylosowano. */
+    public record Registered(StructureInstance instance, int crates) {
+    }
+
+    /**
+     * Rejestruje strukturę, której bloki już stoją w świecie (np. wygenerowane przez generator chunków).
+     * Nic nie stawia: łączy szyby i płoty z sąsiadami, pisze napisy, losuje skrzynie, zakłada ochronę.
+     * Wątek serwera.
+     */
+    public Registered registerPlaced(Blueprint bp, Placement placement, String key, boolean automatic) {
+        World world = Bukkit.getWorld(placement.world());
+        if (world == null) {
+            throw new IllegalArgumentException("Nie ma świata '" + placement.world() + "'");
+        }
+        // Szyby i płoty na krawędziach struktury łączą się z sąsiednimi chunkami, więc robimy to dopiero tutaj.
+        for (Map.Entry<Blueprint.Pos, String> entry : bp.blocks().entrySet()) {
+            if (mayConnect(entry.getValue())) {
+                Blueprint.Pos p = entry.getKey();
+                int[] w = placement.toWorld(p.x(), p.y(), p.z());
+                connectAt(world, w[0], w[1], w[2]);
+            }
+        }
+        for (Blueprint.SignSpec spec : bp.signs()) {
+            writeSign(world, placement, spec);
+        }
+        int[] center = placement.center(bp);
+        String id = UUID.randomUUID().toString().substring(0, 8);
+        StructureInstance instance = new StructureInstance(id, bp.id(), placement, center[0], center[2],
+                automatic, System.currentTimeMillis());
+        instance.footprint(Box.of(bp, placement));
+        instance.externalKey(key);
+        store.add(instance);
+        protection.onPlaced(instance);
+        int placed = crates.refresh(instance, true);
+        store.save();
+        return new Registered(instance, placed);
+    }
+
     private StructureInstance finish(Blueprint bp, Placement placement, PasteRecord record, boolean automatic) {
         World world = record.world;
         connectNeighbours(world, record);
@@ -381,30 +419,42 @@ public final class PasteService {
 
     /** Bloki stawiane są bez fizyki, więc szyby, kraty, płoty i murki łączymy z sąsiadami ręcznie. */
     private void connectNeighbours(World world, PasteRecord record) {
-        BlockFace[] sides = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
         for (Snapshot snapshot : record.snapshots) {
-            Block block = world.getBlockAt(snapshot.x(), snapshot.y(), snapshot.z());
-            Family family = familyOf(block.getType());
-            if (family == null) {
-                continue;
-            }
-            StringBuilder state = new StringBuilder(block.getType().getKey().toString()).append('[');
-            for (BlockFace face : sides) {
-                Material type = block.getRelative(face).getType();
-                boolean connect = type.isOccluding() || familyOf(type) == family;
-                String side = face.name().toLowerCase(Locale.ROOT);
-                if (family == Family.WALL) {
-                    state.append(side).append('=').append(connect ? "low" : "none").append(',');
-                } else {
-                    state.append(side).append('=').append(connect).append(',');
-                }
-            }
-            if (family == Family.WALL) {
-                state.append("up=true,");
-            }
-            state.setCharAt(state.length() - 1, ']');
-            block.setBlockData(resolve(state.toString()), false);
+            connectAt(world, snapshot.x(), snapshot.y(), snapshot.z());
         }
+    }
+
+    /** Ustawia połączenia jednego szyby, płotu albo murku z sąsiadami; inne bloki zostają bez zmian. */
+    private void connectAt(World world, int x, int y, int z) {
+        BlockFace[] sides = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+        Block block = world.getBlockAt(x, y, z);
+        Family family = familyOf(block.getType());
+        if (family == null) {
+            return;
+        }
+        StringBuilder state = new StringBuilder(block.getType().getKey().toString()).append('[');
+        for (BlockFace face : sides) {
+            Material type = block.getRelative(face).getType();
+            boolean connect = type.isOccluding() || familyOf(type) == family;
+            String side = face.name().toLowerCase(Locale.ROOT);
+            if (family == Family.WALL) {
+                state.append(side).append('=').append(connect ? "low" : "none").append(',');
+            } else {
+                state.append(side).append('=').append(connect).append(',');
+            }
+        }
+        if (family == Family.WALL) {
+            state.append("up=true,");
+        }
+        state.setCharAt(state.length() - 1, ']');
+        block.setBlockData(resolve(state.toString()), false);
+    }
+
+    /** Pre-filtr po nazwie stanu; właściwe sprawdzenie robi {@link #familyOf}. */
+    private static boolean mayConnect(String state) {
+        int bracket = state.indexOf('[');
+        String name = bracket < 0 ? state : state.substring(0, bracket);
+        return name.endsWith("_pane") || name.endsWith("iron_bars") || name.endsWith("_fence") || name.endsWith("_wall");
     }
 
     @SuppressWarnings("deprecation")

@@ -1,5 +1,6 @@
 package pl.axon.structure;
 
+import pl.axon.structure.api.StructureTemplate;
 import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.StructureFile;
 
@@ -9,6 +10,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -20,6 +22,8 @@ public final class StructureLibrary {
     private final File folder;
     private final Logger logger;
     private final Map<String, Blueprint> structures = new LinkedHashMap<>();
+    /** Niemutowalne kopie do odczytu z innych wątków (generator chunków). Podmieniane w całości przy reload. */
+    private volatile Map<String, StructureTemplate> templates = Map.of();
 
     public StructureLibrary(File folder, Logger logger) {
         this.folder = folder;
@@ -32,6 +36,15 @@ public final class StructureLibrary {
 
     public void reload() {
         structures.clear();
+        loadFiles();
+        Map<String, StructureTemplate> snapshot = new LinkedHashMap<>();
+        for (Blueprint bp : structures.values()) {
+            snapshot.put(bp.id().toLowerCase(Locale.ROOT), StructureTemplate.snapshot(bp));
+        }
+        templates = Collections.unmodifiableMap(snapshot);
+    }
+
+    private void loadFiles() {
         if (!folder.isDirectory() && !folder.mkdirs()) {
             logger.warning("Nie udało się utworzyć folderu " + folder);
             return;
@@ -59,5 +72,14 @@ public final class StructureLibrary {
 
     public Collection<Blueprint> all() {
         return structures.values();
+    }
+
+    /** Niemutowalne szablony; bezpieczne do odczytu z dowolnego wątku. */
+    public Collection<StructureTemplate> templates() {
+        return templates.values();
+    }
+
+    public StructureTemplate template(String id) {
+        return templates.get(id.toLowerCase(Locale.ROOT));
     }
 }

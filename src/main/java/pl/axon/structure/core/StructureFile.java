@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,6 +62,9 @@ public final class StructureFile {
         out.write("nazwa: " + bp.name() + "\n");
         out.write("opis: " + bp.description() + "\n");
         out.write("rozmiar: " + bp.width() + " " + bp.height() + " " + bp.depth() + "\n");
+        for (String line : bp.traits().toHeaderLines()) {
+            out.write(line + "\n");
+        }
         out.write("paleta:\n");
         for (int i = 0; i < palette.size(); i++) {
             out.write(i + " " + palette.get(i) + "\n");
@@ -115,7 +119,7 @@ public final class StructureFile {
 
     public static Blueprint read(Reader in) throws IOException {
         BufferedReader reader = in instanceof BufferedReader b ? b : new BufferedReader(in);
-        Map<String, String> meta = new HashMap<>();
+        Map<String, String> meta = new LinkedHashMap<>();
         List<String> palette = new ArrayList<>();
         Blueprint bp = null;
         String section = "";
@@ -195,6 +199,7 @@ public final class StructureFile {
         String[] s = size.trim().split("\\s+");
         Blueprint created = new Blueprint(Integer.parseInt(s[0]), Integer.parseInt(s[1]), Integer.parseInt(s[2]));
         created.meta(meta.get("id"), meta.getOrDefault("nazwa", meta.get("id")), meta.getOrDefault("opis", ""));
+        created.traits(Traits.parse(meta, created.width(), created.depth()));
         return created;
     }
 
