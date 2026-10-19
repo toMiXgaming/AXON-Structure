@@ -1636,6 +1636,49 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             // strażnicy (NPC z pluginu Citizens/Sentinel, jeśli jest na serwerze)
             crate(62, 1, 107, "north", "npc-zolnierz");
             crate(54, 1, 100, "south", "npc-zolnierz");
+            wreckModel();
+        }
+
+        /**
+         * Kadłub wraku z bloków zamienia na niewidzialne bariery (kolizja), a wygląd daje model {@code axon:wrak_mi8}
+         * z paczki zasobów serwera. Wnętrze kabiny i wszystko nad kadłubem zostaje puste, łopaty z bloków znikają.
+         */
+        private void wreckModel() {
+            java.util.Set<String> hull = java.util.Set.of("green_concrete", "moss_block", "green_terracotta", "glass",
+                    "gray_stained_glass", "light_gray_concrete", "black_concrete", "red_concrete", "white_concrete");
+            java.util.Set<String> gone = java.util.Set.of("deepslate_tile_slab", "polished_blackstone", "cobweb", "glow_lichen");
+            for (int x = 50; x <= 73; x++) {
+                for (int y = 1; y <= 8; y++) {
+                    for (int z = 92; z <= 99; z++) {
+                        String b = get(x, y, z);
+                        if (b == null) {
+                            continue;
+                        }
+                        b = b.replace("minecraft:", "");
+                        int bracket = b.indexOf('[');
+                        if (bracket >= 0) {
+                            b = b.substring(0, bracket);
+                        }
+                        boolean metal = b.equals("iron_bars") || b.equals("iron_block");
+                        if (x == 73 && !b.equals("iron_bars")) {
+                            continue;
+                        }
+                        if (hull.contains(b) || (metal && x >= 71 && y >= 5)) {
+                            boolean cabin = x >= 53 && x <= 62 && y >= 2 && y <= 3 && z >= 95 && z <= 96;
+                            set(x, y, z, cabin || y >= 6 || metal ? "air" : "barrier");
+                        } else if (gone.contains(b) && x <= 64) {
+                            set(x, y, z, "air");
+                        }
+                    }
+                }
+            }
+            // model ma zamkniętą tylną rampę
+            for (int z = 95; z <= 96; z++) {
+                if (isAir(63, 2, z)) {
+                    set(63, 2, z, "barrier");
+                }
+            }
+            bp.prop(new Blueprint.PropSpec(61.75, G + 5.0, 97.0, "axon:wrak_mi8", 8f, 0f));
         }
 
         /**
