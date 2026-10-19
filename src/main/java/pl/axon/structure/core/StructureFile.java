@@ -31,6 +31,8 @@ import java.util.Map;
  * 11 2 24 up karta
  * napisy:
  * 1 4 4|OXUM'S|GAS||
+ * modele:
+ * 62.5 5 76 axon:wrak_mi8 8 0   (x y z środka modelu, model z paczki, skala, obrót w stopniach)
  * </pre>
  */
 public final class StructureFile {
@@ -119,6 +121,13 @@ public final class StructureFile {
             out.write(sign.pos().x() + " " + sign.pos().y() + " " + sign.pos().z()
                     + "|" + String.join("|", sign.lines()) + "\n");
         }
+        if (!bp.props().isEmpty()) {
+            out.write("modele:\n");
+            for (Blueprint.PropSpec prop : bp.props()) {
+                out.write(prop.x() + " " + prop.y() + " " + prop.z() + " " + prop.model() + " " + prop.scale()
+                        + " " + prop.yaw() + "\n");
+            }
+        }
     }
 
     public static Blueprint read(Reader in) throws IOException {
@@ -182,6 +191,14 @@ public final class StructureFile {
                         int y = Integer.parseInt(xyz[1]);
                         int z = Integer.parseInt(xyz[2]);
                         bp.sign(x, y, z, bp.get(x, y, z), lines);
+                    }
+                    case "modele" -> {
+                        String[] p = line.trim().split("\\s+");
+                        if (p.length != 6) {
+                            throw new IOException("oczekiwano 'x y z model skala obrot'");
+                        }
+                        bp.prop(new Blueprint.PropSpec(Double.parseDouble(p[0]), Double.parseDouble(p[1]),
+                                Double.parseDouble(p[2]), p[3], Float.parseFloat(p[4]), Float.parseFloat(p[5])));
                     }
                     default -> throw new IOException("nieznana sekcja '" + section + "'");
                 }

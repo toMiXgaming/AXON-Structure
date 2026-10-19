@@ -1,5 +1,6 @@
 package pl.axon.structure;
 
+import org.bukkit.Material;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -19,15 +20,18 @@ import pl.axon.structure.world.AutoGenerator;
 import pl.axon.structure.world.InstanceStore;
 import pl.axon.structure.world.OreVeinService;
 import pl.axon.structure.world.PasteService;
+import pl.axon.structure.world.PropService;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public final class AxonStructurePlugin extends JavaPlugin {
 
@@ -38,6 +42,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private GuardService guards;
     private OasisService oasis;
     private PasteService paster;
+    private PropService props;
     private AutoGenerator autoGenerator;
     private ProtectionService protection;
     private OreVeinService veins;
@@ -58,7 +63,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
         protection.veins(veins);
         animals = new AnimalService(this, library, store, oasis);
         ambient = new AmbientService(this, store);
-        paster = new PasteService(this, store, crates, protection);
+        props = new PropService(this);
+        paster = new PasteService(this, store, crates, protection, props);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
 
         reload();
@@ -78,6 +84,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(oasis, this);
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
+        getServer().getPluginManager().registerEvents(props, this);
 
         StrukturyCommand command = new StrukturyCommand(this);
         PluginCommand pluginCommand = getCommand("struktury");
@@ -289,6 +296,13 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 (float) Math.max(0.05, config.getDouble("zycie.glosnosc", 0.6)),
                 sounds));
 
+        Set<String> skipFurniture = new HashSet<>();
+        for (String id : config.getStringList("meble.bez-zamiany")) {
+            skipFurniture.add(id.toLowerCase(Locale.ROOT));
+        }
+        props.configure(new PropService.Settings(config.getString("meble.lozko", ""),
+                blockModels(config, "meble.bloki"), blockModels(config, "meble.drzwi"), skipFurniture));
+
         paster.configure(new PasteService.Settings(
                 Math.max(100, config.getInt("stawianie.bloki-na-tick", 4000)),
                 Math.max(0, config.getInt("stawianie.wygladzanie-krawedzi", 6)),
@@ -398,5 +412,23 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public AutoGenerator autoGenerator() {
         return autoGenerator;
+    }
+
+    /** Sekcja {@code blok: "model"} z configu. */
+    private Map<Material, String> blockModels(FileConfiguration config, String path) {
+        Map<Material, String> models = new HashMap<>();
+        ConfigurationSection section = config.getConfigurationSection(path);
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                Material material = Material.matchMaterial(key);
+                String model = section.getString(key, "");
+                if (material == null || !material.isBlock()) {
+                    getLogger().warning(path + ": nieznany blok '" + key + "', pomijam");
+                } else if (!model.isBlank()) {
+                    models.put(material, model);
+                }
+            }
+        }
+        return models;
     }
 }

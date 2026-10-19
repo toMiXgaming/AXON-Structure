@@ -60,6 +60,7 @@ public final class LootConfig {
         CrateClass.Kind kind = CrateClass.Kind.parse(section.getString("blok", "skrzynia"));
         String name = color(section.getString("nazwa", id));
         String decoration = section.getString("dekoracja", "");
+        String model = section.getString("model", "");
         int minItems = section.getInt("min-przedmiotow", 1);
         List<CrateClass.LootEntry> loot = new ArrayList<>();
         for (Map<?, ?> raw : section.getMapList("loot")) {
@@ -82,7 +83,8 @@ public final class LootConfig {
             }
             loot.add(new CrateClass.LootEntry(material, amount[0], amount[1], chance, display, lore));
         }
-        return new CrateClass(id, name, kind, decoration == null ? "" : decoration, minItems, loot);
+        return new CrateClass(id, name, kind, decoration == null ? "" : decoration,
+                model == null ? "" : model, minItems, loot);
     }
 
     private static int[] parseRange(String value) {

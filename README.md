@@ -31,7 +31,8 @@ Alias: `/axs`. Uprawnienie: `axonstructure.use` (domyślnie OP).
 
 ## Skrzynie
 
-- **Klasa skrzyni** (`klasy:` w configu) – nazwa, blok (`skrzynia`, `beczka` albo `ramka`), opcjonalna dekoracja na wieku i lista lootu z ilościami i szansami.
+- **Klasa skrzyni** (`klasy:` w configu) – nazwa, blok (`skrzynia`, `beczka` albo `ramka`), opcjonalna dekoracja na wieku, opcjonalny `model` z paczki zasobów i lista lootu z ilościami i szansami.
+- **Model z paczki** (`model: "axon:zrzut"`) – nad skrzynią staje niewidoczny wyświetlacz z modelem z paczki serwera (QualityArmory-texturepack), odrobinę większym od bloku, więc samego bloku nie widać, a kliknięcie dalej go otwiera. Klasa `zrzut` (pula `zrzut`, rzadko też na dachu stacji) to skrzynia zrzutu ze spadochronem. Bez paczki gracz widzi fioletowo-czarny sześcian.
 - **Pula** (`pule:`) – dla danego miejsca losuje klasę według wag. Waga `brak` oznacza, że w tym miejscu nic się nie pojawi.
 - **Odświeżanie** – co `odswiezanie.co-ile-minut` minut. Pełne skrzynie zostają (chyba że `zastepuj-pelne: true`), puste i zniszczone losowane są od nowa. Nie odświeża, gdy gracz stoi bliżej niż `blokada-gdy-gracz-blizej-niz`.
 - **Pusty loot na razie** – `loot.puste: true` (domyślnie, dopisywane też do starego `config.yml`): skrzynie i beczki stoją, ale są puste, skrzynia zrzutu spada pusta i znika po czasie, zabici strażnicy nic nie dają, a ramek z kartami nie ma. Pule i klasy zostają w configu – gdy loot będzie ustalony, wystarczy `false` i `/struktury przeladuj`.
@@ -54,9 +55,17 @@ Auto-generowanie stawia strukturę tylko tam, gdzie pod nią jest mało wody (`m
 - W drugą stronę pilnuje AxonPlot: nie da się założyć działki bliżej niż `placement.structure-buffer-blocks` od regionu `struktura_*`.
 - Odstęp od działek wymaga WorldGuarda. Bez niego ochrona przed niszczeniem dalej działa.
 
+## Modele z paczki zasobów
+
+Plugin stawia modele z paczki serwera (QualityArmory-texturepack) jako niewidzialne wyświetlacze przedmiotów. Kolizję dają bloki bariery, model tylko rysuje. Bez paczki gracz widzi fioletowo-czarne sześciany.
+
+- **Sekcja `modele:` w pliku `.axs`** – `x y z model skala obrót`, gdzie `x y z` to środek modelu w kratkach struktury (mogą być ułamki). Tak stoi wrak śmigłowca Mi-8 w jednostce wojskowej (`axon:wrak_mi8`, w środku skrzynia `wrak`).
+- **Meble** (`meble:` w configu) – łóżka i bloki z `meble.bloki` (biblioteczka, kocioł, stół rzemieślniczy, piec, wędzarnia, obserwator...) zamieniają się na barierę, a na nich staje model z paczki: metalowe łóżko, regał, szafa kartotekowa, umywalka, stół warsztatowy, piecyk, kuchenka, radiostacja, biurko z komputerem, kroplówka, kosz na śmieci, szlifierka. Drzwi z `meble.drzwi` zostają prawdziwymi drzwiami, a model (stare drewniane albo stalowe drzwi) przestawia się przy każdym otwarciu i zamknięciu. Model obraca się jak blok. Piec i stół rzemieślniczy przestają wtedy działać. `meble.bez-zamiany` to struktury, w których meble zostają zwykłe (domyślnie oaza).
+- `/struktury cofnij` usuwa też modele; `/struktury usun` je zostawia, tak jak bloki.
+
 ## Format pliku `.axs`
 
-Tekstowy: nagłówek (`id`, `nazwa`, `opis`, `rozmiar`, opcjonalnie `grunt`), paleta bloków, warstwy (`y z: indeks*ile ...`), a na końcu sekcje `skrzynie:` i `ramki:` (`x y z kierunek pula`) oraz `napisy:`. Szczegóły w `StructureFile.java`.
+Tekstowy: nagłówek (`id`, `nazwa`, `opis`, `rozmiar`, opcjonalnie `grunt`), paleta bloków, warstwy (`y z: indeks*ile ...`), a na końcu sekcje `skrzynie:` i `ramki:` (`x y z kierunek pula`), `napisy:` oraz opcjonalnie `modele:`. Szczegóły w `StructureFile.java`.
 
 `grunt: N` oznacza, że warstwa `N` leży na poziomie terenu, a warstwy `0 .. N-1` to podziemie wklejane pod powierzchnię (bez tego pola grunt to warstwa 0, jak dotąd). Wysokość podawana w `/struktury wklej` i wyliczana przy auto-generowaniu to zawsze poziom gruntu.
 
