@@ -108,12 +108,16 @@ CZ=$(awk '/srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
 OX=$((CX + 120))
 cmd "forceload add $CX $CZ"
 cmd "forceload add $OX $CZ"
-sleep 3
+# Chunk poza stacją ładuje się asynchronicznie i serwer potrafi go długo mielić (wtedy TNT wybucha przed czasem),
+# więc dajemy mu czas, zanim cokolwiek postawimy.
+sleep 10
 cmd "setblock $CX 200 $CZ minecraft:gold_block"
 cmd "setblock $OX 200 $CZ minecraft:gold_block"
+sleep 2
+cmd "execute if block $OX 200 $CZ minecraft:gold_block run say OCHRONA-ZLOTO-OK"
 cmd "summon minecraft:tnt $CX 201 $CZ {fuse:5}"
 cmd "summon minecraft:tnt $OX 201 $CZ {fuse:5}"
-sleep 4
+sleep 10
 cmd "execute if block $CX 200 $CZ minecraft:gold_block run say OCHRONA-STRUKTURA-OK"
 cmd "execute unless block $OX 200 $CZ minecraft:gold_block run say OCHRONA-POZA-OK"
 sleep 2
@@ -149,6 +153,7 @@ grep -qF "Server] JW-GRUNT-OK" server.log || { echo "::error::Jednostka: grunt n
 grep -qF "Server] JW-SCHRON-OK" server.log || { echo "::error::Jednostka: brak drabiny na poziomie 2 schronu"; FAIL=1; }
 grep -qF "Server] SZPITAL-GRUNT-OK" server.log || { echo "::error::Szpital: grunt nie wypadł na poziomie wklejenia"; FAIL=1; }
 grep -qF "Server] SZPITAL-PIWNICA-OK" server.log || { echo "::error::Szpital: brak schodów do piwnicy"; FAIL=1; }
+grep -qF "Server] OCHRONA-ZLOTO-OK" server.log || { echo "::error::Złoty blok poza strukturą nie został postawiony (chunk się nie załadował)"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
 grep -q "Oaza: lady i tarcze na miejscu 31/31, stanowisk wymiany 8, lad paserów 1" server.log || { echo "::error::Oaza/czarny rynek: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
