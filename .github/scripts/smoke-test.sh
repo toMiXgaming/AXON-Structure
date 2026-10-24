@@ -45,7 +45,8 @@ wait_for() { # wzorzec, limit sekund
     sleep 2; waited=$((waited + 2))
     if [ "$waited" -ge "$limit" ] || ! kill -0 "$PID" 2>/dev/null; then
       echo "::error::Nie doczekano się: $pattern"
-      grep -nE -A3 "ERROR|Could not load|Exception" server.log | head -n 60; tail -n 60 server.log; return 1
+      # grep bez trafień kończy się kodem 1, a przy set -e i pipefail ucięłoby to wydruk logu
+      grep -nE -A3 "ERROR|Could not load|Exception" server.log | head -n 60 || true; tail -n 60 server.log; return 1
     fi
   done
 }
