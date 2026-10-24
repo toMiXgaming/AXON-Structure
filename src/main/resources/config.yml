@@ -92,7 +92,7 @@ auto-generowanie:
   # Które struktury i jak często (wagi). Puste {} = wszystkie wczytane po równo.
   # Przykład:
   #   struktury:
-  #     stacja: 3
+  #     oilen: 3
   #     magazyn: 1
   struktury: {}
 
@@ -454,7 +454,7 @@ zycie:
   szansa-procent: 35
   # Głośność wszystkich odgłosów (mnożona przez głośność z listy).
   glosnosc: 0.7
-  # Lista dla id struktury (stacja, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek);
+  # Lista dla id struktury (oilen, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek);
   # struktury bez listy biorą "domyslne", pusta lista [] = cisza. Wpis: "nazwa dźwięku [wysokość] [głośność]",
   # nazwy z Minecrafta (https://minecraft.wiki/w/Sounds.json) albo z paczki zasobów.
   odglosy:
