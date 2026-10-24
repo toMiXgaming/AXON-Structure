@@ -717,6 +717,43 @@ pule:
   ladowisko:
     rzadka-skrzynia: 85
     lepsza-skrzynia: 15
+  # --- zajezdnia kolejowa (beczki przy zbiorniku i dystrybutorze: pula paliwo, socjalny: lodowki, zaplecze, toalety) ---
+  # hala lokomotywowni: warsztat pod ścianą, wózki między torami
+  lokomotywownia:
+    narzedziowa: 35
+    mala-skrzynka: 30
+    beczka: 10
+    brak: 25
+  # kabiny trzech lokomotyw (wejście bokiem po stopniu)
+  kabina:
+    lepsza-skrzynia: 40
+    mala-skrzynka: 25
+    skrzynka-jedzenie: 15
+    brak: 20
+  # warsztat w przybudówce
+  warsztat-kolejowy:
+    narzedziowa: 50
+    mala-skrzynka: 20
+    brazowa: 10
+    brak: 20
+  # dyspozytornia na piętrze przybudówki
+  dyspozytornia:
+    lepsza-skrzynia: 50
+    brazowa: 15
+    skrzynka-medyczna: 10
+    brak: 25
+  # nastawnia: parter i kabina z dźwigniami
+  nastawnia:
+    lepsza-skrzynia: 45
+    skrzynia-broni: 15
+    mala-skrzynka: 15
+    brak: 25
+  # odstawiony wagon, w którym ktoś mieszka
+  wagon:
+    mala-skrzynka: 35
+    skrzynka-jedzenie: 30
+    lepsza-skrzynia: 10
+    brak: 25
   # zrzut zaopatrzenia (sekcja zrzuty: wskazuje tę pulę)
   zrzut:
     rzadka-skrzynia: 75
