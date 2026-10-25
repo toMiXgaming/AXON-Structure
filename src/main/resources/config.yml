@@ -377,6 +377,82 @@ czarny-rynek:
     - {przedmiot: netherite_scrap, ilosc: 2, cena: 3500, sztuk: 2}
     - {przedmiot: experience_bottle, ilosc: 32, cena: 1000, sztuk: 4}
 
+stanowiska:
+  # Sklepy, automaty i radia w zwykłych strukturach (poza oazą, więc PvP działa, a obrażenia zamykają ekran).
+  # Otwierają się w tym samym pełnoekranowym GUI co oaza (sekcja gui:), a bez niego jako skrzynia.
+  # Punkty w pliku struktury: punkt-sklep-<nazwa> (sklep z listy niżej), punkt-automat (jednoręki bandyta
+  # z oaza.automaty) i punkt-radio (namiar na zrzut za oaza.radio.cena). Klika się blok punktu albo zaraz obok.
+  # Format sklepu jak oaza.sklep: nazwa, oferty z przedmiotem, ilością, kupnem (0 = nie sprzedaje) i skupem
+  # (0 = nie skupuje). Pieniądze z Vaulta.
+  wlaczone: true
+  sklepy:
+    # stacja Oilen: kasa w sklepiku
+    stacja:
+      nazwa: "&eOilen &7– kasa"
+      oferty:
+        - {przedmiot: bread, ilosc: 4, kupno: 25, skup: 0}
+        - {przedmiot: cookie, ilosc: 8, kupno: 20, skup: 0}
+        - {przedmiot: torch, ilosc: 16, kupno: 35, skup: 0}
+        - {przedmiot: lantern, ilosc: 1, kupno: 40, skup: 0}
+        - {przedmiot: flint_and_steel, ilosc: 1, kupno: 60, skup: 0}
+        - {przedmiot: coal, ilosc: 16, kupno: 60, skup: 15}
+        - {przedmiot: lava_bucket, ilosc: 1, kupno: 250, skup: 0}
+        - {przedmiot: map, ilosc: 1, kupno: 50, skup: 0}
+    # automat z napojami (stacja, galeria, zajezdnia, osiedle)
+    automat-napoje:
+      nazwa: "&bAutomat z napojami"
+      oferty:
+        - {przedmiot: honey_bottle, ilosc: 1, kupno: 30, skup: 0}
+        - {przedmiot: milk_bucket, ilosc: 1, kupno: 45, skup: 0}
+        - {przedmiot: sweet_berries, ilosc: 8, kupno: 20, skup: 0}
+        - {przedmiot: glow_berries, ilosc: 8, kupno: 30, skup: 0}
+    # kiosk Ruchu przy drodze
+    kiosk:
+      nazwa: "&6Kiosk &7– prasa i drobiazgi"
+      oferty:
+        - {przedmiot: paper, ilosc: 16, kupno: 20, skup: 5}
+        - {przedmiot: map, ilosc: 1, kupno: 40, skup: 0}
+        - {przedmiot: book, ilosc: 1, kupno: 30, skup: 8}
+        - {przedmiot: candle, ilosc: 4, kupno: 25, skup: 0}
+        - {przedmiot: string, ilosc: 8, kupno: 25, skup: 6}
+        - {przedmiot: cookie, ilosc: 8, kupno: 20, skup: 0}
+        - {przedmiot: compass, ilosc: 1, kupno: 120, skup: 0}
+    # opuszczony fastfood: frytkownica jeszcze działa
+    fastfood:
+      nazwa: "&cFastfood &7– okienko"
+      oferty:
+        - {przedmiot: cooked_beef, ilosc: 4, kupno: 45, skup: 0}
+        - {przedmiot: cooked_chicken, ilosc: 4, kupno: 35, skup: 0}
+        - {przedmiot: baked_potato, ilosc: 8, kupno: 30, skup: 0}
+        - {przedmiot: mushroom_stew, ilosc: 1, kupno: 25, skup: 0}
+        - {przedmiot: pumpkin_pie, ilosc: 2, kupno: 30, skup: 0}
+        - {przedmiot: raw_beef, ilosc: 8, kupno: 0, skup: 20}
+        - {przedmiot: potato, ilosc: 16, kupno: 0, skup: 12}
+    # galeria handlowa: sklep sportowo-turystyczny
+    galeria:
+      nazwa: "&dGaleria &7– sport i turystyka"
+      oferty:
+        - {przedmiot: leather_helmet, ilosc: 1, kupno: 90, skup: 15}
+        - {przedmiot: leather_chestplate, ilosc: 1, kupno: 140, skup: 20}
+        - {przedmiot: leather_boots, ilosc: 1, kupno: 80, skup: 12}
+        - {przedmiot: bow, ilosc: 1, kupno: 170, skup: 25}
+        - {przedmiot: arrow, ilosc: 16, kupno: 50, skup: 6}
+        - {przedmiot: fishing_rod, ilosc: 1, kupno: 70, skup: 10}
+        - {przedmiot: shield, ilosc: 1, kupno: 220, skup: 30}
+        - {przedmiot: spyglass, ilosc: 1, kupno: 180, skup: 0}
+        - {przedmiot: bundle, ilosc: 1, kupno: 120, skup: 0}
+    # zajezdnia: kolejarz skupuje złom i części (tylko skup)
+    zajezdnia:
+      nazwa: "&7Skup złomu &8– zajezdnia"
+      oferty:
+        - {przedmiot: iron_ingot, ilosc: 8, kupno: 0, skup: 55}
+        - {przedmiot: iron_nugget, ilosc: 32, kupno: 0, skup: 20}
+        - {przedmiot: copper_ingot, ilosc: 16, kupno: 0, skup: 40}
+        - {przedmiot: rail, ilosc: 16, kupno: 0, skup: 30}
+        - {przedmiot: chain, ilosc: 8, kupno: 0, skup: 25}
+        - {przedmiot: redstone, ilosc: 16, kupno: 0, skup: 35}
+        - {przedmiot: minecart, ilosc: 1, kupno: 150, skup: 40}
+
 gui:
   # Okna oazy (sklep, automaty, wymiana, paser, tablica zleceń) jako pełnoekranowy ekran w stylu Rusta: obraz z map
   # w niewidzialnych ramkach, który shader z paczki zasobów serwera (ten sam co w AxonMap) rozciąga na cały ekran.

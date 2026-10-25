@@ -285,6 +285,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
         oasis.configure(config.getConfigurationSection("oaza"), zone(config.getString("zrzuty.strefa-czasowa", "Europe/Warsaw")));
         oasis.configureBlackMarket(config.getConfigurationSection("czarny-rynek"));
+        oasis.configureStations(config.getConfigurationSection("stanowiska"));
         gui.configure(config.getConfigurationSection("gui"));
 
         animals.configure(new AnimalService.Settings(
