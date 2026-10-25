@@ -155,6 +155,16 @@ Zasady, ceny i loot się nie zmieniają: oba widoki wołają te same metody kupn
 
 **Tryb awaryjny – okno skrzyni**, jak dotąd, gdy: na serwerze nie ma pluginu [PacketEvents](https://modrinth.com/plugin/packetevents) (opcjonalny, `softdepend`; klasy z nim wczytują się tylko, gdy jest), `gui.shader: false`, gracz nie wczytał paczki zasobów (`PlayerResourcePackStatusEvent` = `SUCCESSFULLY_LOADED`; `gui.wymagaj-paczki: false` to pomija), gracz wybrał skrzynię komendą `/oaza gui` (przełącznik zapisany w `gui.yml`) albo nie da się go teraz posadzić (pojazd, skok, kucanie). Na każdym ekranie przycisk **Tryb skrzyni** otwiera to samo okno jako skrzynię (wymiana i kręcący się automat trwają dalej). Ekran zamyka się sam przy obrażeniach, śmierci, teleporcie, zmianie świata, wyjściu z serwera i wyłączeniu pluginu – gracz zawsze wstaje i odzyskuje HUD. Gracze, którzy byli online przed `/reload`, dostają skrzynię aż do ponownego wejścia (serwer nie wie, czy mają paczkę).
 
+## Sklepy i automaty w zwykłych strukturach
+
+Te same ekrany GUI działają poza oazą (sekcja `stanowiska:` w configu). W pliku dowolnej struktury:
+
+- `punkt-sklep-<nazwa>` – sklep z `stanowiska.sklepy.<nazwa>` (format jak `oaza.sklep`). W configu są gotowe: `stacja` (kasa Oilen), `automat-napoje`, `kiosk`, `fastfood`, `galeria` (sport i turystyka) i `zajezdnia` (skup złomu).
+- `punkt-automat` – jednoręki bandyta z `oaza.automaty`.
+- `punkt-radio` – namiar na zrzut za `oaza.radio.cena`.
+
+Punkt kładzie się w bloku lady albo maszyny (jak `counterMarker` w generatorze oazy); klika się ten blok albo sąsiedni. PvP tam działa, a obrażenia zamykają ekran. `stanowiska.wlaczone: false` wyłącza wszystkie stanowiska poza oazą.
+
 ## Kopalnia, zwierzęta i odgłosy
 
 **Żyły rudy** (`kopalnia:` w configu): punkty `punkt-ruda` w pliku struktury leżą na blokach rudy (blok zostaje przy wklejaniu). Tylko te bloki gracze mogą kopać mimo ochrony struktury:
