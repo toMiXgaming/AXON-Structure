@@ -86,7 +86,7 @@ Opcjonalne pola dla AxonMapGenerator (brak pola = wartość domyślna, stare pli
 
 Błędna wartość przerywa wczytywanie pliku i pokazuje w logu nazwę pola. Zapis zachowuje pola i nieznane klucze nagłówka.
 
-Struktury z kodu (`src/generator`) ustawiają pola przez `Blueprint.traits()`. Stacja Oilen ma `wjazdy: 8 0 north; 37 0 north` (wjazd i wyjazd z drogi biegnącej wzdłuż frontu).
+Struktury z kodu (`src/generator`) ustawiają pola przez `Blueprint.traits()`. Stacja Oilen ma `wjazdy: 8 0 north; 37 0 north` (wjazd i wyjazd z drogi biegnącej wzdłuż frontu). Galeria (`galeria`) ma `strefa: rownina` i dwa wjazdy: `69 0 north` (wjazd z drogi na parking od frontu) i `139 116 east` (droga serwisowa do ramp rozładunkowych).
 
 ### Preferencje monumentów dla AxonMapGenerator
 
