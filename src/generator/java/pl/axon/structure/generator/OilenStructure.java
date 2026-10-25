@@ -615,11 +615,10 @@ public final class OilenStructure implements StructureDefinition {
             bp.fill(29, 1, 33, 29, ROOF_Y - 1, BZ2 - 1, innerWall);
             bp.fill(34, 1, 33, 34, ROOF_Y - 1, BZ2 - 1, innerWall);
 
-            // biuro: biurko z komputerem, zielona karta na blacie, szafa, sejf
+            // biuro: biurko z komputerem, szafa, sejf
             bp.set(24, 1, 37, "lectern[facing=east,has_book=false,powered=false]");
             furniture.chair(25, 1, 37, "east", "spruce");
             furniture.desk(BX1 + 1, 1, 33, BX1 + 1, 34, "spruce");
-            bp.frame(BX1 + 1, 2, 33, "up", "karta");
             furniture.lamp(BX1 + 1, 2, 34);
             furniture.wardrobe(28, 1, 34, "west", "spruce");
             bp.fill(28, 1, 37, 28, 2, 38, "iron_block"); // sejf
