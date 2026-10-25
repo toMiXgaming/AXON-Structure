@@ -45,7 +45,8 @@ wait_for() { # wzorzec, limit sekund
     sleep 2; waited=$((waited + 2))
     if [ "$waited" -ge "$limit" ] || ! kill -0 "$PID" 2>/dev/null; then
       echo "::error::Nie doczekano się: $pattern"
-      grep -nE -A3 "ERROR|Could not load|Exception" server.log | head -n 60; tail -n 60 server.log; return 1
+      # grep bez trafień kończy się kodem 1, a przy set -e i pipefail ucięłoby to wydruk logu
+      grep -nE -A3 "ERROR|Could not load|Exception" server.log | head -n 60 || true; tail -n 60 server.log; return 1
     fi
   done
 }
@@ -103,8 +104,9 @@ sleep 5
 cmd "struktury zrzut teraz"
 sleep 14
 # Wybuch TNT nad środkiem stacji nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
-CX=$(awk '/srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
-CZ=$(awk '/srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
+# Środek pierwszej wklejonej stacji (auto-generowanie mogło już coś postawić przy spawnie, więc nie bierzemy pierwszego wpisu).
+CX=$(awk '/struktura:/ {s=$2} s=="stacja" && /srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
+CZ=$(awk '/struktura:/ {s=$2} s=="stacja" && /srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
 OX=$((CX + 120))
 cmd "forceload add $CX $CZ"
 cmd "forceload add $OX $CZ"
@@ -156,7 +158,8 @@ grep -qF "Server] SZPITAL-PIWNICA-OK" server.log || { echo "::error::Szpital: br
 grep -qF "Server] OCHRONA-ZLOTO-OK" server.log || { echo "::error::Złoty blok poza strukturą nie został postawiony (chunk się nie załadował)"; FAIL=1; }
 grep -qF "Server] OCHRONA-STRUKTURA-OK" server.log || { echo "::error::Wybuch zniszczył blok w strukturze"; FAIL=1; }
 grep -qF "Server] OCHRONA-POZA-OK" server.log || { echo "::error::Test wybuchu poza strukturą nie zadziałał"; FAIL=1; }
-grep -q "Oaza: lady i tarcze na miejscu 31/31, stanowisk wymiany 8, lad paserów 1" server.log || { echo "::error::Oaza/czarny rynek: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
+# Wszystkie lady stoją (N/N); auto-generowanie może dołożyć własną kryjówkę czarnego rynku, więc paserów jest co najmniej 1.
+grep -qE "Oaza: lady i tarcze na miejscu (3[1-9])/\1, stanowisk wymiany 8, lad paserów [1-9]" server.log || { echo "::error::Oaza/czarny rynek: brak lad, tarcz albo stanowisk"; grep "Oaza:" server.log; FAIL=1; }
 grep -q "Kopalnia: żył rudy" server.log || { echo "::error::Komenda zycie nie zadziałała"; FAIL=1; }
 if grep -q "Kopalnia: żył rudy 0," server.log; then
   echo "::warning::Postawiona kopalnia nie ma żył rudy (punkt-ruda)"
