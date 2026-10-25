@@ -105,7 +105,7 @@ Struktury opisane w kodzie (`src/generator`):
 
 | Plik | Struktura | Pule skrzyń |
 | --- | --- | --- |
-| `oilen.axs` | Opuszczona stacja paliw Oilen, 48 × 48 (wiata, pawilon, myjnia, cysterna, zbiornik gazu) | `paliwo`, `plac`, `lada`, `karta`, `sklep`, `lodowki`, `toalety`, `zaplecze`, `parter`, `magazyn-regal`, `magazyn`, `dach` |
+| `oilen.axs` | Opuszczona stacja paliw Oilen, 48 × 48 (wiata, pawilon, myjnia, cysterna, zbiornik gazu) | `paliwo`, `plac`, `lada`, `sklep`, `lodowki`, `toalety`, `zaplecze`, `parter`, `magazyn-regal`, `magazyn`, `dach` |
 | `gospodarstwo.axs` | Opuszczone gospodarstwo Agro-Pol (PGR) | `plac`, `paliwo`, `parter`, `klepisko`, `strych`, `pietro`, `silos` |
 | `kombinat.axs` | Kombinat rolny Przyszłość (spółdzielnia) | `plac`, `paliwo`, `parter`, `klepisko`, `strych`, `magazyn-nawozow`, `suwnica`, `wieza`, `elewator` |
 | `kopalnia.axs` | Zamknięta kopalnia węgla Jedność (z podziemiem, `grunt: 12`) | `plac`, `paliwo`, `parter`, `strych`, `sztolnia`, `podszybie`, `podszybie-sklad`, `maszynownia`, `wieza-szybowa` |

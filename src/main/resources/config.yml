@@ -677,9 +677,6 @@ pule:
     skrzynka-jedzenie: 70
     brazowa: 15
     brak: 15
-  karta:
-    zielona-karta: 85
-    brak: 15
   sklep:
     skrzynka-jedzenie: 40
     brazowa: 35
@@ -1184,13 +1181,3 @@ klasy:
       - {przedmiot: gunpowder, ilosc: "4-10", szansa: 50}
       - {przedmiot: cooked_beef, ilosc: "6-12", szansa: 70, nazwa: "&fRacja żywnościowa"}
 
-  zielona-karta:
-    nazwa: "&aZielona karta dostępu"
-    blok: ramka
-    loot:
-      - przedmiot: paper
-        ilosc: "1"
-        szansa: 100
-        nazwa: "&aZielona karta dostępu"
-        opis:
-          - "&7Poziom dostępu: 1"
