@@ -55,9 +55,9 @@ cmd() { echo "> $1"; echo "$1" >&3; }
 wait_for 'Done (' 600
 cmd "struktury lista"
 cmd "struktury klasy"
-cmd "struktury wklej stacja world 0 90 0 0"
+cmd "struktury wklej oilen world 0 90 0 0"
 wait_for 'Gotowe!' 120
-cmd "struktury generuj stacja world 400 400 1"
+cmd "struktury generuj oilen world 400 400 1"
 wait_gotowe() { # ile postawień, limit sekund
   local waited=0
   until [ "$(grep -c 'Gotowe!' server.log)" -ge "$1" ] || [ "$waited" -ge "$2" ]; do sleep 2; waited=$((waited + 2)); done
@@ -103,14 +103,14 @@ sleep 5
 # Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
 cmd "struktury zrzut teraz"
 sleep 14
-# Wybuch TNT nad środkiem stacji nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
+# Wybuch TNT nad środkiem stacji Oilen nie może nic zniszczyć, ten sam wybuch poza strukturą tak.
 # Środek pierwszej wklejonej stacji (auto-generowanie mogło już coś postawić przy spawnie, więc nie bierzemy pierwszego wpisu).
-CX=$(awk '/struktura:/ {s=$2} s=="stacja" && /srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
-CZ=$(awk '/struktura:/ {s=$2} s=="stacja" && /srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
+CX=$(awk '/struktura:/ {s=$2} s=="oilen" && /srodek-x:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
+CZ=$(awk '/struktura:/ {s=$2} s=="oilen" && /srodek-z:/ {print $2; exit}' plugins/AXON-Structure/dane.yml)
 OX=$((CX + 120))
 cmd "forceload add $CX $CZ"
 cmd "forceload add $OX $CZ"
-# Chunk poza stacją ładuje się asynchronicznie i serwer potrafi go długo mielić (wtedy TNT wybucha przed czasem),
+# Chunk poza stacją Oilen ładuje się asynchronicznie i serwer potrafi go długo mielić (wtedy TNT wybucha przed czasem),
 # więc dajemy mu czas, zanim cokolwiek postawimy.
 sleep 10
 cmd "setblock $CX 200 $CZ minecraft:gold_block"
