@@ -62,6 +62,9 @@ import java.util.function.Predicate;
  * Oaza: struktury ze {@code strefa: bezpieczna}. W ich obrysie nie ma PvP, strażnicy bronią tylko przed potworami,
  * a punkty z pliku struktury ({@code punkt-*}) to stanowiska: wymiana, sklep, depozyt, tablica zleceń, automaty,
  * radiostacja i strzelnica. Dane graczy (depozyty, zlecenia, ranking) są w {@code oaza.yml}.
+ * <p>
+ * Stanowiska poza oazą (sekcja {@code stanowiska}): w każdej strukturze {@code punkt-sklep-<nazwa>} otwiera sklep
+ * z {@code stanowiska.sklepy.<nazwa>}, a {@code punkt-automat} i {@code punkt-radio} działają jak w oazie. PvP tam działa.
  */
 public final class OasisService implements Listener {
 
@@ -82,6 +85,8 @@ public final class OasisService implements Listener {
     private static final String BLACK_MARKET_COUNTER = "punkt-czarny-rynek-lada";
     private static final long POINTS_TTL_MS = 10_000;
     private static final long WARN_COOLDOWN_MS = 2_000;
+    /** Sklepy stanowisk poza oazą: {@code punkt-sklep-<nazwa>}. */
+    private static final String STATION_SHOP = "punkt-sklep-";
 
     private final JavaPlugin plugin;
     private final StructureLibrary library;
@@ -100,6 +105,9 @@ public final class OasisService implements Listener {
     private final SlotMachine slots = new SlotMachine(this);
     private final ShootingRange range = new ShootingRange(this);
     private final BlackMarketService blackMarket = new BlackMarketService(this);
+    /** Sklepy stanowisk po nazwie (część po {@code punkt-sklep-}). */
+    private final Map<String, ShopService> stationShops = new HashMap<>();
+    private boolean stationsEnabled = true;
     /** Pełnoekranowe GUI; bez niego (null) wszystkie okna są skrzyniami. */
     private ShaderGui gui;
 
@@ -147,6 +155,21 @@ public final class OasisService implements Listener {
     /** Paser w kryjówkach czarnego rynku (sekcja {@code czarny-rynek}). */
     public void configureBlackMarket(ConfigurationSection section) {
         blackMarket.configure(section, plugin.getLogger());
+    }
+
+    /** Sklepy, automaty i radia w zwykłych strukturach (sekcja {@code stanowiska}). */
+    public void configureStations(ConfigurationSection section) {
+        stationsEnabled = section == null || section.getBoolean("wlaczone", true);
+        stationShops.clear();
+        ConfigurationSection shops = section == null ? null : section.getConfigurationSection("sklepy");
+        if (shops != null) {
+            for (String name : shops.getKeys(false)) {
+                ShopService station = new ShopService(this);
+                station.configure(shops.getConfigurationSection(name), plugin.getLogger(), "Sklep '" + name + "'");
+                stationShops.put(name.toLowerCase(Locale.ROOT), station);
+            }
+        }
+        pointsAt = 0;
     }
 
     private static String text(ConfigurationSection section, String key, String fallback) {
@@ -259,6 +282,11 @@ public final class OasisService implements Listener {
         return pool.startsWith("punkt-czarny-rynek");
     }
 
+    /** Punkty, które działają w każdej strukturze, nie tylko w oazie. */
+    private static boolean stationPool(String pool) {
+        return pool.startsWith(STATION_SHOP) || pool.equals("punkt-automat") || pool.equals("punkt-radio");
+    }
+
     /** Punkty {@code punkt-*} postawionych oaz i lady paserów z kryjówek czarnego rynku (odświeżane co kilka sekund). */
     public List<Point> points() {
         long now = System.currentTimeMillis();
@@ -274,7 +302,8 @@ public final class OasisService implements Listener {
             }
             for (Blueprint.SpawnPoint p : bp.spawnPoints()) {
                 String pool = p.pool().toLowerCase(Locale.ROOT);
-                if (!pool.startsWith("punkt-") || !(bp.safeZone() || blackMarketPool(pool))) {
+                if (!pool.startsWith("punkt-")
+                        || !(bp.safeZone() || blackMarketPool(pool) || (stationsEnabled && stationPool(pool)))) {
                     continue;
                 }
                 int[] w = instance.placement().toWorld(p.pos().x(), p.pos().y(), p.pos().z());
@@ -302,6 +331,26 @@ public final class OasisService implements Listener {
         double bestDistance = maxDistance * maxDistance + 1e-6;
         for (Point p : points()) {
             if (!p.pool().equals(pool) || !p.world().equals(block.getWorld())) {
+                continue;
+            }
+            double dx = p.x() - block.getX();
+            double dy = p.y() - block.getY();
+            double dz = p.z() - block.getZ();
+            double d = dx * dx + dy * dy + dz * dz;
+            if (d <= bestDistance) {
+                best = p;
+                bestDistance = d;
+            }
+        }
+        return best;
+    }
+
+    /** Najbliższy punkt stanowiska ({@link #stationPool}) w bloku albo zaraz obok, w dowolnej strukturze. */
+    private Point stationAt(Block block) {
+        Point best = null;
+        double bestDistance = 1.0 + 1e-6;
+        for (Point p : points()) {
+            if (!stationPool(p.pool()) || !p.world().equals(block.getWorld())) {
                 continue;
             }
             double dx = p.x() - block.getX();
@@ -483,6 +532,11 @@ public final class OasisService implements Listener {
             return;
         }
         if (safeAt(block.getLocation()) == null) {
+            Point station = stationsEnabled ? stationAt(block) : null;
+            if (station != null) {
+                event.setCancelled(true);
+                useStation(player, station);
+            }
             return;
         }
         Point point = null;
@@ -496,6 +550,9 @@ public final class OasisService implements Listener {
         if (point == null) {
             point = pointAt(block, "punkt-zlecenia", 3.0);
         }
+        if (point == null && stationsEnabled) {
+            point = stationAt(block);
+        }
         if (point == null) {
             return;
         }
@@ -508,6 +565,28 @@ public final class OasisService implements Listener {
             case "punkt-radio" -> radio(player);
             case "punkt-zlecenia" -> jobs.open(player);
             default -> {
+                if (point.pool().startsWith(STATION_SHOP)) {
+                    useStation(player, point);
+                }
+            }
+        }
+    }
+
+    /** Stanowisko w zwykłej strukturze: sklep z {@code stanowiska.sklepy}, automat albo radio. */
+    private void useStation(Player player, Point point) {
+        switch (point.pool()) {
+            case "punkt-automat" -> slots.play(player);
+            case "punkt-radio" -> radio(player);
+            default -> {
+                String name = point.pool().substring(STATION_SHOP.length());
+                ShopService station = stationShops.get(name);
+                if (station == null) {
+                    player.sendMessage("§7Tu już nikt nie handluje.");
+                    plugin.getLogger().warning("Punkt " + point.pool() + " w " + point.instance().id()
+                            + ": nie ma sklepu stanowiska.sklepy." + name + " w configu.");
+                    return;
+                }
+                station.open(player);
             }
         }
     }
@@ -603,6 +682,9 @@ public final class OasisService implements Listener {
             }
         }
         lines.add("§eLady i tarcze na miejscu: §f" + standing + "/" + total);
+        long stationShopPoints = points().stream().filter(p -> p.pool().startsWith(STATION_SHOP)).count();
+        lines.add("§eStanowiska poza oazą: " + (stationsEnabled ? "§awłączone" : "§cwyłączone") + "§e, sklepów w configu: §f"
+                + stationShops.size() + "§e, punktów sklepów: §f" + stationShopPoints);
         lines.add("§eKryjówek czarnego rynku: §f" + count(BLACK_MARKET_COUNTER) + "§e, towarów u pasera: §f" + blackMarket.size());
         plugin.getLogger().info("Oaza: lady i tarcze na miejscu " + standing + "/" + total + ", stanowisk wymiany "
                 + count("punkt-handel") + ", lad paserów " + count(BLACK_MARKET_COUNTER));

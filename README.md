@@ -62,7 +62,7 @@ Auto-generowanie stawia strukturę tylko tam, gdzie pod nią jest mało wody (`m
 Plugin stawia modele z paczki serwera (QualityArmory-texturepack) jako niewidzialne wyświetlacze przedmiotów. Kolizję dają bloki bariery, model tylko rysuje. Bez paczki gracz widzi fioletowo-czarne sześciany.
 
 - **Sekcja `modele:` w pliku `.axs`** – `x y z model skala obrót`, gdzie `x y z` to środek modelu w kratkach struktury (mogą być ułamki). Tak stoi wrak śmigłowca Mi-8 w jednostce wojskowej (`axon:wrak_mi8`, w środku skrzynia `wrak`).
-- **Meble** (`meble:` w configu) – łóżka i bloki z `meble.bloki` (biblioteczka, kocioł, stół rzemieślniczy, piec, wędzarnia, obserwator...) zamieniają się na barierę, a na nich staje model z paczki: metalowe łóżko, regał, szafa kartotekowa, umywalka, stół warsztatowy, piecyk, kuchenka, radiostacja, biurko z komputerem, kroplówka, kosz na śmieci, szlifierka. Drzwi z `meble.drzwi` zostają prawdziwymi drzwiami, a model (stare drewniane albo stalowe drzwi) przestawia się przy każdym otwarciu i zamknięciu. Model obraca się jak blok. Piec i stół rzemieślniczy przestają wtedy działać. `meble.bez-zamiany` to struktury, w których meble zostają zwykłe (domyślnie oaza).
+- **Meble** (`meble:` w configu) – łóżka i bloki z `meble.bloki` (biblioteczka, kocioł, stół rzemieślniczy, piec, wędzarnia, obserwator...) zamieniają się na barierę, a na nich staje model z paczki: metalowe łóżko, regał, szafa kartotekowa, umywalka, stół warsztatowy, piecyk, kuchenka, radiostacja, biurko z komputerem, kroplówka, kosz na śmieci, szlifierka. Drzwi z `meble.drzwi` zostają prawdziwymi drzwiami, a model (stare drewniane albo stalowe drzwi) przestawia się przy każdym otwarciu i zamknięciu. Model obraca się jak blok. Piec i stół rzemieślniczy przestają wtedy działać. Do nowych struktur (sklepy, stacja, fastfood, osiedle, zajezdnia, elektrownia, galeria) są jeszcze: kasa fiskalna (skrzynia Kresu), lada sklepowa (lampion z dyni), kibel (rama portalu Kresu), regał sklepowy (gniazdo pszczół), lodówka na napoje (skalibrowany czujnik sculk), dystrybutor paliwa (zniszczone kowadło), rozdzielnia (lepki tłok), frytkownica (skarbiec), kanistry (kotwica odrodzenia) i wózek sklepowy (magnetyt). Lodówka i dystrybutor mają dwie kratki wysokości, więc nad nimi w strukturze stoi bariera. Przód modelu patrzy w stronę `facing` bloku. `meble.bez-zamiany` to struktury, w których meble zostają zwykłe (domyślnie oaza).
 - `/struktury cofnij` usuwa też modele; `/struktury usun` je zostawia, tak jak bloki.
 
 ## Format pliku `.axs`
@@ -99,7 +99,7 @@ gospodarstwo: strefa: rownina
 czarny-rynek: strefa: ustronnie
 ```
 
-`jednostka`, `szpital` i `kombinat` nie mają preferencji, więc zostają z domyślnymi wartościami.
+`elektrownia` jest w kodzie (`src/generator`) i ma już w nagłówku `strefa: rownina` oraz wjazd z drogi (`wjazdy: 8 0 north`, środek bramy od frontu). `jednostka`, `szpital` i `kombinat` nie mają preferencji, więc zostają z domyślnymi wartościami.
 
 Struktury opisane w kodzie (`src/generator`):
 
@@ -127,7 +127,7 @@ W zajezdni: ceglana lokomotywownia na cztery tory z zawalonym kawałkiem dachu i
 
 **Zrzuty zaopatrzenia** (`zrzuty:` w configu): 2 razy dziennie o losowej porze między 12:00 a 22:00 (czas polski; raz w każdej połowie okna), gdy online są co najmniej 2 osoby, nad lądowiskiem jednostki albo dachem szpitala powoli (45 s z 60 bloków) spada na spadochronie skrzynia z pulą `zrzut` (rzadka skrzynia albo skrzynia broni). Komunikat nie zdradza miejsca (wie to radiostacja w oazie, za opłatą), ale zrzut widać z daleka: spadająca skrzynia i spadochron świecą na czerwono i ciągną smugę czerwonego dymu, lądowanie to czerwony fajerwerk i huk słyszany w promieniu 300 bloków (z kierunku zrzutu), a nad leżącą skrzynią stoi wysoki czerwony słup dymu (widoczny do ~500 bloków) i co 5 s wybucha flara (`dym-sygnalowy`, `flara-co-sekund`, `swiecenie`). Nieopróżniona skrzynia znika po 15 minutach. Miejsca zrzutów to punkty z pulą `zrzut` w plikach `.axs`; zwykłe odświeżanie skrzyń je pomija.
 
-**Strażnicy NPC** (`straznicy:` w configu, wymagają pluginów [Citizens](https://ci.citizensnpcs.co/job/Citizens2/) i [Sentinel](https://ci.citizensnpcs.co/job/Sentinel/)): w jednostce 4 żołnierzy (plac apelowy, lądowisko), w szpitalu 3 szabrowników (dach, hol, piwnica). Każdy zestaw ma skin (z mineskin.org albo nick gracza), broń (`qa:<nazwa>` z QualityArmory albo zwykły przedmiot), zbroję, życie, zasięg, celność i klasę skrzyni, z której losuje się loot po zabiciu. Strażnicy pojawiają się, gdy gracz podejdzie do struktury, znikają, gdy w okolicy nikogo nie ma, a zabici wracają po 10 minutach. Bez Citizens i Sentinela miejsca zostają puste.
+**Strażnicy NPC** (`straznicy:` w configu, wymagają pluginów [Citizens](https://ci.citizensnpcs.co/job/Citizens2/) i [Sentinel](https://ci.citizensnpcs.co/job/Sentinel/)): w jednostce 4 żołnierzy (plac apelowy, lądowisko), w szpitalu 3 szabrowników (dach, hol, piwnica), w elektrowni 7 szabrowników (portiernia, stołówka, rozdzielnia, hala maszyn, kotłownia, chłodnia, skład węgla). Każdy zestaw ma skin (z mineskin.org albo nick gracza), broń (`qa:<nazwa>` z QualityArmory albo zwykły przedmiot), zbroję, życie, zasięg, celność i klasę skrzyni, z której losuje się loot po zabiciu. Strażnicy pojawiają się, gdy gracz podejdzie do struktury, znikają, gdy w okolicy nikogo nie ma, a zabici wracają po 10 minutach. Bez Citizens i Sentinela miejsca zostają puste.
 
 **Oaza Świt** (`oaza.axs`, sekcja `oaza:` w configu): dawna jednostka przejęta przez przetrwańców, 150 × 140 bloków, z murem, bramą, targowiskiem, sklepem, depozytem, barem z automatami, radiostacją, strzelnicą, noclegownią, ogrodami i lądowiskiem. Plik ma `bezpieczna: tak` (dawniej `strefa: bezpieczna`, nadal czytane), więc oaza nie pojawia się sama (stawia ją admin: `/struktury generuj oaza`), w jej obrysie gracze nie ranią się nawzajem (też region WorldGuard z `pvp: deny`), a strażnicy z zestawu `ochroniarz` strzelają tylko do potworów i są nietykalni. Stanowiska to punkty `punkt-*` w pliku: 8 lad wymiany (pierwszy gracz klika ladę, drugi tę samą; okno wymiany z potwierdzeniem obu stron i odliczaniem, każda zmiana kasuje potwierdzenia), sklep (lada albo handlarz NPC; ceny w Vaulcie), prywatny depozyt, tablica zleceń (przynieś towar za zapłatę), automaty, radiostacja (gdzie i kiedy spadnie zrzut) i strzelnica z tygodniowym rankingiem i nagrodą (`/oaza ranking`). Płatności idą przez Vault; bez niego płatne stanowiska grzecznie odmawiają.
 
@@ -155,6 +155,16 @@ Sklep, automaty, wymiana, paser czarnego rynku i tablica zleceń otwierają się
 Zasady, ceny i loot się nie zmieniają: oba widoki wołają te same metody kupna, gry i wymiany.
 
 **Tryb awaryjny – okno skrzyni**, jak dotąd, gdy: na serwerze nie ma pluginu [PacketEvents](https://modrinth.com/plugin/packetevents) (opcjonalny, `softdepend`; klasy z nim wczytują się tylko, gdy jest), `gui.shader: false`, gracz nie wczytał paczki zasobów (`PlayerResourcePackStatusEvent` = `SUCCESSFULLY_LOADED`; `gui.wymagaj-paczki: false` to pomija), gracz wybrał skrzynię komendą `/oaza gui` (przełącznik zapisany w `gui.yml`) albo nie da się go teraz posadzić (pojazd, skok, kucanie). Na każdym ekranie przycisk **Tryb skrzyni** otwiera to samo okno jako skrzynię (wymiana i kręcący się automat trwają dalej). Ekran zamyka się sam przy obrażeniach, śmierci, teleporcie, zmianie świata, wyjściu z serwera i wyłączeniu pluginu – gracz zawsze wstaje i odzyskuje HUD. Gracze, którzy byli online przed `/reload`, dostają skrzynię aż do ponownego wejścia (serwer nie wie, czy mają paczkę).
+
+## Sklepy i automaty w zwykłych strukturach
+
+Te same ekrany GUI działają poza oazą (sekcja `stanowiska:` w configu). W pliku dowolnej struktury:
+
+- `punkt-sklep-<nazwa>` – sklep z `stanowiska.sklepy.<nazwa>` (format jak `oaza.sklep`). W configu są gotowe: `stacja` (kasa Oilen), `automat-napoje`, `kiosk`, `fastfood`, `galeria` (sport i turystyka) i `zajezdnia` (skup złomu).
+- `punkt-automat` – jednoręki bandyta z `oaza.automaty`.
+- `punkt-radio` – namiar na zrzut za `oaza.radio.cena`.
+
+Punkt kładzie się w bloku lady albo maszyny (jak `counterMarker` w generatorze oazy); klika się ten blok albo sąsiedni. PvP tam działa, a obrażenia zamykają ekran. `stanowiska.wlaczone: false` wyłącza wszystkie stanowiska poza oazą.
 
 ## Kopalnia, zwierzęta i odgłosy
 

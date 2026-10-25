@@ -19,7 +19,7 @@ public final class StructureExporter {
 
     private static final List<StructureDefinition> STRUCTURES = List.of(new GasStationStructure(), new FarmStructure(), new CollectiveFarmStructure(),
             new MineStructure(), new MilitaryBaseStructure(), new HospitalStructure(), new OasisStructure(),
-            new BlackMarketStructure(), new RailDepotStructure());
+            new BlackMarketStructure(), new PowerPlantStructure(), new RailDepotStructure());
 
     private StructureExporter() {
     }
