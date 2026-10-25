@@ -52,6 +52,7 @@ meble:
     vault: "axon:frytkownica"            # frytkownica gastronomiczna
     respawn_anchor: "axon:kanistry"      # sterta kanistrów
     lodestone: "axon:wozek"              # porzucony wózek sklepowy
+    loom: "axon:telewizor"               # telewizor z kineskopem (blokowisko)
   # Drzwi zostają prawdziwymi drzwiami (otwierają się), model idzie za nimi przy otwieraniu.
   drzwi:
     spruce_door: "axon:drzwi_drewniane"
