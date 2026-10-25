@@ -1004,6 +1004,10 @@ public final class MallStructure implements StructureDefinition {
             // kabiny co 3 kratki po obu stronach korytarzyka
             for (int z = za; z <= zb; z++) {
                 int rel = Math.abs(z - (north ? zb : za));
+                if (rel > 11) {
+                    // przedsionek przy klatce schodowej
+                    continue;
+                }
                 boolean partition = rel % 3 == 2;
                 for (int x : new int[]{x1, x1 + 1, x1 + 2, x2 - 2, x2 - 1, x2}) {
                     if (partition) {

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Sklep w oazie: towary z configu ({@code oaza.sklep.oferty}) za pieniądze z Vaulta. Lewy klik kupuje,
+ * Sklep: towary z configu ({@code oaza.sklep.oferty} albo {@code stanowiska.sklepy.<nazwa>.oferty}) za pieniądze z Vaulta. Lewy klik kupuje,
  * prawy sprzedaje (skup), shift mnoży razy 4. Ekran GUI ({@link ShopScreen}) woła te same {@link #buy} i {@link #sell}.
  */
 final class ShopService {
@@ -30,6 +30,11 @@ final class ShopService {
     }
 
     void configure(ConfigurationSection section, Logger logger) {
+        configure(section, logger, "Sklep w oazie");
+    }
+
+    /** {@code label} to nazwa sklepu w ostrzeżeniach w logu. */
+    void configure(ConfigurationSection section, Logger logger, String label) {
         offers.clear();
         if (section == null) {
             return;
@@ -41,7 +46,7 @@ final class ShopService {
             // bronie QualityArmory wczytują się po naszym pluginie: brakujące przedmioty szukamy znów przy otwarciu
             ItemStack item = Items.create(spec, amount);
             if (item == null && !spec.toLowerCase(java.util.Locale.ROOT).startsWith("qa:")) {
-                logger.warning("Sklep w oazie: nie ma przedmiotu '" + spec + "'.");
+                logger.warning(label + ": nie ma przedmiotu '" + spec + "'.");
                 continue;
             }
             offers.add(new Offer(spec, item, amount, number(map.get("kupno"), 0).doubleValue(),

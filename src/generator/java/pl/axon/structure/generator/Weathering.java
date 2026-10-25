@@ -91,7 +91,7 @@ final class Weathering {
                     String below = bp.get(x, y - 1, z);
                     boolean open = y > top[x * bp.depth() + z];
                     int wall = wallSide(bp, x, y, z);
-                    if (open && isFullBlock(below)) {
+                    if (open && isFullBlock(below) && !below.endsWith("barrier")) {
                         // mech na ziemi przy ścianach i plamy mchu na dachach
                         double p = y == ground + 1 ? (wall >= 0 ? 0.22 : 0.0) : (y > ground + 3 ? 0.035 : 0.0);
                         if (rnd.nextDouble() < p) {
@@ -150,7 +150,7 @@ final class Weathering {
 
     private static boolean isWallBlock(String state) {
         String n = state.replace("minecraft:", "");
-        if (!isFullBlock(state)) {
+        if (!isFullBlock(state) || n.equals("barrier")) {
             return false;
         }
         return !(n.startsWith("grass_block") || n.equals("dirt") || n.equals("coarse_dirt") || n.equals("podzol") || n.contains("ore")
