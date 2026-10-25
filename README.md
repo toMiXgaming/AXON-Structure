@@ -67,7 +67,7 @@ Plugin stawia modele z paczki serwera (QualityArmory-texturepack) jako niewidzia
 
 ## Format pliku `.axs`
 
-Tekstowy: nagłówek (`id`, `nazwa`, `opis`, `rozmiar`, opcjonalnie `grunt`), paleta bloków, warstwy (`y z: indeks*ile ...`), a na końcu sekcje `skrzynie:` i `ramki:` (`x y z kierunek pula`), `napisy:` oraz opcjonalnie `modele:`. Szczegóły w `StructureFile.java`.
+Tekstowy: nagłówek (`id`, `nazwa`, `opis`, `rozmiar`, opcjonalnie `grunt`), paleta bloków, warstwy (`y z: indeks*ile ...`), a na końcu sekcje `skrzynie:` i `ramki:` (`x y z kierunek pula`), `napisy:` oraz opcjonalnie `modele:`. Szczegóły w `StructureFile.java`, a ściąga do robienia nowych plików, z podglądem PNG i sprawdzaniem bez serwera, w [docs/axs-format.md](docs/axs-format.md).
 
 `grunt: N` oznacza, że warstwa `N` leży na poziomie terenu, a warstwy `0 .. N-1` to podziemie wklejane pod powierzchnię (bez tego pola grunt to warstwa 0, jak dotąd). Wysokość podawana w `/struktury wklej` i wyliczana przy auto-generowaniu to zawsze poziom gruntu.
 
