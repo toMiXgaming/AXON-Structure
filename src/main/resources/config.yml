@@ -99,7 +99,7 @@ auto-generowanie:
 zrzuty:
   # Kilka razy dziennie, o losowej porze w podanych godzinach, nad jedną z postawionych struktur spada
   # na spadochronie skrzynia z rzadkim lootem. Miejsca zrzutów są w plikach struktur (lądowisko jednostki,
-  # dach szpitala). Komenda: /struktury zrzut teraz (od razu), /struktury zrzut (o której następny).
+  # dach szpitala, dach galerii). Komenda: /struktury zrzut teraz (od razu), /struktury zrzut (o której następny).
   wlaczone: true
   # Ile zrzutów dziennie. Okno godzin dzielone jest na tyle równych części, w każdej jeden zrzut o losowej porze
   # (przy 2 i 12-22: raz między 12 a 17, raz między 17 a 22).
@@ -274,6 +274,39 @@ straznicy:
       loot: ""
       cele: []
       spi: true
+
+    bandyta:
+      # gang z galerii Kometa (npc-bandyta): twardsi od szabrowników, celniejsi, w kolczudze
+      nazwa: "&cBandyta z Komety"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:ak47"
+      zbroja: [chainmail_helmet, chainmail_chestplate, leather_leggings, iron_boots]
+      zycie: 34
+      obrazenia: -1
+      zasieg: 26
+      celnosc: 0.7
+      loot: lepsza-skrzynia
+      cele: [players]
+      chodzi: true
+      promien-chodzenia: 10
+    herszt:
+      # herszt gangu (npc-herszt): biuro administracji galerii i liczarnia w garażu
+      nazwa: "&4Herszt Komety"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:m4a1s"
+      zbroja: [iron_helmet, iron_chestplate, iron_leggings, iron_boots]
+      zycie: 60
+      obrazenia: -1
+      zasieg: 32
+      celnosc: 0.4
+      loot: rzadka-skrzynia
+      cele: [players]
+      chodzi: true
+      promien-chodzenia: 5
 
 oaza:
   # Oaza Świt (struktura "oaza"): strefa bez PvP, stawiana tylko komendą (/struktury generuj oaza), nigdy sama.
@@ -454,7 +487,7 @@ zycie:
   szansa-procent: 35
   # Głośność wszystkich odgłosów (mnożona przez głośność z listy).
   glosnosc: 0.7
-  # Lista dla id struktury (stacja, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek);
+  # Lista dla id struktury (stacja, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek, galeria);
   # struktury bez listy biorą "domyslne", pusta lista [] = cisza. Wpis: "nazwa dźwięku [wysokość] [głośność]",
   # nazwy z Minecrafta (https://minecraft.wiki/w/Sounds.json) albo z paczki zasobów.
   odglosy:
@@ -507,6 +540,16 @@ zycie:
       - "minecraft:block.smithing_table.use 1.0 0.4"
       - "minecraft:entity.chicken.ambient 1.0 0.6"
       - "minecraft:block.note_block.bit 0.7 0.3"
+    # galeria: gong z głośników, skrzypiące ruchome schody, szkło, ptaki pod świetlikiem
+    galeria:
+      - "minecraft:block.note_block.chime 1.2 0.4"
+      - "minecraft:block.note_block.chime 0.9 0.4"
+      - "minecraft:block.glass.break 0.8 0.3"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:block.iron_door.close 0.6 0.5"
+      - "minecraft:entity.parrot.ambient 1.2 0.3"
+      - "minecraft:block.pointed_dripstone.drip_water 1.0"
+      - "minecraft:item.elytra.flying 0.6 0.3"
 
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.
@@ -717,6 +760,73 @@ pule:
   ladowisko:
     rzadka-skrzynia: 85
     lepsza-skrzynia: 15
+  # --- galeria Kometa (beczki na parkingu i przy rampach: plac, paliwo; lodówki Maximarketu: lodowki) ---
+  # zwykłe sklepy: odzież, buty, prasa, zabawki, salon gier
+  galeria-sklep:
+    brazowa: 30
+    mala-skrzynka: 25
+    skrzynka-jedzenie: 10
+    lepsza-skrzynia: 15
+    brak: 20
+  # strefa restauracji, piekarnia, kawiarnia, bar kina i kręgielni
+  galeria-jedzenie:
+    skrzynka-jedzenie: 65
+    mala-skrzynka: 10
+    brak: 25
+  # regały Maximarketu
+  galeria-hipermarket:
+    skrzynka-jedzenie: 50
+    mala-skrzynka: 15
+    skrzynka-medyczna: 10
+    brazowa: 10
+    brak: 15
+  # apteka na parterze
+  galeria-apteka:
+    skrzynka-medyczna: 70
+    lepsza-skrzynia: 20
+    brak: 10
+  # jubiler (roleta zamknięta, wejście z zaplecza) i kantor
+  galeria-jubiler:
+    rzadka-skrzynia: 35
+    lepsza-skrzynia: 50
+    brak: 15
+  # foto, telefony, komputery, Elektro-Max
+  galeria-elektronika:
+    lepsza-skrzynia: 45
+    narzedziowa: 30
+    brazowa: 10
+    brak: 15
+  # Sport-Myśliwy: klatka z bronią i zaplecze
+  galeria-militaria:
+    skrzynia-broni: 70
+    lepsza-skrzynia: 20
+    brak: 10
+  # zaplecza sklepów, korytarze techniczne, magazyny, naczepa
+  galeria-zaplecze:
+    brazowa: 40
+    narzedziowa: 25
+    lepsza-skrzynia: 15
+    brak: 20
+  # administracja i ochrona (herszt), biuro kierownika Maximarketu, sejfy
+  galeria-biuro:
+    lepsza-skrzynia: 45
+    skrzynia-broni: 25
+    rzadka-skrzynia: 15
+    brak: 15
+  # liczarnia w garażu (tylko włazem z biura Maximarketu)
+  galeria-skarbiec:
+    rzadka-skrzynia: 100
+  # dach: maszynownia windy, pomost billboardu
+  galeria-dach:
+    rzadka-skrzynia: 50
+    lepsza-skrzynia: 40
+    brak: 10
+  # garaż podziemny: samochody, furgonetka konwoju
+  galeria-parking:
+    brazowa: 30
+    lepsza-skrzynia: 20
+    beczka: 25
+    brak: 25
   # zrzut zaopatrzenia (sekcja zrzuty: wskazuje tę pulę)
   zrzut:
     rzadka-skrzynia: 75

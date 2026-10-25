@@ -86,7 +86,7 @@ Opcjonalne pola dla AxonMapGenerator (brak pola = wartość domyślna, stare pli
 
 Błędna wartość przerywa wczytywanie pliku i pokazuje w logu nazwę pola. Zapis zachowuje pola i nieznane klucze nagłówka.
 
-Struktury z kodu (`src/generator`) ustawiają pola przez `StructureDefinition.traits()`. Stacja ma `mapa: nie`, bo to struktura testowa.
+Struktury z kodu (`src/generator`) ustawiają pola przez `StructureDefinition.traits()`. Stacja ma `mapa: nie`, bo to struktura testowa. Galeria (`galeria`) ma `strefa: rownina` i dwa wjazdy: `69 0 north` (wjazd z drogi na parking od frontu) i `139 116 east` (droga serwisowa do ramp rozładunkowych).
 
 ### Preferencje monumentów dla AxonMapGenerator
 
