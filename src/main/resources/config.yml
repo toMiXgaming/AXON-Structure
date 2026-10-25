@@ -197,6 +197,20 @@ straznicy:
       loot: mala-skrzynka
       # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
       cele: [players]
+    cpun:
+      # łatwy przeciwnik (apteka): bez pancerza, mało życia, bije pałką z bliska
+      nazwa: "&7Ćpun"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "wooden_sword"
+      zbroja: [air, air, air, air]
+      zycie: 14
+      obrazenia: 3
+      zasieg: 4
+      celnosc: 0
+      loot: mala-skrzynka
+      cele: [players]
     ochroniarz:
       # strażnik oazy: broni przed potworami, do graczy nie strzela i nie da się go zranić
       nazwa: "&aOchrona Oazy"

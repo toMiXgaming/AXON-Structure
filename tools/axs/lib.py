@@ -188,7 +188,7 @@ COL.update({
     'wheat': (170, 160, 60), 'carrots': (80, 150, 40), 'potatoes': (80, 150, 40), 'beetroots': (80, 130, 40),
     'poppy': (190, 30, 30), 'dandelion': (240, 220, 40), 'allium': (180, 110, 210), 'azure_bluet': (220, 230, 230),
     'cornflower': (70, 100, 200), 'oxeye_daisy': (230, 230, 210), 'lily_of_the_valley': (235, 235, 235),
-    'red_tulip': (200, 40, 30), 'white_tulip': (230, 230, 230),
+    'red_tulip': (200, 40, 30), 'white_tulip': (230, 230, 230), 'spruce_leaves': (50, 85, 50),
 })
 for _k in list(COL):
     COL.setdefault('potted_' + _k, (120, 70, 50))
