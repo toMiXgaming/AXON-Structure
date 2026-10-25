@@ -842,6 +842,30 @@ pule:
     skrzynka-jedzenie: 30
     lepsza-skrzynia: 10
     brak: 25
+  # --- osiedle Słoneczne (beczki na parkingu: plac i paliwo; sklep: lada, sklep, zaplecze, lodowki;
+  #     górne piętra odciętej klatki: pietro; dachy: dach) ---
+  # mieszkania w blokach
+  mieszkanie:
+    mala-skrzynka: 45
+    skrzynka-jedzenie: 25
+    skrzynka-medyczna: 10
+    brak: 20
+  # blaszane garaże przy uliczce
+  garaz:
+    narzedziowa: 35
+    beczka-paliwa: 25
+    brazowa: 20
+    brak: 20
+  # komórki lokatorskie w piwnicy
+  piwnica:
+    skrzynka-jedzenie: 45
+    mala-skrzynka: 25
+    brak: 30
+  # altana śmietnikowa
+  smietnik:
+    beczka: 40
+    mala-skrzynka: 20
+    brak: 40
   # zrzut zaopatrzenia (sekcja zrzuty: wskazuje tę pulę)
   zrzut:
     rzadka-skrzynia: 75
