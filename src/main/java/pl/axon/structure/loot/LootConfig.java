@@ -65,14 +65,40 @@ public final class LootConfig {
         for (Map<?, ?> raw : section.getMapList("loot")) {
             Map<String, Object> entry = new HashMap<>();
             raw.forEach((k, v) -> entry.put(String.valueOf(k), v));
-            Object itemName = entry.get("przedmiot");
-            Material material = itemName == null ? null : Material.matchMaterial(String.valueOf(itemName));
-            if (material == null) {
-                logger.warning("Klasa '" + id + "': nieznany przedmiot '" + itemName + "', pomijam");
+
+            // 1) Odwołanie do całej tabeli lootu AxonItems: {tabela: beczka_przydrozna}
+            Object tableName = entry.get("tabela");
+            if (tableName != null && !String.valueOf(tableName).isBlank()) {
+                loot.add(CrateClass.LootEntry.ofTable(String.valueOf(tableName).trim()));
                 continue;
             }
-            int[] amount = parseRange(String.valueOf(entry.getOrDefault("ilosc", "1")));
-            double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
+
+            Object itemName = entry.get("przedmiot");
+            if (itemName == null) {
+                logger.warning("Klasa '" + id + "': wpis bez 'przedmiot' ani 'tabela', pomijam");
+                continue;
+            }
+            String rawItem = String.valueOf(itemName).trim();
+            int[] amount = parseRange(raw(entry, "ilosc", "1"));
+            double chance = Double.parseDouble(raw(entry, "szansa", "100"));
+
+            // 2) Przedmiot AxonItems: {przedmiot: axon:scrap, ilosc: "2-6"}
+            if (rawItem.toLowerCase(Locale.ROOT).startsWith("axon:")) {
+                String axonId = rawItem.substring("axon:".length()).trim().toLowerCase(Locale.ROOT);
+                if (axonId.isEmpty()) {
+                    logger.warning("Klasa '" + id + "': pusty identyfikator 'axon:', pomijam");
+                    continue;
+                }
+                loot.add(CrateClass.LootEntry.ofAxon(axonId, amount[0], amount[1], chance));
+                continue;
+            }
+
+            // 3) Zwykły przedmiot z Minecrafta.
+            Material material = Material.matchMaterial(rawItem);
+            if (material == null) {
+                logger.warning("Klasa '" + id + "': nieznany przedmiot '" + rawItem + "', pomijam");
+                continue;
+            }
             String display = entry.containsKey("nazwa") ? color(String.valueOf(entry.get("nazwa"))) : null;
             List<String> lore = new ArrayList<>();
             if (entry.get("opis") instanceof List<?> lines) {
@@ -80,9 +106,14 @@ public final class LootConfig {
                     lore.add(color(String.valueOf(line)));
                 }
             }
-            loot.add(new CrateClass.LootEntry(material, amount[0], amount[1], chance, display, lore));
+            loot.add(CrateClass.LootEntry.ofMaterial(material, amount[0], amount[1], chance, display, lore));
         }
         return new CrateClass(id, name, kind, decoration == null ? "" : decoration, minItems, loot);
+    }
+
+    private static String raw(Map<String, Object> entry, String key, String fallback) {
+        Object value = entry.get(key);
+        return value == null ? fallback : String.valueOf(value);
     }
 
     private static int[] parseRange(String value) {

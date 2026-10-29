@@ -24,7 +24,8 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "loot",
+                    "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -46,6 +47,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "najblizsza" -> nearest(sender);
             case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
+            case "loot" -> loot(sender);
             case "przeladuj" -> {
                 plugin.reload();
                 sender.sendMessage("§aPrzeładowano: " + plugin.library().all().size() + " struktur, "
@@ -67,6 +69,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " najblizsza §7– gdzie jest najbliższa postawiona struktura");
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
+        sender.sendMessage("§e/" + label + " loot §7– co realnie wpada do skrzyń (przedmioty AxonCore, tabele)");
         sender.sendMessage("§e/" + label + " przeladuj §7– wczytuje config i pliki struktur od nowa");
         sender.sendMessage("§7Z konsoli: §ewklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]§7, "
                 + "§egeneruj <nazwa> <świat> <x> <z> [obrót 0-3]");
@@ -265,6 +268,30 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
                         .append(total == 0 ? 0 : Math.round(e.getValue() * 100.0 / total)).append("%, ");
             }
             sender.sendMessage(line.substring(0, line.length() - 2));
+        }
+    }
+
+    /** Diagnostyka: pokazuje, czy most do AxonItems działa i co siedzi w każdej klasie skrzyni. */
+    private void loot(CommandSender sender) {
+        sender.sendMessage("§6Loot AxonCore: §f" + plugin.crates().axonLoot().describe());
+        if (!plugin.crates().axonLoot().available()) {
+            sender.sendMessage("§7Zainstaluj AxonItems, żeby beczki dawały prawdziwy złom, części i korpusy broni.");
+        }
+        for (CrateClass crate : plugin.crates().loot().classes().values()) {
+            int tables = 0;
+            int axon = 0;
+            int vanilla = 0;
+            for (CrateClass.LootEntry entry : crate.loot()) {
+                if (entry.isTable()) {
+                    tables++;
+                } else if (entry.isAxon()) {
+                    axon++;
+                } else {
+                    vanilla++;
+                }
+            }
+            sender.sendMessage("§e" + crate.id() + "§7: §f" + tables + "§7 tabel, §f" + axon
+                    + "§7 przedmiotów AxonCore, §f" + vanilla + "§7 z Minecrafta");
         }
     }
 

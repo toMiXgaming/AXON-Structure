@@ -6,7 +6,8 @@ load: STARTUP
 api-version: '1.21'
 description: Struktury w stylu Rusta wklejane jedną komendą.
 author: toMiXgaming
-softdepend: [WorldGuard]
+# AxonItems daje prawdziwe przedmioty AxonCore w skrzyniach (most refleksyjny, bez zależności Maven).
+softdepend: [WorldGuard, AxonItems]
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.

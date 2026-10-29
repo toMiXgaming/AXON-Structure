@@ -39,6 +39,7 @@ public final class CrateService {
     private final Random random = new Random();
     private final Set<String> warnedPools = new HashSet<>();
     private final Set<Material> decorationTypes = new HashSet<>();
+    private final AxonLootBridge axonLoot;
     private LootConfig loot;
     private Settings settings;
     private BukkitTask task;
@@ -47,6 +48,7 @@ public final class CrateService {
         this.plugin = plugin;
         this.library = library;
         this.store = store;
+        this.axonLoot = new AxonLootBridge(plugin.getLogger());
     }
 
     public void configure(LootConfig loot, Settings settings) {
@@ -54,6 +56,8 @@ public final class CrateService {
         this.settings = settings;
         warnedPools.clear();
         decorationTypes.clear();
+        // AxonItems mógł wystartować po nas – sprawdzamy most przy każdym przeładowaniu.
+        axonLoot.resolve();
         for (CrateClass crate : loot.classes().values()) {
             if (!crate.decoration().isBlank()) {
                 try {
@@ -67,6 +71,11 @@ public final class CrateService {
 
     public LootConfig loot() {
         return loot;
+    }
+
+    /** Most do AxonItems – używany przez {@code /struktury loot} do diagnostyki. */
+    public AxonLootBridge axonLoot() {
+        return axonLoot;
     }
 
     public void start() {
@@ -209,7 +218,7 @@ public final class CrateService {
         }
         if (block.getState() instanceof Container container) {
             container.getInventory().clear();
-            crate.fill(container.getInventory(), random);
+            crate.fill(container.getInventory(), random, axonLoot);
         }
         if (!crate.decoration().isBlank()) {
             Block above = block.getRelative(BlockFace.UP);
@@ -239,7 +248,7 @@ public final class CrateService {
         if (crate == null || crate.kind() != CrateClass.Kind.FRAME) {
             return false;
         }
-        List<ItemStack> items = crate.roll(random);
+        List<ItemStack> items = crate.roll(random, axonLoot);
         if (items.isEmpty()) {
             return false;
         }

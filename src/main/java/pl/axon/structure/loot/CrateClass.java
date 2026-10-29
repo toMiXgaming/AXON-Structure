@@ -10,7 +10,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-/** Klasa skrzyni z configu: jaki blok, jaka nazwa i jaki loot. */
+/**
+ * Klasa skrzyni z configu: jaki blok, jaka nazwa i jaki loot.
+ *
+ * <p>Wpis lootu może być trojaki:
+ * <ul>
+ *   <li>{@code przedmiot: iron_ingot} – zwykły przedmiot z Minecrafta,</li>
+ *   <li>{@code przedmiot: axon:scrap} – przedmiot z AxonItems (tworzony przez API, z modelem i PDC),</li>
+ *   <li>{@code tabela: beczka_przydrozna} – cała tabela lootu z AxonItems (z szansami i progiem dnia wipe'u).</li>
+ * </ul>
+ * Dzięki temu beczki przy drogach dają prawdziwy złom AxonCore, a nie przemianowane żelazne bryłki.
+ */
 public record CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
                          List<LootEntry> loot) {
 
@@ -28,10 +38,48 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
         }
     }
 
-    public record LootEntry(Material material, int min, int max, double chance, String name, List<String> lore) {
+    /**
+     * Jeden wpis lootu.
+     *
+     * @param material  blok/przedmiot Minecrafta albo {@code null}, gdy wpis wskazuje przedmiot AxonItems
+     * @param axonId    id przedmiotu AxonItems (bez prefiksu) albo {@code null}
+     * @param tableId   id tabeli lootu AxonItems albo {@code null}
+     * @param min       dolna granica ilości
+     * @param max       górna granica ilości
+     * @param chance    szansa w procentach
+     * @param name      opcjonalna nazwa (tylko dla przedmiotów Minecrafta)
+     * @param lore      opcjonalny opis (tylko dla przedmiotów Minecrafta)
+     */
+    public record LootEntry(Material material, String axonId, String tableId, int min, int max, double chance,
+                            String name, List<String> lore) {
 
+        public static LootEntry ofMaterial(Material material, int min, int max, double chance,
+                                           String name, List<String> lore) {
+            return new LootEntry(material, null, null, min, max, chance, name, lore);
+        }
+
+        public static LootEntry ofAxon(String axonId, int min, int max, double chance) {
+            return new LootEntry(null, axonId, null, min, max, chance, null, List.of());
+        }
+
+        public static LootEntry ofTable(String tableId) {
+            return new LootEntry(null, null, tableId, 1, 1, 100.0, null, List.of());
+        }
+
+        public boolean isTable() {
+            return tableId != null;
+        }
+
+        public boolean isAxon() {
+            return axonId != null;
+        }
+
+        /** Przedmiot z Minecrafta – jedyny wariant, który sam potrafi się zbudować bez AxonItems. */
         @SuppressWarnings("deprecation")
-        public ItemStack create(Random random) {
+        public ItemStack createVanilla(Random random) {
+            if (material == null) {
+                return null;
+            }
             int amount = min + (max > min ? random.nextInt(max - min + 1) : 0);
             ItemStack item = new ItemStack(material, Math.max(1, amount));
             if (name != null || !lore.isEmpty()) {
@@ -48,31 +96,77 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
             }
             return item;
         }
+
+        /** Ilość do wylosowania (dla wpisów AxonItems). */
+        public int rollAmount(Random random) {
+            return min + (max > min ? random.nextInt(max - min + 1) : 0);
+        }
     }
 
-    /** Losuje przedmioty: każdy wpis ma własną szansę, a gdy nic nie wypadnie, dobiera do {@code minItems}. */
-    public List<ItemStack> roll(Random random) {
+    /**
+     * Losuje przedmioty: każdy wpis ma własną szansę, a gdy nic nie wypadnie, dobiera do {@code minItems}.
+     *
+     * <p>Wpisy AxonItems i tabele wymagają mostu do AxonItems – bez niego są pomijane (skrzynia
+     * dostanie wtedy tylko przedmioty z Minecrafta, więc serwer bez AxonItems nadal działa).
+     */
+    public List<ItemStack> roll(Random random, AxonLootBridge bridge) {
         List<ItemStack> items = new ArrayList<>();
         for (LootEntry entry : loot) {
-            if (random.nextDouble() * 100.0 < entry.chance()) {
-                items.add(entry.create(random));
+            if (random.nextDouble() * 100.0 >= entry.chance()) {
+                continue;
+            }
+            if (entry.isTable()) {
+                if (bridge != null) {
+                    items.addAll(bridge.rollTable(entry.tableId()));
+                }
+                continue;
+            }
+            if (entry.isAxon()) {
+                if (bridge != null) {
+                    ItemStack item = bridge.createItem(entry.axonId(), entry.rollAmount(random));
+                    if (item != null) {
+                        items.add(item);
+                    }
+                }
+                continue;
+            }
+            ItemStack vanilla = entry.createVanilla(random);
+            if (vanilla != null) {
+                items.add(vanilla);
             }
         }
         int guard = 0;
         while (items.size() < minItems && !loot.isEmpty() && guard++ < 32) {
-            items.add(loot.get(random.nextInt(loot.size())).create(random));
+            LootEntry entry = loot.get(random.nextInt(loot.size()));
+            if (entry.isTable()) {
+                if (bridge != null) {
+                    items.addAll(bridge.rollTable(entry.tableId()));
+                }
+            } else if (entry.isAxon()) {
+                if (bridge != null) {
+                    ItemStack item = bridge.createItem(entry.axonId(), entry.rollAmount(random));
+                    if (item != null) {
+                        items.add(item);
+                    }
+                }
+            } else {
+                ItemStack vanilla = entry.createVanilla(random);
+                if (vanilla != null) {
+                    items.add(vanilla);
+                }
+            }
         }
         return items;
     }
 
-    public void fill(Inventory inventory, Random random) {
+    public void fill(Inventory inventory, Random random, AxonLootBridge bridge) {
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < inventory.getSize(); i++) {
             slots.add(i);
         }
         Collections.shuffle(slots, random);
         int slot = 0;
-        for (ItemStack item : roll(random)) {
+        for (ItemStack item : roll(random, bridge)) {
             if (slot >= slots.size()) {
                 break;
             }
