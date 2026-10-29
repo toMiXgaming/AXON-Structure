@@ -24,7 +24,7 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "zrzut", "straznicy", "oaza", "zycie", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "pojemniki", "pojemnik", "zrzut", "straznicy", "oaza", "zycie", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -46,6 +46,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "najblizsza" -> nearest(sender);
             case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
+            case "pojemniki" -> plugin.containers().status().forEach(sender::sendMessage);
+            case "pojemnik" -> placeContainer(sender, label, args);
             case "straznicy" -> guards(sender, args);
             case "oaza" -> plugin.oasis().status().forEach(sender::sendMessage);
             case "zycie" -> life(sender);
@@ -81,6 +83,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " najblizsza §7– gdzie jest najbliższa postawiona struktura");
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
+        sender.sendMessage("§e/" + label + " pojemniki §7– beczki przy drogach i pojemniki-modele w strukturach");
+        sender.sendMessage("§e/" + label + " pojemnik <klasa> §7– stawia pojemnik-model przed tobą (test, znika po restarcie)");
         sender.sendMessage("§e/" + label + " zrzut [teraz] §7– o której następny zrzut (teraz: zrzuca skrzynię od razu)");
         sender.sendMessage("§e/" + label + " straznicy [postaw] §7– strażnicy NPC (postaw: od razu we wczytanych strukturach)");
         sender.sendMessage("§e/" + label + " oaza §7– stan oazy: stanowiska, sklep, czy działa Vault");
@@ -319,6 +323,50 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         return instance;
     }
 
+    /** {@code pojemnik <klasa> [świat x y z [yaw]]}: pojemnik-model o stałej klasie, do sprawdzenia modelu i lootu. */
+    private void placeContainer(CommandSender sender, String label, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§cUżycie: /" + label + " pojemnik <klasa> [świat x y z [yaw]]");
+            return;
+        }
+        CrateClass crate = plugin.crates().loot().crateClass(args[1]);
+        if (crate == null || crate.kind() != CrateClass.Kind.MODEL) {
+            sender.sendMessage("§cNie ma klasy-modelu §e" + args[1] + "§c (blok: model). Zobacz §e/" + label + " klasy§c.");
+            return;
+        }
+        Location at;
+        float yaw;
+        if (args.length >= 6) {
+            World world = world(sender, args[2]);
+            if (world == null) {
+                return;
+            }
+            try {
+                at = new Location(world, Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
+                yaw = args.length >= 7 ? Float.parseFloat(args[6]) : 0f;
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§cZłe współrzędne.");
+                return;
+            }
+        } else if (sender instanceof Player player) {
+            Location eye = player.getLocation();
+            org.bukkit.util.Vector dir = eye.getDirection().setY(0);
+            if (dir.lengthSquared() < 1e-6) {
+                dir = new org.bukkit.util.Vector(0, 0, 1);
+            }
+            dir.normalize().multiply(2);
+            at = eye.clone().add(dir);
+            // przodem do gracza, zaokrąglone do 90°
+            yaw = Math.round((eye.getYaw() + 180f) / 90f) * 90f;
+        } else {
+            sender.sendMessage("§cZ konsoli: /" + label + " pojemnik <klasa> <świat> <x> <y> <z> [yaw]");
+            return;
+        }
+        plugin.containers().placeCommand(crate, at, yaw);
+        sender.sendMessage("§aPostawiono §e" + crate.id() + "§a na §f" + at.getBlockX() + " " + at.getBlockY() + " "
+                + at.getBlockZ() + "§a. Znika po restarcie.");
+    }
+
     private void classes(CommandSender sender) {
         if (plugin.crates().emptyLoot()) {
             sender.sendMessage("§cloot.puste: true §7– skrzynie stoją puste, zrzuty i NPC nic nie dają. Tabele niżej czekają na później.");
@@ -360,6 +408,12 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("wklej") || args[0].equalsIgnoreCase("generuj"))) {
             for (Blueprint bp : plugin.library().all()) {
                 options.add(bp.id());
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("pojemnik")) {
+            for (CrateClass crate : plugin.crates().loot().classes().values()) {
+                if (crate.kind() == CrateClass.Kind.MODEL) {
+                    options.add(crate.id());
+                }
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("zrzut")) {
             options.add("teraz");

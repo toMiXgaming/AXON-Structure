@@ -18,42 +18,55 @@ public final class LootConfig {
     private final Map<String, CrateClass> classes = new LinkedHashMap<>();
     private final Map<String, CratePool> pools = new LinkedHashMap<>();
 
+    /** Sekcja z pojemnikami-modelami; jej klasy i pule zastępują te o tym samym id z {@code klasy} i {@code pule}. */
+    public static final String CONTAINERS = "pojemniki";
+
     public static LootConfig load(ConfigurationSection root, Logger logger) {
         LootConfig config = new LootConfig();
-        ConfigurationSection classesSection = root.getConfigurationSection("klasy");
-        if (classesSection != null) {
-            for (String id : classesSection.getKeys(false)) {
-                ConfigurationSection section = classesSection.getConfigurationSection(id);
-                if (section == null) {
-                    continue;
-                }
-                try {
-                    config.classes.put(id.toLowerCase(Locale.ROOT), parseClass(id, section, logger));
-                } catch (IllegalArgumentException e) {
-                    logger.severe("Klasa skrzyni '" + id + "': " + e.getMessage());
-                }
-            }
-        }
-        ConfigurationSection poolsSection = root.getConfigurationSection("pule");
-        if (poolsSection != null) {
-            for (String id : poolsSection.getKeys(false)) {
-                ConfigurationSection section = poolsSection.getConfigurationSection(id);
-                if (section == null) {
-                    continue;
-                }
-                LinkedHashMap<String, Integer> weights = new LinkedHashMap<>();
-                for (String key : section.getKeys(false)) {
-                    String classId = key.toLowerCase(Locale.ROOT);
-                    if (!classId.equals(CratePool.NONE) && !config.classes.containsKey(classId)) {
-                        logger.warning("Pula '" + id + "' odwołuje się do nieznanej klasy '" + key + "'");
-                        continue;
-                    }
-                    weights.put(classId, section.getInt(key));
-                }
-                config.pools.put(id.toLowerCase(Locale.ROOT), new CratePool(id, weights));
-            }
-        }
+        config.loadClasses(root.getConfigurationSection("klasy"), logger);
+        config.loadClasses(root.getConfigurationSection(CONTAINERS + ".klasy"), logger);
+        config.loadPools(root.getConfigurationSection("pule"), logger);
+        config.loadPools(root.getConfigurationSection(CONTAINERS + ".pule"), logger);
         return config;
+    }
+
+    private void loadClasses(ConfigurationSection classesSection, Logger logger) {
+        if (classesSection == null) {
+            return;
+        }
+        for (String id : classesSection.getKeys(false)) {
+            ConfigurationSection section = classesSection.getConfigurationSection(id);
+            if (section == null) {
+                continue;
+            }
+            try {
+                classes.put(id.toLowerCase(Locale.ROOT), parseClass(id, section, logger));
+            } catch (IllegalArgumentException e) {
+                logger.severe("Klasa skrzyni '" + id + "': " + e.getMessage());
+            }
+        }
+    }
+
+    private void loadPools(ConfigurationSection poolsSection, Logger logger) {
+        if (poolsSection == null) {
+            return;
+        }
+        for (String id : poolsSection.getKeys(false)) {
+            ConfigurationSection section = poolsSection.getConfigurationSection(id);
+            if (section == null) {
+                continue;
+            }
+            LinkedHashMap<String, Integer> weights = new LinkedHashMap<>();
+            for (String key : section.getKeys(false)) {
+                String classId = key.toLowerCase(Locale.ROOT);
+                if (!classId.equals(CratePool.NONE) && !classes.containsKey(classId)) {
+                    logger.warning("Pula '" + id + "' odwołuje się do nieznanej klasy '" + key + "'");
+                    continue;
+                }
+                weights.put(classId, section.getInt(key));
+            }
+            pools.put(id.toLowerCase(Locale.ROOT), new CratePool(id, weights));
+        }
     }
 
     private static CrateClass parseClass(String id, ConfigurationSection section, Logger logger) {
@@ -67,8 +80,16 @@ public final class LootConfig {
             Map<String, Object> entry = new HashMap<>();
             raw.forEach((k, v) -> entry.put(String.valueOf(k), v));
             Object itemName = entry.get("przedmiot");
-            Material material = itemName == null ? null : Material.matchMaterial(String.valueOf(itemName));
-            if (material == null) {
+            String itemId = itemName == null ? "" : String.valueOf(itemName).trim();
+            String axonId = null;
+            Material material = null;
+            if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.PREFIX)) {
+                // sprawdzane dopiero przy losowaniu: AxonItems włącza się po nas (load: STARTUP)
+                axonId = itemId.substring(AxonItemsBridge.PREFIX.length()).toLowerCase(Locale.ROOT);
+            } else {
+                material = Material.matchMaterial(itemId);
+            }
+            if (material == null && (axonId == null || axonId.isBlank())) {
                 logger.warning("Klasa '" + id + "': nieznany przedmiot '" + itemName + "', pomijam");
                 continue;
             }
@@ -81,10 +102,26 @@ public final class LootConfig {
                     lore.add(color(String.valueOf(line)));
                 }
             }
-            loot.add(new CrateClass.LootEntry(material, amount[0], amount[1], chance, display, lore));
+            loot.add(new CrateClass.LootEntry(material, axonId, amount[0], amount[1], chance, display, lore));
+        }
+        CrateClass.ContainerSpec container = null;
+        if (kind == CrateClass.Kind.MODEL) {
+            if (model == null || model.isBlank()) {
+                throw new IllegalArgumentException("blok: model wymaga pola model (np. axon:beczka)");
+            }
+            long respawn = section.contains("odnowienie-minut")
+                    ? Math.max(1, section.getLong("odnowienie-minut")) * 60_000L : -1;
+            container = new CrateClass.ContainerSpec(section.getString("model-rozbity", ""),
+                    Math.max(1, section.getInt("uderzenia", 3)),
+                    Math.max(1, section.getInt("uderzenia-narzedziem", 2)),
+                    respawn,
+                    color(section.getString("ogloszenie", "")),
+                    Math.max(1, Math.min(3, section.getInt("dlugosc", 1))),
+                    (float) Math.max(0.2, section.getDouble("szerokosc", 0.9)),
+                    (float) Math.max(0.2, section.getDouble("wysokosc", 1.0)));
         }
         return new CrateClass(id, name, kind, decoration == null ? "" : decoration,
-                model == null ? "" : model, minItems, loot);
+                model == null ? "" : model, minItems, loot, container);
     }
 
     private static int[] parseRange(String value) {

@@ -2,6 +2,7 @@ package pl.axon.structure;
 
 import org.bukkit.Bukkit;
 import pl.axon.structure.api.AxonStructureApi;
+import pl.axon.structure.api.RoadsideSpot;
 import pl.axon.structure.api.RotationUtil;
 import pl.axon.structure.api.StructureInstanceInfo;
 import pl.axon.structure.api.StructureTemplate;
@@ -68,6 +69,13 @@ public final class AxonStructureApiImpl implements AxonStructureApi {
             plugin.protection().onRemoved(instance);
             plugin.store().remove(instance.id());
         }
+        plugin.containers().removeWorld(world);
+    }
+
+    @Override
+    public int setRoadsideContainers(String world, Collection<RoadsideSpot> spots) {
+        requireServerThread();
+        return plugin.containers().setRoadside(Objects.requireNonNull(world), List.copyOf(spots));
     }
 
     @Override

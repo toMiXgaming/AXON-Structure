@@ -21,6 +21,8 @@ Plugin na serwer **Paper 1.21.4** (Java 21) do stawiania struktur w stylu monume
 | `/struktury najblizsza` | pokazuje najbliższą postawioną strukturę |
 | `/struktury usun [id]` | zapomina strukturę: zdejmuje ochronę i skrzynie, bloki zostają |
 | `/struktury klasy` | klasy skrzyń i pule z szansami |
+| `/struktury pojemniki` | ile jest beczek przy drogach i pojemników-modeli w strukturach, ile rozbitych, ile czeka na odnowienie |
+| `/struktury pojemnik <klasa>` | stawia pojemnik-model przed tobą (do sprawdzenia modelu i lootu, znika po restarcie); z konsoli `pojemnik <klasa> <świat> <x> <y> <z> [yaw]` |
 | `/struktury zrzut [teraz]` | o której następny zrzut (`teraz`: zrzuca skrzynię z zaopatrzeniem od razu) |
 | `/struktury straznicy [postaw]` | ilu strażników NPC stoi (`postaw`: stawia ich od razu we wczytanych strukturach) |
 | `/struktury zycie` | żyły rudy w kopalni (ile czeka na odrośnięcie), zwierzęta, odgłosy i czy loot jest pusty |
@@ -33,11 +35,22 @@ Dla graczy: `/oaza` (co jest w oazie), `/oaza ranking` (strzelnica) i `/oaza gui
 
 ## Skrzynie
 
-- **Klasa skrzyni** (`klasy:` w configu) – nazwa, blok (`skrzynia`, `beczka` albo `ramka`), opcjonalna dekoracja na wieku, opcjonalny `model` z paczki zasobów i lista lootu z ilościami i szansami.
+- **Klasa skrzyni** (`klasy:` w configu) – nazwa, blok (`skrzynia`, `beczka`, `ramka` albo `model`, patrz [pojemniki](#pojemniki-bez-bloku-beczki-i-skrzynie-modele)), opcjonalna dekoracja na wieku, opcjonalny `model` z paczki zasobów i lista lootu z ilościami i szansami.
 - **Model z paczki** (`model: "axon:zrzut"`) – nad skrzynią staje niewidoczny wyświetlacz z modelem z paczki serwera (QualityArmory-texturepack), odrobinę większym od bloku, więc samego bloku nie widać, a kliknięcie dalej go otwiera. Klasa `zrzut` (pula `zrzut`, rzadko też na dachu stacji) to skrzynia zrzutu ze spadochronem. Bez paczki gracz widzi fioletowo-czarny sześcian.
 - **Pula** (`pule:`) – dla danego miejsca losuje klasę według wag. Waga `brak` oznacza, że w tym miejscu nic się nie pojawi.
 - **Odświeżanie** – co `odswiezanie.co-ile-minut` minut. Pełne skrzynie zostają (chyba że `zastepuj-pelne: true`), puste i zniszczone losowane są od nowa. Nie odświeża, gdy gracz stoi bliżej niż `blokada-gdy-gracz-blizej-niz`.
 - **Pusty loot na razie** – `loot.puste: true` (domyślnie, dopisywane też do starego `config.yml`): skrzynie i beczki stoją, ale są puste, skrzynia zrzutu spada pusta i znika po czasie, zabici strażnicy nic nie dają, a ramek z kartami nie ma. Pule i klasy zostają w configu – gdy loot będzie ustalony, wystarczy `false` i `/struktury przeladuj`.
+
+## Pojemniki bez bloku (beczki i skrzynie-modele)
+
+Skrzynie i beczki z lootem stoją bez prawdziwego bloku: to model z paczki serwera (`axon:beczka`, `axon:skrzynia_drewniana`… z QualityArmory-texturepack, przód na południe) i niewidzialna encja Interaction, w którą się klika. Nie da się ich zabrać, wykorzystać w bazie ani nic w nich schować. Klasy są w `pojemniki.klasy` (`blok: model`) i zastępują klasy o tym samym id z `klasy:`, a pule z `pule:` dalej o nich decydują.
+
+- **Beczka** (`model-rozbity` ustawiony): LPM rozbija ją w 3 uderzeniach ręką albo 2 czymkolwiek w ręce (`uderzenia`, `uderzenia-narzedziem`). Model zmienia się na rozbity, a PPM otwiera wirtualny ekwipunek z lootem wylosowanym w chwili rozbicia. Nic nie wypada na ziemię. Rozbita beczka znika, gdy jest pusta albo po `pojemniki.rozbita-znika-po-minutach`, i wraca w tym samym miejscu po `pojemniki.odnowienie-minut` od rozbicia.
+- **Skrzynia** (bez `model-rozbity`): PPM otwiera ją od razu. Loot losuje się przy pierwszym otwarciu, więc nie da się go podejrzeć z daleka. Po opróżnieniu wraca po czasie odnowienia (klasa może mieć własne `odnowienie-minut` i `ogloszenie` na czacie, np. skrzynia wojskowa co 30 min).
+- Nic się nie odnawia, gdy gracz stoi bliżej niż `pojemniki.blokada-gdy-gracz-blizej-niz`.
+- **Przy drogach**: punkty podaje AxonMapGenerator (`setRoadsideContainers` w API), pojemnik staje na terenie i losuje się z puli `pojemniki.przy-drogach.pula` (domyślnie `droga`: niebieska, zardzewiała i czerwona beczka, rzadko skrzynka). Punkt nad wodą jest pomijany.
+- **Loot z przedmiotami AxonCore**: `przedmiot: "axon:scrap"` tworzy plugin AxonItems (prawidłowy PDC i model). Bez AxonItems te pozycje są pomijane, a w logu jest jedno ostrzeżenie. Przy `loot.puste: true` pojemniki stoją i się rozbijają, ale są puste.
+- Stan jest tylko w pamięci, encje nie zapisują się w świecie: stają przy wczytaniu chunka, a po restarcie wszystko losuje się od nowa. Stara skrzynia-blok w strukturze znika przy najbliższym odświeżeniu, gdy jest pusta, i w jej miejscu staje model.
 
 ## Dopasowanie do terenu
 
@@ -200,6 +213,7 @@ Plugin musi mieć `depend: [AXON-Structure]` (AXON-Structure ładuje się przy `
 | `isRegistered(key)` | dowolny | czy klucz jest już zarejestrowany |
 | `unregisterWorld(world)` | serwer | zapomina wszystkie struktury w świecie (przy wipe) |
 | `claimWorld(world)` | dowolny | wyłącza auto-generowanie AXON-Structure w tym świecie |
+| `setRoadsideContainers(world, spots)` | serwer | punkty beczek przy drogach (`RoadsideSpot(x, z, yaw)`), zastępuje poprzednie dla świata; trzeba je podać po każdym starcie |
 
 `RotationUtil` (ten sam pakiet) obraca współrzędne i stany bloków tak samo jak wklejanie. Obrót 0–3 × 90°, liczby spoza zakresu są sprowadzane modulo 4.
 

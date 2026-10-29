@@ -100,6 +100,16 @@ cmd "struktury oaza"
 # Żyły rudy w kopalni (punkt-ruda), zwierzęta i pusty loot: stan do logu.
 cmd "struktury zycie"
 sleep 5
+# Pojemniki-modele: beczka z komendy (ItemDisplay + Interaction bez bloku) i pojemniki w miejscach skrzyń stacji.
+cmd "forceload add 0 600"
+sleep 3
+cmd "struktury pojemnik beczka world 0 120 600 0"
+sleep 2
+cmd "execute if entity @e[type=item_display,tag=axs_pojemnik,x=0,y=120.5,z=600,distance=..2] run say POJEMNIK-MODEL-OK"
+cmd "execute if entity @e[type=interaction,tag=axs_pojemnik,x=0,y=120,z=600,distance=..2] run say POJEMNIK-KLIK-OK"
+cmd "execute if block 0 120 600 minecraft:air run say POJEMNIK-BEZ-BLOKU-OK"
+cmd "execute if entity @e[type=interaction,tag=axs_pojemnik,x=0,y=90,z=0,distance=..60] run say POJEMNIKI-STACJA-OK"
+cmd "struktury pojemniki"
 # Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
 cmd "struktury zrzut teraz"
 sleep 14
@@ -165,6 +175,10 @@ if grep -q "Kopalnia: żył rudy 0," server.log; then
   echo "::warning::Postawiona kopalnia nie ma żył rudy (punkt-ruda)"
 fi
 grep -q "Zrzut wylądował" server.log || { echo "::error::Zrzut zaopatrzenia nie wylądował"; FAIL=1; }
+grep -qF "Server] POJEMNIK-MODEL-OK" server.log || { echo "::error::Pojemnik z komendy: brak modelu (ItemDisplay)"; FAIL=1; }
+grep -qF "Server] POJEMNIK-KLIK-OK" server.log || { echo "::error::Pojemnik z komendy: brak encji Interaction"; FAIL=1; }
+grep -qF "Server] POJEMNIK-BEZ-BLOKU-OK" server.log || { echo "::error::Pojemnik z komendy postawił blok"; FAIL=1; }
+grep -qF "Server] POJEMNIKI-STACJA-OK" server.log || echo "::warning::Na stacji Oilen nie stanął żaden pojemnik-model (pule mogły wylosować brak)"
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }
 if grep -q "Auto-generowanie: postawiono" server.log; then
   echo "Auto-generowanie zadziałało."

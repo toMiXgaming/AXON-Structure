@@ -45,9 +45,19 @@ public interface AxonStructureApi {
     /** Czy instancja o tym kluczu jest już zarejestrowana. */
     boolean isRegistered(String instanceKey);
 
-    /** Zapomina wszystkie instancje w świecie (zdejmuje ochronę i skrzynie, bloki zostają). Wątek serwera. */
+    /** Zapomina wszystkie instancje w świecie (zdejmuje ochronę, skrzynie i pojemniki przy drogach, bloki zostają). Wątek serwera. */
     void unregisterWorld(String world);
 
     /** Wyłącza automatyczne stawianie struktur AXON-Structure w tym świecie. */
     void claimWorld(String world);
+
+    /**
+     * Ustawia punkty pojemników przy drogach (beczek) w świecie i zastępuje poprzednie. Pojemniki są modelami bez
+     * bloku: stają przy wczytaniu chunka na wysokości terenu, losują się z puli {@code pojemniki.przy-drogach.pula}
+     * i odnawiają w tym samym miejscu. Punkty nie są zapisywane, więc trzeba je podać po każdym starcie serwera.
+     * Punkt nad wodą jest pomijany. Wątek serwera.
+     *
+     * @return ile punktów jest teraz w świecie
+     */
+    int setRoadsideContainers(String world, Collection<RoadsideSpot> spots);
 }
