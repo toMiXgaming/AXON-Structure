@@ -6,11 +6,11 @@ load: STARTUP
 api-version: '1.21'
 description: Struktury w stylu Rusta wklejane jedną komendą.
 author: toMiXgaming
-softdepend: [WorldGuard, Citizens, Sentinel, QualityArmory, Vault, packetevents]
+softdepend: [WorldGuard, Citizens, Sentinel, QualityArmory, Vault, packetevents, AxonItems]
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|zrzut|straznicy|oaza|zycie|przeladuj]
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|pojemniki|pojemnik|zrzut|straznicy|oaza|zycie|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
   oaza:

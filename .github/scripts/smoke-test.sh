@@ -51,31 +51,43 @@ wait_for() { # wzorzec, limit sekund
   done
 }
 cmd() { echo "> $1"; echo "$1" >&3; }
+# Wklejanie i generowanie: auto-generowanie przy spawnie może akurat coś stawiać ("Trwa już stawianie"),
+# wtedy komenda jest odrzucana – ponawiamy ją, aż przejdzie.
+place() {
+  local tries=0 busy
+  while :; do
+    busy=$(grep -c "Trwa już stawianie" server.log || true)
+    cmd "$1"; sleep 2
+    [ "$(grep -c "Trwa już stawianie" server.log || true)" -le "$busy" ] && return 0
+    tries=$((tries + 1)); [ "$tries" -ge 30 ] && return 0
+    sleep 3
+  done
+}
 
 wait_for 'Done (' 600
 cmd "struktury lista"
 cmd "struktury klasy"
-cmd "struktury wklej oilen world 0 90 0 0"
+place "struktury wklej oilen world 0 90 0 0"
 wait_for 'Gotowe!' 120
-cmd "struktury generuj oilen world 400 400 1"
+place "struktury generuj oilen world 400 400 1"
 wait_gotowe() { # ile postawień, limit sekund
   local waited=0
   until [ "$(grep -c 'Gotowe!' server.log)" -ge "$1" ] || [ "$waited" -ge "$2" ]; do sleep 2; waited=$((waited + 2)); done
 }
 wait_gotowe 2 180
-cmd "struktury wklej gospodarstwo world -300 90 0 2"
+place "struktury wklej gospodarstwo world -300 90 0 2"
 wait_gotowe 3 180
-cmd "struktury wklej kombinat world 0 90 -300 1"
+place "struktury wklej kombinat world 0 90 -300 1"
 wait_gotowe 4 240
 # Kopalnia ma 12 warstw podziemia: grunt (krata nad szybem) ma wypaść na y 90, drabina w szybie 5 bloków niżej.
-cmd "struktury wklej kopalnia world 300 90 -300 0"
+place "struktury wklej kopalnia world 300 90 -300 0"
 wait_gotowe 5 300
 cmd "forceload add 294 -300"
 sleep 3
 cmd "execute if block 295 90 -300 minecraft:iron_trapdoor run say GRUNT-OK"
 cmd "execute if block 294 85 -300 minecraft:ladder run say PODZIEMIE-OK"
 # Jednostka ma 21 warstw podziemia: posadzka portyku sztabu na y 90, drabina na dnie klatki schronu na y 71.
-cmd "struktury wklej jednostka world -300 90 -300 0"
+place "struktury wklej jednostka world -300 90 -300 0"
 wait_gotowe 6 420
 cmd "forceload add -318 -267"
 cmd "forceload add -293 -334"
@@ -83,7 +95,7 @@ sleep 3
 cmd "execute if block -293 90 -334 minecraft:polished_andesite run say JW-GRUNT-OK"
 cmd "execute if block -318 71 -267 minecraft:ladder run say JW-SCHRON-OK"
 # Szpital ma 9 warstw podziemia: narożnik głównego bloku na y 90, schody do piwnicy na y 86.
-cmd "struktury wklej szpital world 300 90 0 0"
+place "struktury wklej szpital world 300 90 0 0"
 wait_gotowe 7 300
 cmd "forceload add 275 -5"
 cmd "forceload add 277 -1"
@@ -91,15 +103,29 @@ sleep 3
 cmd "execute if block 275 90 -5 minecraft:smooth_stone run say SZPITAL-GRUNT-OK"
 cmd "execute if block 277 86 -1 minecraft:stone_brick_stairs run say SZPITAL-PIWNICA-OK"
 # Oaza: strefa bez PvP; lady stanowisk i tarcze strzelnicy muszą stać po wklejeniu (to bloki-znaczniki).
-cmd "struktury wklej oaza world 0 90 300 0"
+place "struktury wklej oaza world 0 90 300 0"
 wait_gotowe 8 420
 # Kryjówka czarnego rynku: mała struktura z piwnicą; beczka-lada pasera ma stać po wklejeniu.
-cmd "struktury wklej czarny-rynek world -300 90 300 0"
+place "struktury wklej czarny-rynek world -300 90 300 0"
 wait_gotowe 9 180
 cmd "struktury oaza"
 # Żyły rudy w kopalni (punkt-ruda), zwierzęta i pusty loot: stan do logu.
 cmd "struktury zycie"
 sleep 5
+# Pojemniki-modele: beczka z komendy (ItemDisplay + Interaction bez bloku) i pojemniki w miejscach skrzyń stacji.
+cmd "forceload add 0 600"
+sleep 3
+cmd "struktury pojemnik beczka world 0 120 600 0"
+sleep 2
+cmd "execute if entity @e[type=item_display,tag=axs_pojemnik,x=0,y=120.5,z=600,distance=..2] run say POJEMNIK-MODEL-OK"
+cmd "execute if entity @e[type=interaction,tag=axs_pojemnik,x=0,y=120,z=600,distance=..2] run say POJEMNIK-KLIK-OK"
+cmd "execute if block 0 120 600 minecraft:air run say POJEMNIK-BEZ-BLOKU-OK"
+# stacja przy spawnie: bez graczy jej chunki mogą być zwolnione, a pojemniki stoją tylko we wczytanych
+cmd "forceload add -16 -16 64 64"
+sleep 4
+cmd "execute if entity @e[type=interaction,tag=axs_pojemnik,x=0,y=90,z=0,distance=..80] run say POJEMNIKI-STACJA-OK"
+cmd "forceload remove -16 -16 64 64"
+cmd "struktury pojemniki"
 # Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
 cmd "struktury zrzut teraz"
 sleep 14
@@ -165,6 +191,10 @@ if grep -q "Kopalnia: żył rudy 0," server.log; then
   echo "::warning::Postawiona kopalnia nie ma żył rudy (punkt-ruda)"
 fi
 grep -q "Zrzut wylądował" server.log || { echo "::error::Zrzut zaopatrzenia nie wylądował"; FAIL=1; }
+grep -qF "Server] POJEMNIK-MODEL-OK" server.log || { echo "::error::Pojemnik z komendy: brak modelu (ItemDisplay)"; FAIL=1; }
+grep -qF "Server] POJEMNIK-KLIK-OK" server.log || { echo "::error::Pojemnik z komendy: brak encji Interaction"; FAIL=1; }
+grep -qF "Server] POJEMNIK-BEZ-BLOKU-OK" server.log || { echo "::error::Pojemnik z komendy postawił blok"; FAIL=1; }
+grep -qF "Server] POJEMNIKI-STACJA-OK" server.log || echo "::warning::Na stacji Oilen nie stanął żaden pojemnik-model (pule mogły wylosować brak)"
 grep -q "Zapomniano" server.log || { echo "::error::Komenda usun nie zadziałała"; FAIL=1; }
 if grep -q "Auto-generowanie: postawiono" server.log; then
   echo "Auto-generowanie zadziałało."

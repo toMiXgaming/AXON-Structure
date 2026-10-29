@@ -10,6 +10,7 @@ import pl.axon.structure.api.AxonStructureApi;
 import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.gui.ShaderGui;
 import pl.axon.structure.loot.AirdropService;
+import pl.axon.structure.loot.ContainerService;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
 import pl.axon.structure.npc.GuardService;
@@ -41,6 +42,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private StructureLibrary library;
     private InstanceStore store;
     private CrateService crates;
+    private ContainerService containers;
     private AirdropService airdrops;
     private GuardService guards;
     private OasisService oasis;
@@ -59,6 +61,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
         library = new StructureLibrary(new File(getDataFolder(), "struktury"), getLogger());
         store = new InstanceStore(new File(getDataFolder(), "dane.yml"), getLogger());
         crates = new CrateService(this, library, store);
+        containers = new ContainerService(this, crates, library, store);
+        crates.containers(containers);
         airdrops = new AirdropService(this, library, store, crates);
         guards = new GuardService(this, library, store, crates);
         oasis = new OasisService(this, library, store, guards, airdrops);
@@ -87,6 +91,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
         getServer().getPluginManager().registerEvents(props, this);
+        getServer().getPluginManager().registerEvents(containers, this);
 
         StrukturyCommand command = new StrukturyCommand(this);
         PluginCommand pluginCommand = getCommand("struktury");
@@ -109,6 +114,11 @@ public final class AxonStructurePlugin extends JavaPlugin {
         protection.hookWorldGuard();
         protection.syncAll();
         crates.start();
+        int restored = crates.restoreContainers();
+        containers.start();
+        if (restored > 0) {
+            getLogger().info("Pojemniki-modele w strukturach: " + restored);
+        }
         airdrops.start();
         guards.start();
         oasis.start();
@@ -131,6 +141,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         safely("strażnicy", guards == null ? null : guards::stop);
         safely("zrzuty", airdrops == null ? null : airdrops::stop);
         safely("skrzynie", crates == null ? null : crates::stop);
+        safely("pojemniki", containers == null ? null : containers::stop);
         safely("dane.yml", store == null ? null : store::save);
     }
 
@@ -227,6 +238,12 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 config.getInt("odswiezanie.blokada-gdy-gracz-blizej-niz", 32),
                 config.getBoolean("odswiezanie.zastepuj-pelne", false),
                 config.getBoolean("loot.puste", true)));
+
+        containers.configure(new ContainerService.Settings(
+                Math.max(1, config.getLong("pojemniki.odnowienie-minut", 10)) * 60_000L,
+                Math.max(1, config.getLong("pojemniki.rozbita-znika-po-minutach", 5)) * 60_000L,
+                Math.max(0, config.getInt("pojemniki.blokada-gdy-gracz-blizej-niz", 24)),
+                config.getString("pojemniki.przy-drogach.pula", "droga").toLowerCase(Locale.ROOT)));
 
         airdrops.configure(new AirdropService.Settings(
                 config.getBoolean("zrzuty.wlaczone", true),
@@ -388,6 +405,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public CrateService crates() {
         return crates;
+    }
+
+    public ContainerService containers() {
+        return containers;
     }
 
     private java.time.ZoneId zone(String id) {

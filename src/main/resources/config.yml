@@ -531,6 +531,281 @@ loot:
   # w zestawach strażników) zostają niżej na później – gdy będą gotowe, ustaw false i /struktury przeladuj.
   puste: true
 
+# ------------------------------------------------------------
+#  POJEMNIKI – skrzynie i beczki bez prawdziwego bloku: model z paczki zasobów serwera (QualityArmory-texturepack,
+#  axon:<nazwa>, przód na południe) i niewidzialna encja, w którą się klika. Nie da się ich zabrać, rozbudować
+#  ani nic w nich schować. Stoją w miejscach skrzyń w strukturach (pule niżej i w pule:) i przy drogach
+#  (punkty podaje AxonMapGenerator). Stan jest tylko w pamięci: po restarcie wszystko losuje się od nowa.
+#
+#  Beczki (model-rozbity ustawiony): LPM rozbija beczkę, model zmienia się na rozbity, PPM otwiera loot (losowany
+#  w chwili rozbicia). Rozbita znika, gdy jest pusta albo po rozbita-znika-po-minutach, i wraca w tym samym miejscu
+#  po odnowienie-minut od rozbicia. Skrzynie (bez model-rozbity): PPM otwiera od razu, loot losuje się przy
+#  pierwszym otwarciu, a po opróżnieniu wraca po odnowienie-minut.
+#  Przedmioty "axon:<id>" tworzy plugin AxonItems (id z jego items.yml); bez niego te pozycje są pomijane.
+#  Gdy loot.puste: true, pojemniki stoją i dają się rozbić, ale są puste.
+# ------------------------------------------------------------
+pojemniki:
+  # Po ilu minutach pojemnik wraca (beczka: od rozbicia, skrzynia: od opróżnienia). Klasa może mieć własne odnowienie-minut.
+  odnowienie-minut: 10
+  # Po ilu minutach od rozbicia znika rozbita beczka, nawet z lootem w środku.
+  rozbita-znika-po-minutach: 5
+  # Nie odnawiaj, gdy gracz jest bliżej niż tyle bloków (0 = wyłączone).
+  blokada-gdy-gracz-blizej-niz: 24
+  przy-drogach:
+    # Pula dla punktów przy drogach z AxonMapGenerator (drogi.beczki w jego configu).
+    pula: droga
+
+  pule:
+    droga:
+      beczka: 55
+      beczka-rdza: 25
+      beczka-paliwa: 15
+      skrzynia-przydrozna: 5
+
+  # Pola klasy jak w klasy: niżej, plus:
+  #   blok: model
+  #   model: model z paczki (axon:beczka)
+  #   model-rozbity: model po rozbiciu; brak = skrzynia, którą otwiera się od razu
+  #   uderzenia / uderzenia-narzedziem: ile uderzeń ręką / czymkolwiek w ręce, żeby rozbić (domyślnie 3 / 2)
+  #   odnowienie-minut: własny czas odnowienia klasy
+  #   ogloszenie: komunikat na czacie przy odnowieniu ({nazwa}, {miejsce}); "" = bez komunikatu
+  #   dlugosc: ile bloków zajmuje (skrzynia wojskowa: 2); szerokosc / wysokosc: klikalny obszar w blokach
+  klasy:
+    # --- beczki (rozbijane): drogi, place, stacje paliw ---
+    beczka:
+      nazwa: "&9Beczka"
+      blok: model
+      model: "axon:beczka"
+      model-rozbity: "axon:beczka_rozbita"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "2-6", szansa: 100}
+        - {przedmiot: "axon:metal_fragments", ilosc: "5-10", szansa: 40}
+        - {przedmiot: "axon:screw", ilosc: "2-4", szansa: 30}
+        - {przedmiot: "axon:rivet", ilosc: "3-6", szansa: 25}
+        - {przedmiot: "axon:rusty_tools", ilosc: "1", szansa: 25}
+        - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 20}
+        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 15}
+        - {przedmiot: "axon:spring", ilosc: "1", szansa: 12}
+        - {przedmiot: "axon:stock", ilosc: "1", szansa: 12}
+        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 2}
+        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 2}
+
+    beczka-rdza:
+      nazwa: "&6Zardzewiała beczka"
+      blok: model
+      model: "axon:beczka_rdza"
+      model-rozbity: "axon:beczka_rdza_rozbita"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "1-5", szansa: 100}
+        - {przedmiot: "axon:metal_fragments", ilosc: "3-8", szansa: 40}
+        - {przedmiot: "axon:rusty_tools", ilosc: "1-2", szansa: 35}
+        - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 30}
+        - {przedmiot: "axon:screw", ilosc: "1-3", szansa: 25}
+        - {przedmiot: "axon:rivet", ilosc: "2-4", szansa: 20}
+        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:spring", ilosc: "1", szansa: 8}
+
+    beczka-paliwa:
+      nazwa: "&cBeczka z olejem"
+      blok: model
+      model: "axon:beczka_paliwa"
+      model-rozbity: "axon:beczka_paliwa_rozbita"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: coal, ilosc: "4-12", szansa: 100, nazwa: "&fPaliwo niskiej jakości"}
+        - {przedmiot: "axon:scrap", ilosc: "1-4", szansa: 40}
+        - {przedmiot: "axon:metal_fragments", ilosc: "2-5", szansa: 20}
+
+    # --- skrzynie (otwierane od razu) ---
+    skrzynia-przydrozna:
+      nazwa: "&7Skrzynka przydrożna"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "3-8", szansa: 100}
+        - {przedmiot: "axon:cloth", ilosc: "2-5", szansa: 35}
+        - {przedmiot: "axon:screw", ilosc: "1-3", szansa: 30}
+        - {przedmiot: "axon:rivet", ilosc: "2-4", szansa: 25}
+        - {przedmiot: bread, ilosc: "1-2", szansa: 25}
+        - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 4}
+
+    brazowa:
+      nazwa: "&6Skrzynia drewniana"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "5-12", szansa: 100}
+        - {przedmiot: "axon:screw", ilosc: "2-4", szansa: 30}
+        - {przedmiot: "axon:rivet", ilosc: "2-5", szansa: 30}
+        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 12}
+        - {przedmiot: "axon:spring", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:stock", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:steel", ilosc: "2-4", szansa: 25}
+        - {przedmiot: "axon:cloth", ilosc: "2-6", szansa: 25}
+        - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 4}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 4}
+
+    mala-skrzynka:
+      nazwa: "&7Mała drewniana skrzynka"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "3-8", szansa: 100}
+        - {przedmiot: "axon:cloth", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:screw", ilosc: "1-3", szansa: 25}
+        - {przedmiot: "axon:rivet", ilosc: "2-4", szansa: 20}
+        - {przedmiot: "axon:rusty_tools", ilosc: "1", szansa: 20}
+        - {przedmiot: wheat, ilosc: "2-6", szansa: 30}
+        - {przedmiot: bread, ilosc: "1-2", szansa: 30}
+        - {przedmiot: torch, ilosc: "2-6", szansa: 20}
+        - {przedmiot: coal, ilosc: "1-4", szansa: 20}
+
+    lepsza-skrzynia:
+      nazwa: "&9Lepsza skrzynia"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "8-16", szansa: 100}
+        - {przedmiot: "axon:steel", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:screw", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:rivet", ilosc: "3-6", szansa: 35}
+        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 20}
+        - {przedmiot: "axon:spring", ilosc: "1", szansa: 18}
+        - {przedmiot: "axon:stock", ilosc: "1", szansa: 15}
+        - {przedmiot: "axon:gunpowder", ilosc: "2-4", szansa: 20}
+        - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 12}
+        - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 6}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 5}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 5}
+        - {przedmiot: golden_apple, ilosc: "1", szansa: 8, nazwa: "&fApteczka"}
+
+    rzadka-skrzynia:
+      nazwa: "&5Rzadka skrzynia"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 3
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "12-24", szansa: 100}
+        - {przedmiot: "axon:steel", ilosc: "3-6", szansa: 60}
+        - {przedmiot: "axon:gunpowder", ilosc: "3-6", szansa: 35}
+        - {przedmiot: "axon:tech_notes", ilosc: "1-2", szansa: 25}
+        - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 8}
+        - {przedmiot: golden_apple, ilosc: "1-2", szansa: 25, nazwa: "&fApteczka"}
+        - {przedmiot: ender_pearl, ilosc: "1", szansa: 10}
+
+    # czarny rynek: części do broni, ale nigdy korpusy T3
+    skrzynia-broni:
+      nazwa: "&2Skrzynia z częściami broni"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:pipe", ilosc: "1-2", szansa: 40}
+        - {przedmiot: "axon:spring", ilosc: "1-2", szansa: 35}
+        - {przedmiot: "axon:stock", ilosc: "1", szansa: 30}
+        - {przedmiot: "axon:screw", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:gunpowder", ilosc: "2-6", szansa: 35}
+        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 12}
+        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 6}
+        - {przedmiot: shield, ilosc: "1", szansa: 15}
+        - {przedmiot: spyglass, ilosc: "1", szansa: 8, nazwa: "&fLornetka"}
+
+    narzedziowa:
+      nazwa: "&eSkrzynka narzędziowa"
+      blok: model
+      model: "axon:skrzynka_narzedziowa"
+      szerokosc: 0.8
+      wysokosc: 0.7
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "4-10", szansa: 100}
+        - {przedmiot: "axon:screw", ilosc: "3-6", szansa: 60}
+        - {przedmiot: "axon:rivet", ilosc: "3-6", szansa: 50}
+        - {przedmiot: "axon:spring", ilosc: "1-2", szansa: 30}
+        - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 30}
+        - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 3}
+
+    skrzynka-jedzenie:
+      nazwa: "&aSkrzynka z jedzeniem"
+      blok: model
+      model: "axon:skrzynka_jedzenie"
+      wysokosc: 0.8
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: bread, ilosc: "1-3", szansa: 60}
+        - {przedmiot: apple, ilosc: "1-4", szansa: 50}
+        - {przedmiot: baked_potato, ilosc: "1-3", szansa: 40}
+        - {przedmiot: carrot, ilosc: "1-4", szansa: 40}
+        - {przedmiot: dried_kelp, ilosc: "3-8", szansa: 30, nazwa: "&fSuszone wodorosty"}
+        - {przedmiot: cookie, ilosc: "2-6", szansa: 30}
+        - {przedmiot: mushroom_stew, ilosc: "1", szansa: 15, nazwa: "&fPuszka gulaszu"}
+        - {przedmiot: honey_bottle, ilosc: "1", szansa: 10}
+        - {przedmiot: golden_carrot, ilosc: "1-2", szansa: 8}
+
+    skrzynka-medyczna:
+      nazwa: "&bSzafka medyczna"
+      blok: model
+      model: "axon:szafka_medyczna"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: paper, ilosc: "1-4", szansa: 60, nazwa: "&fBandaż"}
+        - {przedmiot: "axon:cloth", ilosc: "1-3", szansa: 30}
+        - {przedmiot: honey_bottle, ilosc: "1-2", szansa: 40, nazwa: "&fSyrop"}
+        - {przedmiot: milk_bucket, ilosc: "1", szansa: 25}
+        - {przedmiot: glistering_melon_slice, ilosc: "1-2", szansa: 25, nazwa: "&fStrzykawka medyczna"}
+        - {przedmiot: suspicious_stew, ilosc: "1", szansa: 15}
+        - {przedmiot: golden_apple, ilosc: "1", szansa: 12, nazwa: "&fApteczka"}
+
+    # --- strefy PvP (do pul w nowych strukturach) ---
+    skrzynia-wojskowa:
+      nazwa: "&2Skrzynia wojskowa"
+      blok: model
+      model: "axon:skrzynia_wojskowa"
+      dlugosc: 2
+      wysokosc: 0.8
+      odnowienie-minut: 30
+      ogloszenie: "&2{nazwa} &7odnowiła się: &f{miejsce}"
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "15-30", szansa: 100}
+        - {przedmiot: "axon:hqm", ilosc: "1-3", szansa: 35}
+        - {przedmiot: "axon:blueprint", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:body_rifle", ilosc: "1", szansa: 6}
+        - {przedmiot: "axon:scope", ilosc: "1", szansa: 4}
+        - {przedmiot: "axon:body_sniper", ilosc: "1", szansa: 3}
+        - {przedmiot: "axon:silencer", ilosc: "1", szansa: 3}
+
+    skrzynia-elitarna:
+      nazwa: "&4Skrzynia elitarna"
+      blok: model
+      model: "axon:skrzynia_elitarna"
+      wysokosc: 0.8
+      odnowienie-minut: 30
+      ogloszenie: "&4{nazwa} &7odnowiła się: &f{miejsce}"
+      min-przedmiotow: 3
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "20-35", szansa: 100}
+        - {przedmiot: "axon:hqm", ilosc: "2-4", szansa: 60}
+        - {przedmiot: "axon:blueprint", ilosc: "1", szansa: 18}
+        - {przedmiot: "axon:body_rifle", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:scope", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:body_sniper", ilosc: "1", szansa: 6}
+        - {przedmiot: "axon:silencer", ilosc: "1", szansa: 6}
+
 kopalnia:
   # Żyły rudy: punkty punkt-ruda w pliku struktury (kopalnia) leżą na blokach rudy. Te bloki – i tylko one – gracze
   # mogą kopać mimo ochrony struktury (region WorldGuard kopalni dostaje sam block-break: allow, resztę dalej chroni
@@ -670,7 +945,8 @@ pule:
     beczka: 20
     brak: 15
   plac:
-    beczka: 65
+    beczka: 45
+    beczka-rdza: 20
     beczka-paliwa: 10
     brak: 25
   lada:
@@ -702,7 +978,8 @@ pule:
     narzedziowa: 15
     brak: 15
   magazyn:
-    beczka: 60
+    beczka: 40
+    beczka-rdza: 20
     brazowa: 15
     brak: 25
   dach:
@@ -1009,163 +1286,8 @@ pule:
 #    nazwa / opis: opcjonalna nazwa i opis przedmiotu
 # ------------------------------------------------------------
 klasy:
-  beczka:
-    nazwa: "&6Beczka"
-    blok: beczka
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: iron_nugget, ilosc: "4-14", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: copper_ingot, ilosc: "1-4", szansa: 50}
-      - {przedmiot: iron_ingot, ilosc: "1-2", szansa: 30}
-      - {przedmiot: chain, ilosc: "1-2", szansa: 20, nazwa: "&fRura metalowa"}
-      - {przedmiot: redstone, ilosc: "1-4", szansa: 25}
-      - {przedmiot: gunpowder, ilosc: "1-2", szansa: 15}
-      - {przedmiot: string, ilosc: "1-3", szansa: 20, nazwa: "&fLina"}
-
-  beczka-paliwa:
-    nazwa: "&cBeczka paliwa"
-    blok: beczka
-    dekoracja: "red_candle[candles=1,lit=false]"
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: coal, ilosc: "4-12", szansa: 100, nazwa: "&fPaliwo niskiej jakości"}
-      - {przedmiot: charcoal, ilosc: "2-6", szansa: 50}
-      - {przedmiot: iron_nugget, ilosc: "2-6", szansa: 40, nazwa: "&fZłom"}
-      - {przedmiot: lava_bucket, ilosc: "1", szansa: 8, nazwa: "&fRopa naftowa"}
-      - {przedmiot: blaze_powder, ilosc: "1", szansa: 5}
-
-  brazowa:
-    nazwa: "&6Brązowa skrzynia"
-    blok: skrzynia
-    min-przedmiotow: 2
-    loot:
-      - {przedmiot: iron_nugget, ilosc: "6-20", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: iron_ingot, ilosc: "1-4", szansa: 50}
-      - {przedmiot: gold_nugget, ilosc: "2-8", szansa: 30}
-      - {przedmiot: redstone, ilosc: "2-8", szansa: 30}
-      - {przedmiot: torch, ilosc: "2-8", szansa: 30}
-      - {przedmiot: arrow, ilosc: "4-12", szansa: 30}
-      - {przedmiot: chain, ilosc: "1-3", szansa: 20, nazwa: "&fRura metalowa"}
-      - {przedmiot: bow, ilosc: "1", szansa: 10}
-      - {przedmiot: stone_axe, ilosc: "1", szansa: 12}
-      - {przedmiot: iron_pickaxe, ilosc: "1", szansa: 8}
-      - {przedmiot: leather_chestplate, ilosc: "1", szansa: 10}
-      - {przedmiot: iron_sword, ilosc: "1", szansa: 6}
-      - {przedmiot: crossbow, ilosc: "1", szansa: 5}
-
-  skrzynka-jedzenie:
-    nazwa: "&aSkrzynka z jedzeniem"
-    blok: beczka
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: bread, ilosc: "1-3", szansa: 60}
-      - {przedmiot: apple, ilosc: "1-4", szansa: 50}
-      - {przedmiot: baked_potato, ilosc: "1-3", szansa: 40}
-      - {przedmiot: carrot, ilosc: "1-4", szansa: 40}
-      - {przedmiot: dried_kelp, ilosc: "3-8", szansa: 30, nazwa: "&fSuszone wodorosty"}
-      - {przedmiot: cookie, ilosc: "2-6", szansa: 30}
-      - {przedmiot: mushroom_stew, ilosc: "1", szansa: 15, nazwa: "&fPuszka gulaszu"}
-      - {przedmiot: honey_bottle, ilosc: "1", szansa: 10}
-      - {przedmiot: golden_carrot, ilosc: "1-2", szansa: 8}
-
-  skrzynka-medyczna:
-    nazwa: "&bSkrzynka medyczna"
-    blok: beczka
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: paper, ilosc: "1-4", szansa: 60, nazwa: "&fBandaż"}
-      - {przedmiot: honey_bottle, ilosc: "1-2", szansa: 40, nazwa: "&fSyrop"}
-      - {przedmiot: string, ilosc: "1-3", szansa: 30, nazwa: "&fSzmata"}
-      - {przedmiot: milk_bucket, ilosc: "1", szansa: 25}
-      - {przedmiot: glistering_melon_slice, ilosc: "1-2", szansa: 25, nazwa: "&fStrzykawka medyczna"}
-      - {przedmiot: suspicious_stew, ilosc: "1", szansa: 15}
-      - {przedmiot: golden_apple, ilosc: "1", szansa: 12, nazwa: "&fApteczka"}
-
-  narzedziowa:
-    nazwa: "&eSkrzynka narzędziowa"
-    blok: skrzynia
-    min-przedmiotow: 2
-    loot:
-      - {przedmiot: iron_nugget, ilosc: "8-24", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: iron_ingot, ilosc: "2-5", szansa: 70}
-      - {przedmiot: redstone, ilosc: "2-6", szansa: 40}
-      - {przedmiot: chain, ilosc: "2-4", szansa: 30, nazwa: "&fRura metalowa"}
-      - {przedmiot: iron_pickaxe, ilosc: "1", szansa: 25}
-      - {przedmiot: iron_axe, ilosc: "1", szansa: 25}
-      - {przedmiot: iron_shovel, ilosc: "1", szansa: 20}
-      - {przedmiot: shears, ilosc: "1", szansa: 20}
-      - {przedmiot: flint_and_steel, ilosc: "1", szansa: 20}
-      - {przedmiot: compass, ilosc: "1", szansa: 10}
-      - {przedmiot: spyglass, ilosc: "1", szansa: 10}
-      - {przedmiot: crossbow, ilosc: "1", szansa: 8}
-
-  mala-skrzynka:
-    nazwa: "&7Mała drewniana skrzynka"
-    blok: skrzynia
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: iron_nugget, ilosc: "3-10", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: wheat, ilosc: "2-6", szansa: 40}
-      - {przedmiot: bread, ilosc: "1-2", szansa: 30}
-      - {przedmiot: leather, ilosc: "1-3", szansa: 25}
-      - {przedmiot: string, ilosc: "1-3", szansa: 25, nazwa: "&fLina"}
-      - {przedmiot: torch, ilosc: "2-6", szansa: 25}
-      - {przedmiot: flint, ilosc: "1-3", szansa: 20}
-      - {przedmiot: coal, ilosc: "1-4", szansa: 20}
-      - {przedmiot: stone_axe, ilosc: "1", szansa: 8}
-      - {przedmiot: shears, ilosc: "1", szansa: 5}
-
-  lepsza-skrzynia:
-    nazwa: "&9Lepsza skrzynia"
-    blok: skrzynia
-    min-przedmiotow: 2
-    loot:
-      - {przedmiot: iron_nugget, ilosc: "10-24", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: iron_ingot, ilosc: "2-6", szansa: 70}
-      - {przedmiot: gold_ingot, ilosc: "1-3", szansa: 30}
-      - {przedmiot: arrow, ilosc: "6-16", szansa: 40}
-      - {przedmiot: gunpowder, ilosc: "2-4", szansa: 20}
-      - {przedmiot: bow, ilosc: "1", szansa: 15}
-      - {przedmiot: crossbow, ilosc: "1", szansa: 10}
-      - {przedmiot: iron_sword, ilosc: "1", szansa: 12}
-      - {przedmiot: chainmail_chestplate, ilosc: "1", szansa: 10}
-      - {przedmiot: iron_helmet, ilosc: "1", szansa: 10}
-      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 6}
-      - {przedmiot: golden_apple, ilosc: "1", szansa: 8, nazwa: "&fApteczka"}
-
-  rzadka-skrzynia:
-    nazwa: "&5Rzadka skrzynia"
-    blok: skrzynia
-    min-przedmiotow: 3
-    loot:
-      - {przedmiot: iron_ingot, ilosc: "4-10", szansa: 100}
-      - {przedmiot: diamond, ilosc: "1-3", szansa: 50}
-      - {przedmiot: golden_apple, ilosc: "1-2", szansa: 30, nazwa: "&fApteczka"}
-      - {przedmiot: crossbow, ilosc: "1", szansa: 30}
-      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 30}
-      - {przedmiot: iron_leggings, ilosc: "1", szansa: 25}
-      - {przedmiot: gunpowder, ilosc: "3-8", szansa: 30}
-      - {przedmiot: spyglass, ilosc: "1", szansa: 25, nazwa: "&fLornetka"}
-      - {przedmiot: ender_pearl, ilosc: "1-2", szansa: 20}
-      - {przedmiot: emerald, ilosc: "1-3", szansa: 20}
-      - {przedmiot: diamond_sword, ilosc: "1", szansa: 8}
-
-  skrzynia-broni:
-    nazwa: "&2Skrzynia z bronią"
-    blok: skrzynia
-    min-przedmiotow: 2
-    loot:
-      - {przedmiot: arrow, ilosc: "8-24", szansa: 80, nazwa: "&fAmunicja"}
-      - {przedmiot: bow, ilosc: "1", szansa: 35}
-      - {przedmiot: crossbow, ilosc: "1", szansa: 30}
-      - {przedmiot: iron_sword, ilosc: "1", szansa: 25, nazwa: "&fBagnet"}
-      - {przedmiot: shield, ilosc: "1", szansa: 20}
-      - {przedmiot: gunpowder, ilosc: "2-6", szansa: 35}
-      - {przedmiot: firework_rocket, ilosc: "1-3", szansa: 15, nazwa: "&fRaca"}
-      - {przedmiot: tnt, ilosc: "1", szansa: 5, nazwa: "&fŁadunek wybuchowy"}
-      - {przedmiot: chainmail_chestplate, ilosc: "1", szansa: 15, nazwa: "&fKamizelka"}
-      - {przedmiot: iron_helmet, ilosc: "1", szansa: 15, nazwa: "&fHełm wz. 67"}
-      - {przedmiot: spyglass, ilosc: "1", szansa: 8, nazwa: "&fLornetka"}
+  # Skrzynie, beczki i szafki są w pojemniki.klasy (modele bez bloku). Tutaj zostają zrzut i karta w ramce.
+  # Klasa o tym samym id w pojemniki.klasy zastępuje tę stąd.
 
   # Model z paczki QualityArmory-texturepack (axon:zrzut); beczka w środku jest niewidoczna.
   zrzut:
