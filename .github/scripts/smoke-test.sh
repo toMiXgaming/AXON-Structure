@@ -120,7 +120,11 @@ sleep 2
 cmd "execute if entity @e[type=item_display,tag=axs_pojemnik,x=0,y=120.5,z=600,distance=..2] run say POJEMNIK-MODEL-OK"
 cmd "execute if entity @e[type=interaction,tag=axs_pojemnik,x=0,y=120,z=600,distance=..2] run say POJEMNIK-KLIK-OK"
 cmd "execute if block 0 120 600 minecraft:air run say POJEMNIK-BEZ-BLOKU-OK"
-cmd "execute if entity @e[type=interaction,tag=axs_pojemnik,x=0,y=90,z=0,distance=..60] run say POJEMNIKI-STACJA-OK"
+# stacja przy spawnie: bez graczy jej chunki mogą być zwolnione, a pojemniki stoją tylko we wczytanych
+cmd "forceload add -16 -16 64 64"
+sleep 4
+cmd "execute if entity @e[type=interaction,tag=axs_pojemnik,x=0,y=90,z=0,distance=..80] run say POJEMNIKI-STACJA-OK"
+cmd "forceload remove -16 -16 64 64"
 cmd "struktury pojemniki"
 # Zrzut zaopatrzenia: spada na lądowisko jednostki albo dach szpitala (czas spadania 10 s).
 cmd "struktury zrzut teraz"
