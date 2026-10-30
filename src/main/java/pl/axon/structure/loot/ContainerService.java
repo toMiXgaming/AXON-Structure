@@ -17,6 +17,8 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.Display;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -92,12 +94,18 @@ public final class ContainerService implements Listener {
     private Settings settings = new Settings(10 * 60_000L, 5 * 60_000L, 24, "droga");
     private BukkitTask task;
     private int commandCounter;
+    private AccessCardService cards;
 
     public ContainerService(JavaPlugin plugin, CrateService crates, StructureLibrary library, InstanceStore store) {
         this.plugin = plugin;
         this.crates = crates;
         this.library = library;
         this.store = store;
+    }
+
+    /** Karty dostępu zużywane przy pojemnikach z {@code karta-poziom}. */
+    public void cards(AccessCardService cards) {
+        this.cards = cards;
     }
 
     public void configure(Settings settings) {
@@ -299,6 +307,7 @@ public final class ContainerService implements Listener {
         spot.inventory = null;
         spot.damage = 0;
         spot.emptiedAt = 0;
+        spot.lockedUntil = CrateLockMath.unlockAt(System.currentTimeMillis(), crate.container().lockMinutes());
         spot.state = crate.container().breakable() ? ContainerSpot.State.INTACT : ContainerSpot.State.CLOSED;
     }
 
@@ -370,6 +379,9 @@ public final class ContainerService implements Listener {
                 default -> {
                 }
             }
+            if (spot.visible() && spot.lockedUntil > CrateLockMath.UNLOCKED) {
+                tickLock(spot, now);
+            }
             if (spot.visible()) {
                 if (spot.display != null && Bukkit.getEntity(spot.display) == null) {
                     despawnEntities(spot); // ktoś usunął encje (np. /kill)
@@ -379,6 +391,49 @@ public final class ContainerService implements Listener {
                 }
             }
         }
+    }
+
+    /** Odliczanie nad zablokowanym pojemnikiem; po czasie zdejmuje blokadę i ogłasza to na czacie. */
+    private void tickLock(ContainerSpot spot, long now) {
+        Entity text = spot.lockText == null ? null : Bukkit.getEntity(spot.lockText);
+        if (!CrateLockMath.locked(spot.lockedUntil, now)) {
+            spot.lockedUntil = CrateLockMath.UNLOCKED;
+            if (text != null) {
+                text.remove();
+                spot.entities.remove(spot.lockText);
+                byEntity.remove(spot.lockText);
+            }
+            spot.lockText = null;
+            World world = Bukkit.getWorld(spot.world);
+            if (world != null && spot.crate != null) {
+                String message = "§a§l[Zaopatrzenie] §f" + spot.crate.displayName() + " §fzostała odblokowana!";
+                world.getPlayers().forEach(player -> player.sendMessage(message));
+            }
+            return;
+        }
+        String line = CrateLockMath.displayLine(spot.lockedUntil, now);
+        if (line == null || spot.entities.isEmpty()) {
+            return;
+        }
+        var component = LegacyComponentSerializer.legacyAmpersand().deserialize(line);
+        if (text instanceof TextDisplay display) {
+            display.text(component);
+            return;
+        }
+        World world = Bukkit.getWorld(spot.world);
+        if (world == null) {
+            return;
+        }
+        Location at = new Location(world, spot.x + 0.5, spot.y + spot.crate.container().height() + 0.4, spot.z + 0.5);
+        TextDisplay display = world.spawn(at, TextDisplay.class, entity -> {
+            entity.text(component);
+            entity.setBillboard(Display.Billboard.CENTER);
+            entity.setSeeThrough(true);
+            entity.setPersistent(false);
+            entity.addScoreboardTag(TAG);
+        });
+        spot.lockText = display.getUniqueId();
+        track(spot, display);
     }
 
     /** Rozbita beczka znika (pusta albo po czasie); wraca po czasie odnowienia liczonym od rozbicia. */
@@ -538,6 +593,7 @@ public final class ContainerService implements Listener {
         }
         spot.entities.clear();
         spot.display = null;
+        spot.lockText = null;
     }
 
     private void closeViewers(ContainerSpot spot) {
@@ -614,6 +670,9 @@ public final class ContainerService implements Listener {
             return;
         }
         long now = System.currentTimeMillis();
+        if (lockedMessage(player, spot, now)) {
+            return;
+        }
         if (now - spot.lastHit < HIT_COOLDOWN_MS) {
             return;
         }
@@ -671,10 +730,16 @@ public final class ContainerService implements Listener {
             return;
         }
         lastOpen.put(player.getUniqueId(), now);
+        if (spot.state == ContainerSpot.State.CLOSED && lockedMessage(player, spot, now)) {
+            return;
+        }
         switch (spot.state) {
             case INTACT -> actionBar(player, "§7Najpierw rozbij: §fLPM§7.");
             case CLOSED -> {
                 if (spot.inventory == null) {
+                    if (!useCard(player, spot)) {
+                        return;
+                    }
                     spot.inventory = newInventory(spot);
                     if (!crates.emptyLoot()) {
                         spot.crate.fill(spot.inventory, random); // przy pierwszym otwarciu, nie da się podejrzeć z daleka
@@ -691,6 +756,30 @@ public final class ContainerService implements Listener {
             default -> {
             }
         }
+    }
+
+    private static boolean lockedMessage(Player player, ContainerSpot spot, long now) {
+        if (!CrateLockMath.locked(spot.lockedUntil, now)) {
+            return false;
+        }
+        actionBar(player, "§c§lZABLOKOWANA §7jeszcze §f"
+                + CrateLockMath.countdown(CrateLockMath.remainingMillis(spot.lockedUntil, now)));
+        return true;
+    }
+
+    /** Pierwsze otwarcie pojemnika z {@code karta-poziom} zużywa jedną kartę; potem otwiera się już bez niej. */
+    private boolean useCard(Player player, ContainerSpot spot) {
+        int level = spot.crate.container().cardLevel();
+        if (level <= 0 || cards == null) {
+            return true;
+        }
+        if (!cards.consume(player, level)) {
+            actionBar(player, "§c§lBRAK KARTY §7potrzebna: " + LootConfig.color(AccessCardMath.displayName(AccessCardMath.idOf(level)))
+                    + " §7(masz poziom §f" + cards.bestLevel(player) + "§7)");
+            return false;
+        }
+        actionBar(player, "§a§lKARTA ZUŻYTA §7otwieram " + spot.crate.displayName());
+        return true;
     }
 
     @SuppressWarnings("deprecation")

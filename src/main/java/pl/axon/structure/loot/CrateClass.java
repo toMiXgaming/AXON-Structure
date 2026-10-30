@@ -44,9 +44,11 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
      * @param length        ile bloków zajmuje wzdłuż swojej osi x (skrzynia wojskowa: 2)
      * @param width         szerokość encji Interaction (klikalny obszar)
      * @param height        wysokość encji Interaction
+     * @param lockMinutes   ile minut po odnowieniu pojemnik jest zablokowany (odliczanie nad modelem); 0 = bez
+     * @param cardLevel     poziom karty dostępu zużywanej przy pierwszym otwarciu (1–3); 0 = bez karty
      */
     public record ContainerSpec(String brokenModel, int hits, int toolHits, long respawnMillis, String announce,
-                                int length, float width, float height) {
+                                int length, float width, float height, int lockMinutes, int cardLevel) {
 
         public boolean breakable() {
             return !brokenModel.isBlank();
@@ -63,6 +65,14 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
         public LootEntry(Material material, String axonId, int min, int max, double chance, String name,
                          List<String> lore) {
             this(material, axonId, min, max, chance, name, lore, null);
+        }
+
+        /** Prefiks wpisu {@code karta:<kolor>} w polu {@code table}: karta dostępu zamiast tabeli. */
+        public static final String CARD_PREFIX = "karta:";
+
+        /** Wpis {@code karta:<kolor>}: karta dostępu z {@link AccessCardService}. */
+        public static LootEntry card(String color, double chance) {
+            return table(CARD_PREFIX + color, chance);
         }
 
         /** Wpis {@code tabela:<id>}: cała tabela z loot.yml w AxonItems. */
@@ -117,7 +127,9 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
     }
 
     private static void add(List<ItemStack> items, LootEntry entry, Random random) {
-        if (entry.table() != null) {
+        if (entry.table() != null && entry.table().startsWith(LootEntry.CARD_PREFIX)) {
+            add(items, AccessCardService.createCard(entry.table().substring(LootEntry.CARD_PREFIX.length())));
+        } else if (entry.table() != null) {
             items.addAll(AxonItemsBridge.rollTable(entry.table()));
         } else {
             add(items, entry.create(random));

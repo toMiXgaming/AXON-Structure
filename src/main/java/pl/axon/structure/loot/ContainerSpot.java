@@ -55,6 +55,10 @@ final class ContainerSpot implements InventoryHolder {
     boolean dead;
     final List<UUID> entities = new ArrayList<>();
     UUID display;
+    /** Do kiedy (epoch millis) pojemnik jest zablokowany; 0 = otwarty. */
+    long lockedUntil;
+    /** Napis z odliczaniem nad zablokowanym pojemnikiem. */
+    UUID lockText;
 
     ContainerSpot(String key, String world, int x, int y, int z, float yaw, String pool, String fixedClass,
                   String owner, boolean roadside) {

@@ -568,6 +568,9 @@ pojemniki:
   #   model-rozbity: model po rozbiciu; brak = skrzynia, którą otwiera się od razu
   #   uderzenia / uderzenia-narzedziem: ile uderzeń ręką / czymkolwiek w ręce, żeby rozbić (domyślnie 3 / 2)
   #   odnowienie-minut: własny czas odnowienia klasy
+  #   blokada-minut: ile minut po odnowieniu nie da się otworzyć (odliczanie nad modelem); 0 = bez blokady
+  #   karta-poziom: karta dostępu zużywana przy pierwszym otwarciu (1 niebieska, 2 czerwona, 3 zielona); 0 = bez
+  #   loot "karta:<kolor>": prawdziwa karta dostępu (niebieska + czerwona w stole = zielona)
   #   ogloszenie: komunikat na czacie przy odnowieniu ({nazwa}, {miejsce}); "" = bez komunikatu
   #   dlugosc: ile bloków zajmuje (skrzynia wojskowa: 2); szerokosc / wysokosc: klikalny obszar w blokach
   klasy:
@@ -729,6 +732,8 @@ pojemniki:
         - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
         - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 3}
         - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 3}
+        # Niebieska karta dostępu (poziom 1). Z czerwoną łączy się w stole w zieloną.
+        - {przedmiot: "karta:niebieska", szansa: 6}
 
     skrzynka-jedzenie:
       nazwa: "&aSkrzynka z jedzeniem"
@@ -774,6 +779,8 @@ pojemniki:
       loot:
         # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
         - {przedmiot: "tabela:skrzynia_wojskowa", szansa: 100}
+        # Czerwona karta dostępu (poziom 2). Z niebieską łączy się w stole w zieloną.
+        - {przedmiot: "karta:czerwona", szansa: 12}
 
     skrzynia-elitarna:
       nazwa: "&4Skrzynia elitarna"
@@ -782,6 +789,10 @@ pojemniki:
       wysokosc: 0.8
       odnowienie-minut: 30
       ogloszenie: "&4{nazwa} &7odnowiła się: &f{miejsce}"
+      # Po odnowieniu 15 minut kłódki (odliczanie nad modelem, ogłoszenie po odblokowaniu).
+      blokada-minut: 15
+      # Pierwsze otwarcie zużywa zieloną kartę dostępu (poziom 3).
+      karta-poziom: 3
       min-przedmiotow: 3
       loot:
         # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
@@ -1291,12 +1302,8 @@ klasy:
     nazwa: "&aZielona karta dostępu"
     blok: ramka
     loot:
-      - przedmiot: paper
-        ilosc: "1"
-        szansa: 100
-        nazwa: "&aZielona karta dostępu"
-        opis:
-          - "&7Poziom dostępu: 1"
+      # Prawdziwa karta (znacznik w przedmiocie, zwykły papier jej nie podrobi). Otwiera skrzynię elitarną.
+      - {przedmiot: "karta:zielona", szansa: 100}
 
 # ---------------------------------------------------------------------------
 # Wraki pojazdów PRL przy drogach
