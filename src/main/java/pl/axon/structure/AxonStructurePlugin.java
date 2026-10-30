@@ -20,6 +20,8 @@ import pl.axon.structure.life.AmbientService;
 import pl.axon.structure.life.AnimalService;
 import pl.axon.structure.protect.ProtectionListener;
 import pl.axon.structure.protect.ProtectionService;
+import pl.axon.structure.vehicle.VehicleConfig;
+import pl.axon.structure.vehicle.VehicleService;
 import pl.axon.structure.world.AutoGenerator;
 import pl.axon.structure.world.InstanceStore;
 import pl.axon.structure.world.OreVeinService;
@@ -54,6 +56,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private OreVeinService veins;
     private AnimalService animals;
     private AmbientService ambient;
+    private VehicleService vehicles;
 
     @Override
     public void onEnable() {
@@ -76,6 +79,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         props = new PropService(this);
         paster = new PasteService(this, store, crates, protection, props);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
+        vehicles = new VehicleService(this);
 
         reload();
         store.load();
@@ -92,6 +96,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
         getServer().getPluginManager().registerEvents(props, this);
         getServer().getPluginManager().registerEvents(containers, this);
+        getServer().getPluginManager().registerEvents(vehicles, this);
 
         StrukturyCommand command = new StrukturyCommand(this);
         PluginCommand pluginCommand = getCommand("struktury");
@@ -213,6 +218,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
         // przed ochroną: regiony WorldGuard kopalni zależą od tego, czy żyły rudy są włączone
         configureVeins(config);
+        vehicles.configure(VehicleConfig.load(config.getConfigurationSection("wraki")));
 
         Map<String, String> flags = new LinkedHashMap<>();
         ConfigurationSection flagSection = config.getConfigurationSection("ochrona.flagi-worldguard");
@@ -476,5 +482,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
             }
         }
         return models;
+    }
+
+    public VehicleService vehicles() {
+        return vehicles;
     }
 }

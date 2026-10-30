@@ -15,6 +15,7 @@ import pl.axon.structure.core.Rotation;
 import pl.axon.structure.core.StructureInstance;
 import pl.axon.structure.loot.CrateClass;
 import pl.axon.structure.loot.CratePool;
+import pl.axon.structure.vehicle.VehicleModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "pojemniki", "pojemnik", "zrzut", "straznicy", "oaza", "zycie", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "pojemniki", "pojemnik", "zrzut", "straznicy", "oaza", "zycie", "wrak", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -62,6 +63,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
                             + "§e. §7Zrzut od razu: §e/" + label + " zrzut teraz");
                 }
             }
+            case "wrak" -> wreck(sender, label, args);
             case "przeladuj" -> {
                 plugin.reload();
                 sender.sendMessage("§aPrzeładowano: " + plugin.library().all().size() + " struktur, "
@@ -89,6 +91,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " straznicy [postaw] §7– strażnicy NPC (postaw: od razu we wczytanych strukturach)");
         sender.sendMessage("§e/" + label + " oaza §7– stan oazy: stanowiska, sklep, czy działa Vault");
         sender.sendMessage("§e/" + label + " zycie §7– żyły rudy w kopalni, zwierzęta, odgłosy i czy loot jest pusty");
+        sender.sendMessage("§e/" + label + " wrak [model|wyczysc] §7– stawia wrak pojazdu PRL przed tobą "
+                + "(bez argumentu losuje; §fwyczysc§7 usuwa wszystkie wraki w świecie)");
         sender.sendMessage("§e/" + label + " przeladuj §7– wczytuje config i pliki struktur od nowa");
         sender.sendMessage("§7Z konsoli: §ewklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]§7, "
                 + "§egeneruj <nazwa> <świat> <x> <z> [obrót 0-3]");
@@ -388,6 +392,59 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    /**
+     * Wrak pojazdu PRL: {@code /struktury wrak [model|wyczysc]}.
+     *
+     * <p>Bez argumentu losuje model z wag z configu i stawia go przed graczem (3 kratki do przodu,
+     * obrót zgodny z kierunkiem patrzenia). Z argumentem stawia konkretny model. {@code wyczysc}
+     * usuwa wszystkie wraki w świecie gracza.
+     */
+    private void wreck(CommandSender sender, String label, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("wyczysc")) {
+            World world = sender instanceof Player player ? player.getWorld() : null;
+            if (world == null) {
+                sender.sendMessage("§cZ konsoli podaj świat: /" + label + " wrak wyczysc <świat>");
+                return;
+            }
+            int removed = plugin.vehicles().clear(world);
+            sender.sendMessage("§aUsunięto §e" + removed + "§a wraków w świecie §f" + world.getName() + "§a.");
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cTę komendę może wywołać tylko gracz.");
+            return;
+        }
+        VehicleModel model;
+        if (args.length >= 2) {
+            model = VehicleModel.byId(args[1]);
+            if (model == null) {
+                sender.sendMessage("§cNie ma wraku §e" + args[1] + "§c. Dostępne: §f"
+                        + String.join(", ", VehicleModel.ids()));
+                return;
+            }
+        } else {
+            model = plugin.vehicles().config().roll(new java.util.Random());
+            if (model == null) {
+                sender.sendMessage("§cWylosowano „brak wraku”. Podaj model: §f"
+                        + String.join(", ", VehicleModel.ids()));
+                return;
+            }
+        }
+        World world = player.getWorld();
+        int steps = Math.floorMod(Math.round(player.getLocation().getYaw() / 90f), 4);
+        // 3 kratki przed graczem, w kierunku patrzenia.
+        double rad = Math.toRadians(player.getLocation().getYaw());
+        int x = player.getLocation().getBlockX() - (int) Math.round(Math.sin(rad) * 3);
+        int z = player.getLocation().getBlockZ() + (int) Math.round(Math.cos(rad) * 3);
+        int groundY = world.getHighestBlockYAt(x, z);
+        if (plugin.vehicles().place(world, x, groundY, z, steps, model)) {
+            sender.sendMessage("§aPostawiono §f" + model.displayName() + "§a na §f" + x + " " + groundY + " " + z
+                    + "§a (obrót " + (steps * 90) + "°).");
+        } else {
+            sender.sendMessage("§cNie udało się postawić wraku – chunk niewczytany albo miejsce zajęte.");
+        }
+    }
+
     private static World world(CommandSender sender, String name) {
         World world = Bukkit.getWorld(name);
         if (world == null) {
@@ -421,6 +478,9 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             for (StructureInstance instance : plugin.store().all()) {
                 options.add(instance.id());
             }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("wrak")) {
+            options.addAll(VehicleModel.ids());
+            options.add("wyczysc");
         } else if (args.length == 3 && (args[0].equalsIgnoreCase("wklej") || args[0].equalsIgnoreCase("generuj"))) {
             for (World world : Bukkit.getWorlds()) {
                 options.add(world.getName());

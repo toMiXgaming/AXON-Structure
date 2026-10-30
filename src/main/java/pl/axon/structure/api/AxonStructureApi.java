@@ -3,6 +3,7 @@ package pl.axon.structure.api;
 import org.bukkit.Bukkit;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**

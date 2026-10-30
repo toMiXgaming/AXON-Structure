@@ -10,4 +10,12 @@ package pl.axon.structure.api;
  *            zwykle w stronę drogi
  */
 public record RoadsideSpot(int x, int z, float yaw) {
+
+    /**
+     * Obrót „wzdłuż drogi” w krokach po 90° (0–3) dla wraków: przód pojemnika patrzy na drogę,
+     * więc droga biegnie prostopadle (yaw + 90°).
+     */
+    public int steps() {
+        return Math.floorMod(Math.round((yaw + 90f) / 90f), 4);
+    }
 }
