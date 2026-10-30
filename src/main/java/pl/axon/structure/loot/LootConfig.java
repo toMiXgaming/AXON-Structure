@@ -65,6 +65,8 @@ public final class LootConfig {
         int minItems = section.getInt("min-przedmiotow", 1);
         // 0 = globalny interwał z odswiezanie.co-ile-minut; skrzynia wojskowa ustawia 30.
         int refreshMinutes = Math.max(0, section.getInt("odswiezanie-minut", 0));
+        // 0 = brak blokady; elitarna skrzynia ustawia 10, żeby nie dało się jej otworzyć od razu.
+        int lockMinutes = Math.max(0, section.getInt("blokada-minut", 0));
         List<CrateClass.LootEntry> loot = new ArrayList<>();
         for (Map<?, ?> raw : section.getMapList("loot")) {
             Map<String, Object> entry = new HashMap<>();
@@ -113,7 +115,7 @@ public final class LootConfig {
             loot.add(CrateClass.LootEntry.ofMaterial(material, amount[0], amount[1], chance, display, lore));
         }
         return new CrateClass(id, name, kind, decoration == null ? "" : decoration, minItems, loot,
-                modelName, zone, refreshMinutes);
+                modelName, zone, refreshMinutes, lockMinutes);
     }
 
     private static String raw(Map<String, Object> entry, String key, String fallback) {

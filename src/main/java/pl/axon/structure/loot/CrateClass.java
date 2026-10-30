@@ -22,18 +22,25 @@ import java.util.Random;
  * Dzięki temu beczki przy drogach dają prawdziwy złom AxonCore, a nie przemianowane żelazne bryłki.
  */
 public record CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
-                         List<LootEntry> loot, String modelName, String zone, int refreshMinutes) {
+                         List<LootEntry> loot, String modelName, String zone, int refreshMinutes,
+                         int lockMinutes) {
 
     /** Stary konstruktor – bez modelu i strefy (skrzynie blokowe). */
     public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
                       List<LootEntry> loot) {
-        this(id, displayName, kind, decoration, minItems, loot, null, null, 0);
+        this(id, displayName, kind, decoration, minItems, loot, null, null, 0, 0);
     }
 
-    /** Konstruktor z modelem i strefą, bez własnego interwału odświeżania. */
+    /** Konstruktor z modelem i strefą, bez własnego interwału odświeżania i bez blokady. */
     public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
                       List<LootEntry> loot, String modelName, String zone) {
-        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, 0);
+        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, 0, 0);
+    }
+
+    /** Konstruktor z modelem, strefą i interwałem odświeżania, bez blokady. */
+    public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
+                      List<LootEntry> loot, String modelName, String zone, int refreshMinutes) {
+        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, refreshMinutes, 0);
     }
 
     public CrateClass {
@@ -46,6 +53,9 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
         if (refreshMinutes < 0) {
             refreshMinutes = 0;
         }
+        if (lockMinutes < 0) {
+            lockMinutes = 0;
+        }
     }
 
     /**
@@ -54,6 +64,14 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
      */
     public boolean hasOwnRefresh() {
         return refreshMinutes > 0;
+    }
+
+    /**
+     * Czy skrzynia startuje zablokowana (np. elitarna otwiera się po 10 minutach od postawienia).
+     * Blokada liczy się od momentu postawienia i jest pokazywana jako odliczanie nad modelem.
+     */
+    public boolean locked() {
+        return lockMinutes > 0;
     }
 
     public enum Kind {

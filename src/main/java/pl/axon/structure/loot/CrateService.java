@@ -89,6 +89,7 @@ public final class CrateService {
     public void start() {
         stop();
         task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L * 30, 20L * 30);
+        models.start();
     }
 
     public void stop() {
@@ -96,6 +97,7 @@ public final class CrateService {
             task.cancel();
             task = null;
         }
+        models.stop();
     }
 
     private void tick() {
@@ -335,11 +337,24 @@ public final class CrateService {
         }
         // Stary pojemnik i jego zapamiętany loot znikają – następne otwarcie losuje od nowa.
         models.forgetAt(world, w);
-        boolean placed = models.place(world, w, modelName, facing, poolId, crate.zone());
+        boolean placed = models.place(world, w, modelName, facing, poolId, crate.zone(), crate.lockMinutes());
         if (placed) {
             announce(crate, world, w);
+            if (crate.locked()) {
+                announceLock(crate, world, w);
+            }
         }
         return placed;
+    }
+
+    /** Ogłoszenie, że skrzynia jest zablokowana i otworzy się po odliczaniu. */
+    private void announceLock(CrateClass crate, World world, int[] w) {
+        String message = "&c&l[Zaopatrzenie] &f" + crate.displayName()
+                + " &fjest zablokowana – otworzy się po &f" + crate.lockMinutes() + " min&f!";
+        String colored = LootConfig.color(message);
+        for (Player player : world.getPlayers()) {
+            player.sendMessage(colored);
+        }
     }
 
     /** Ogłoszenie na czacie, gdy pojawi się nowa skrzynia z własną strefą (np. wojskowa). */

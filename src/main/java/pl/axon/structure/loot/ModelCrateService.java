@@ -1,5 +1,7 @@
 package pl.axon.structure.loot;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -10,6 +12,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -21,6 +24,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
@@ -52,12 +56,18 @@ public final class ModelCrateService implements Listener {
     private static final String MODEL_TAG = "axon_model";
     private static final String POOL_TAG = "axon_pool";
     private static final String ZONE_TAG = "axon_zone";
+    /** Znacznik odblokowania (epoch millis) – trzymany na hitboxie, więc przeżywa restart. */
+    private static final String LOCK_TAG = "axon_lock_until";
 
     private final JavaPlugin plugin;
     private final Random random = new Random();
     private final NamespacedKey modelKey;
     private final NamespacedKey poolKey;
     private final NamespacedKey zoneKey;
+    private final NamespacedKey lockKey;
+
+    /** Odliczanie nad zablokowanymi skrzyniami – 1 s, dotyka tylko wczytanych chunków. */
+    private BukkitTask lockTask;
 
     /** Otwarte ekwipunki: gracz → stan pojemnika (żeby zapisać loot po zamknięciu). */
     private final Map<UUID, OpenCrate> open = new HashMap<>();
@@ -77,11 +87,118 @@ public final class ModelCrateService implements Listener {
         this.modelKey = new NamespacedKey(plugin, MODEL_TAG);
         this.poolKey = new NamespacedKey(plugin, POOL_TAG);
         this.zoneKey = new NamespacedKey(plugin, ZONE_TAG);
+        this.lockKey = new NamespacedKey(plugin, LOCK_TAG);
     }
 
     public void configure(LootConfig loot, AxonLootBridge axonLoot) {
         this.loot = loot;
         this.axonLoot = axonLoot;
+    }
+
+    // ------------------------------------------------------------------
+    //  Odliczanie blokady
+    // ------------------------------------------------------------------
+
+    /** Uruchamia odliczanie nad zablokowanymi skrzyniami (1 s). */
+    public void start() {
+        stop();
+        lockTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tickLocks, 20L, 20L);
+    }
+
+    /** Zatrzymuje odliczanie (przy wyłączaniu / przeładowaniu pluginu). */
+    public void stop() {
+        if (lockTask != null) {
+            lockTask.cancel();
+            lockTask = null;
+        }
+    }
+
+    /**
+     * Odświeża odliczanie nad zablokowanymi skrzyniami i ogłasza odblokowanie.
+     *
+     * <p>Iterujemy po encjach świata, ale każdą encję sprawdzamy tanio (typ + PDC), a świat
+     * i tak trzyma tylko wczytane encje – nie ma tu żadnego loadowania chunków.
+     */
+    private void tickLocks() {
+        long now = System.currentTimeMillis();
+        for (World world : Bukkit.getWorlds()) {
+            for (Entity entity : world.getEntities()) {
+                if (!(entity instanceof Interaction hitbox) || !isModelEntity(hitbox)) {
+                    continue;
+                }
+                Long unlockAt = hitbox.getPersistentDataContainer().get(lockKey, PersistentDataType.LONG);
+                if (unlockAt == null || unlockAt <= CrateLockMath.UNLOCKED) {
+                    continue;
+                }
+                if (unlockAt > now) {
+                    updateCountdown(hitbox, unlockAt, now);
+                } else {
+                    unlock(hitbox, world);
+                }
+            }
+        }
+    }
+
+    /** Ustawia (albo odświeża) tekst odliczania nad modelem. */
+    private void updateCountdown(Interaction hitbox, long unlockAt, long now) {
+        String line = CrateLockMath.displayLine(unlockAt, now);
+        if (line == null) {
+            return;
+        }
+        Component text = LegacyComponentSerializer.legacyAmpersand().deserialize(line);
+        TextDisplay display = countdownOf(hitbox);
+        if (display == null) {
+            Location at = hitbox.getLocation().add(0, 1.35, 0);
+            try {
+                display = hitbox.getWorld().spawn(at, TextDisplay.class, entity -> {
+                    entity.text(text);
+                    entity.setBillboard(Display.Billboard.CENTER);
+                    entity.setSeeThrough(true);
+                    entity.setShadowed(true);
+                    entity.setPersistent(false);
+                    entity.setInvulnerable(true);
+                    entity.setGravity(false);
+                    entity.setDefaultBackground(false);
+                });
+                hitbox.addPassenger(display);
+            } catch (RuntimeException e) {
+                plugin.getLogger().warning("Nie udało się pokazać odliczania skrzyni: " + e.getMessage());
+                return;
+            }
+        } else {
+            display.text(text);
+        }
+    }
+
+    /** Zdejmuje blokadę: usuwa odliczanie, czyści znacznik i ogłasza otwarcie. */
+    private void unlock(Interaction hitbox, World world) {
+        TextDisplay display = countdownOf(hitbox);
+        if (display != null) {
+            display.remove();
+        }
+        PersistentDataContainer pdc = hitbox.getPersistentDataContainer();
+        pdc.remove(lockKey);
+        String zone = pdc.get(zoneKey, PersistentDataType.STRING);
+        String modelName = pdc.get(modelKey, PersistentDataType.STRING);
+        String label = modelName == null || modelName.isBlank() ? "skrzynia" : modelName;
+        String message = zone == null || zone.isBlank()
+                ? "&a&l[Zaopatrzenie] &fSkrzynia " + label + " &fzostała odblokowana!"
+                : "&a&l[Zaopatrzenie] &fW strefie " + zone + " &fskrzynia " + label
+                        + " &fzostała odblokowana!";
+        String colored = LootConfig.color(message);
+        for (Player player : world.getPlayers()) {
+            player.sendMessage(colored);
+        }
+    }
+
+    /** Wyświetlacz odliczania będący pasażerem hitboxa (albo {@code null}). */
+    private TextDisplay countdownOf(Interaction hitbox) {
+        for (Entity passenger : hitbox.getPassengers()) {
+            if (passenger instanceof TextDisplay display) {
+                return display;
+            }
+        }
+        return null;
     }
 
     /** Klasy skrzyń i pule z config.yml – potrzebne zrzutom do losowania klasy. */
@@ -103,10 +220,21 @@ public final class ModelCrateService implements Listener {
      * @return {@code true}, gdy udało się postawić
      */
     public boolean place(World world, int[] w, String modelName, String facing, String poolId, String zoneName) {
+        return place(world, w, modelName, facing, poolId, zoneName, 0);
+    }
+
+    /**
+     * Stawia pojemnik-model z opcjonalną blokadą czasową.
+     *
+     * @param lockMinutes ile minut skrzynia ma być zablokowana (0 = brak blokady)
+     */
+    public boolean place(World world, int[] w, String modelName, String facing, String poolId, String zoneName,
+                         int lockMinutes) {
         if (world == null || !world.isChunkLoaded(w[0] >> 4, w[2] >> 4)) {
             return false;
         }
         remove(world, w);
+        long unlockAt = CrateLockMath.unlockAt(System.currentTimeMillis(), lockMinutes);
         Location base = new Location(world, w[0] + 0.5, w[1], w[2] + 0.5);
         try {
             ItemDisplay display = world.spawn(base, ItemDisplay.class, entity -> {
@@ -130,8 +258,14 @@ public final class ModelCrateService implements Listener {
                 entity.setPersistent(true);
                 entity.setInvulnerable(true);
                 tag(entity.getPersistentDataContainer(), modelName, poolId, zoneName);
+                if (unlockAt > CrateLockMath.UNLOCKED) {
+                    entity.getPersistentDataContainer().set(lockKey, PersistentDataType.LONG, unlockAt);
+                }
             });
             display.addPassenger(hitbox);
+            if (unlockAt > CrateLockMath.UNLOCKED) {
+                updateCountdown(hitbox, unlockAt, System.currentTimeMillis());
+            }
             return true;
         } catch (RuntimeException e) {
             plugin.getLogger().warning("Nie udało się postawić pojemnika-modelu na "
@@ -185,6 +319,13 @@ public final class ModelCrateService implements Listener {
         Player player = event.getPlayer();
         if (player.isSneaking()) {
             return; // sneak = nie otwieraj (pozwala obejrzeć model)
+        }
+        Long unlockAt = pdc.get(lockKey, PersistentDataType.LONG);
+        if (unlockAt != null && CrateLockMath.locked(unlockAt, System.currentTimeMillis())) {
+            long left = CrateLockMath.remainingMillis(unlockAt, System.currentTimeMillis());
+            player.sendActionBar(LegacyComponentSerializer.legacyAmpersand()
+                    .deserialize("&c&lZABLOKOWANA &7jeszcze &f" + CrateLockMath.countdown(left)));
+            return;
         }
         openCrate(player, hitbox, poolId, pdc.get(zoneKey, PersistentDataType.STRING));
     }

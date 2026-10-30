@@ -159,6 +159,8 @@ pule:
 #  model: nazwa modelu z paczki dla bloku: model (domyślnie id klasy)
 #  strefa: nazwa strefy do ogłoszenia na czacie, gdy skrzynia się pojawi ("" = bez ogłoszenia)
 #  odswiezanie-minut: własny interwał odświeżania w minutach (0 = globalny z odswiezanie.co-ile-minut)
+#  blokada-minut: ile minut od postawienia skrzyni nie da się jej otworzyć (0 = brak blokady).
+#                 Nad modelem wisi odliczanie, a po odblokowaniu leci ogłoszenie na czacie.
 #  loot: każda pozycja losowana osobno
 #    przedmiot: nazwa z Minecrafta (np. iron_ingot) ALBO przedmiot AxonCore (axon:scrap)
 #    tabela: id tabeli lootu z AxonItems/loot.yml (np. beczka_przydrozna) – cała tabela naraz
@@ -290,6 +292,9 @@ klasy:
     model: skrzynia_wojskowa
     strefa: "&6Baza wojskowa"
     odswiezanie-minut: 30
+    # 10 minut kłódki – skrzynia pojawia się z odliczaniem nad modelem,
+    # więc nie da się jej opróżnić w pierwszej sekundzie po odświeżeniu.
+    blokada-minut: 10
     min-przedmiotow: 2
     loot:
       - {tabela: skrzynia_wojskowa, szansa: 100}
