@@ -83,6 +83,18 @@ public final class LootConfig {
             String itemId = itemName == null ? "" : String.valueOf(itemName).trim();
             String axonId = null;
             Material material = null;
+            if (itemId.toLowerCase(Locale.ROOT).startsWith(CrateClass.LootEntry.CARD_PREFIX)) {
+                String color = itemId.substring(CrateClass.LootEntry.CARD_PREFIX.length()).trim()
+                        .toLowerCase(Locale.ROOT);
+                if (!AccessCardMath.known(color)) {
+                    logger.warning("Klasa '" + id + "': nieznana karta '" + itemName
+                            + "' (niebieska, czerwona, zielona), pomijam");
+                    continue;
+                }
+                double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
+                loot.add(CrateClass.LootEntry.card(color, chance));
+                continue;
+            }
             if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.TABLE_PREFIX)) {
                 String table = itemId.substring(AxonItemsBridge.TABLE_PREFIX.length()).toLowerCase(Locale.ROOT);
                 if (table.isBlank()) {
@@ -128,7 +140,9 @@ public final class LootConfig {
                     color(section.getString("ogloszenie", "")),
                     Math.max(1, Math.min(3, section.getInt("dlugosc", 1))),
                     (float) Math.max(0.2, section.getDouble("szerokosc", 0.9)),
-                    (float) Math.max(0.2, section.getDouble("wysokosc", 1.0)));
+                    (float) Math.max(0.2, section.getDouble("wysokosc", 1.0)),
+                    Math.max(0, section.getInt("blokada-minut", 0)),
+                    Math.max(0, Math.min(3, section.getInt("karta-poziom", 0))));
         }
         return new CrateClass(id, name, kind, decoration == null ? "" : decoration,
                 model == null ? "" : model, minItems, loot, container);
