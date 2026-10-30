@@ -25,7 +25,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
             List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "loot",
-                    "przeladuj", "pomoc");
+                    "zrzut", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -48,6 +48,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
             case "loot" -> loot(sender);
+            case "zrzut" -> drop(sender, label, args);
             case "przeladuj" -> {
                 plugin.reload();
                 sender.sendMessage("§aPrzeładowano: " + plugin.library().all().size() + " struktur, "
@@ -70,6 +71,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
         sender.sendMessage("§e/" + label + " loot §7– co realnie wpada do skrzyń (przedmioty AxonCore, tabele)");
+        sender.sendMessage("§e/" + label + " zrzut [promień] §7– zrzut zaopatrzenia w losowym miejscu wokół ciebie");
         sender.sendMessage("§e/" + label + " przeladuj §7– wczytuje config i pliki struktur od nowa");
         sender.sendMessage("§7Z konsoli: §ewklej <nazwa> <świat> <x> <y> <z> [obrót 0-3]§7, "
                 + "§egeneruj <nazwa> <świat> <x> <z> [obrót 0-3]");
@@ -268,6 +270,33 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
                         .append(total == 0 ? 0 : Math.round(e.getValue() * 100.0 / total)).append("%, ");
             }
             sender.sendMessage(line.substring(0, line.length() - 2));
+        }
+    }
+
+    /**
+     * Zrzut zaopatrzenia: skrzynia-model z tabeli {@code zrzut} w losowym punkcie wokół gracza.
+     * Bez argumentu promień bierze się z configu ({@code zrzuty.promien}).
+     */
+    private void drop(CommandSender sender, String label, String[] args) {
+        int radius = 0;
+        if (args.length >= 2) {
+            try {
+                radius = Math.max(0, Integer.parseInt(args[1]));
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§cPromień musi być liczbą. Użycie: /" + label + " zrzut [promień]");
+                return;
+            }
+        }
+        Player player = sender instanceof Player p ? p : null;
+        if (player == null && args.length < 2) {
+            sender.sendMessage("§7Z konsoli podaj promień: /" + label + " zrzut <promień>");
+        }
+        boolean ok = plugin.drops().dropNear(player, radius);
+        if (ok) {
+            sender.sendMessage("§aZrzut zaopatrzenia postawiony. Sprawdź czat po współrzędne.");
+        } else {
+            sender.sendMessage("§cNie udało się postawić zrzutu – brak wczytanego terenu w promieniu "
+                    + (radius > 0 ? radius : "z configu") + " albo brak puli §e" + "zrzut" + "§c w config.yml.");
         }
     }
 

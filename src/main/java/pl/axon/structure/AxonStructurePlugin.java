@@ -9,6 +9,7 @@ import pl.axon.structure.api.AxonStructureApi;
 import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
+import pl.axon.structure.loot.SupplyDropService;
 import pl.axon.structure.protect.ProtectionListener;
 import pl.axon.structure.protect.ProtectionService;
 import pl.axon.structure.world.AutoGenerator;
@@ -26,6 +27,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private StructureLibrary library;
     private InstanceStore store;
     private CrateService crates;
+    private SupplyDropService drops;
     private PasteService paster;
     private AutoGenerator autoGenerator;
     private ProtectionService protection;
@@ -36,6 +38,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         library = new StructureLibrary(new File(getDataFolder(), "struktury"), getLogger());
         store = new InstanceStore(new File(getDataFolder(), "dane.yml"), getLogger());
         crates = new CrateService(this, library, store);
+        drops = new SupplyDropService(this, crates.models());
         protection = new ProtectionService(this, library, store);
         paster = new PasteService(this, store, crates, protection);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
@@ -48,8 +51,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
             protection.syncAll();
         });
         crates.start();
+        drops.start();
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
+        getServer().getPluginManager().registerEvents(crates.models(), this);
         getServer().getServicesManager().register(AxonStructureApi.class, new AxonStructureApiImpl(this), this,
                 ServicePriority.Normal);
 
@@ -66,6 +71,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         getServer().getServicesManager().unregisterAll(this);
+        if (drops != null) {
+            drops.stop();
+        }
         if (crates != null) {
             crates.stop();
         }
@@ -104,6 +112,14 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 config.getInt("odswiezanie.blokada-gdy-gracz-blizej-niz", 32),
                 config.getBoolean("odswiezanie.zastepuj-pelne", false)));
 
+        drops.configure(new SupplyDropService.Settings(
+                config.getBoolean("zrzuty.wlaczone", true),
+                new java.util.ArrayList<>(config.getStringList("zrzuty.swiaty")),
+                Math.max(0, config.getInt("zrzuty.co-ile-minut", 90)),
+                Math.max(50, config.getInt("zrzuty.promien", 500)),
+                Math.max(0, config.getInt("zrzuty.min-promien", 120)),
+                Math.max(0, config.getInt("zrzuty.ogloszenie-promien", 0))));
+
         paster.configure(new PasteService.Settings(
                 Math.max(100, config.getInt("stawianie.bloki-na-tick", 4000)),
                 Math.max(0, config.getInt("stawianie.wygladzanie-krawedzi", 6)),
@@ -138,6 +154,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public CrateService crates() {
         return crates;
+    }
+
+    public SupplyDropService drops() {
+        return drops;
     }
 
     public PasteService paster() {

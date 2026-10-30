@@ -25,7 +25,12 @@ public final class Blueprint {
         /** Skrzynia albo beczka – blok zależy od wylosowanej klasy. */
         CRATE,
         /** Ramka z przedmiotem, np. karta dostępu. */
-        FRAME
+        FRAME,
+        /**
+         * Pojemnik-model: ItemDisplay z modelem {@code axon:<nazwa>} plus Interaction jako hitbox.
+         * W świecie nie ma prawdziwego bloku – klik otwiera wirtualny ekwipunek 27 slotów.
+         */
+        MODEL
     }
 
     /** Miejsce, w którym przy odświeżaniu losowana jest skrzynia z podanej puli. */
@@ -148,6 +153,16 @@ public final class Blueprint {
     /** Miejsce na ramkę z przedmiotem przyczepioną do bloku po stronie przeciwnej do {@code facing}. */
     public void frame(int x, int y, int z, String facing, String pool) {
         spawnPoints.add(new SpawnPoint(new Pos(x, y, z), SpawnKind.FRAME, facing, pool));
+    }
+
+    /**
+     * Miejsce na pojemnik-model (ItemDisplay + Interaction). Blok zostaje pusty –
+     * wizualizację i hitbox stawia odświeżanie skrzyń.
+     */
+    public void model(int x, int y, int z, String facing, String pool) {
+        set(x, y, z, AIR);
+        spawnPoints.removeIf(p -> p.pos().equals(new Pos(x, y, z)));
+        spawnPoints.add(new SpawnPoint(new Pos(x, y, z), SpawnKind.MODEL, facing, pool));
     }
 
     public void sign(int x, int y, int z, String state, String... lines) {

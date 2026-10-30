@@ -91,6 +91,47 @@ class StructureFileTest {
     }
 
     @Test
+    void sekcjaModeleJestZapisywanaIOdczytana() throws IOException {
+        Blueprint bp = read(file(""));
+        bp.model(1, 0, 1, "north", "skrzynia_wojskowa");
+        bp.crate(2, 0, 2, "south", "droga");
+        bp.frame(3, 0, 3, "west", "karta");
+
+        StringWriter out = new StringWriter();
+        StructureFile.write(bp, out);
+        String written = out.toString();
+        assertTrue(written.contains("modele:"), "sekcja modele: musi trafić do pliku");
+        assertTrue(written.contains("1 0 1 north skrzynia_wojskowa"));
+
+        Blueprint again = read(written);
+        List<Blueprint.SpawnPoint> models = again.spawnPoints().stream()
+                .filter(p -> p.kind() == Blueprint.SpawnKind.MODEL)
+                .toList();
+        assertEquals(1, models.size());
+        assertEquals(new Blueprint.Pos(1, 0, 1), models.get(0).pos());
+        assertEquals("north", models.get(0).facing());
+        assertEquals("skrzynia_wojskowa", models.get(0).pool());
+        assertEquals(1, again.spawnPoints().stream()
+                .filter(p -> p.kind() == Blueprint.SpawnKind.CRATE).count());
+        assertEquals(1, again.spawnPoints().stream()
+                .filter(p -> p.kind() == Blueprint.SpawnKind.FRAME).count());
+    }
+
+    @Test
+    void modelCzysciBlokIPoprzednieMiejsce() throws IOException {
+        Blueprint bp = read(file(""));
+        bp.crate(1, 0, 1, "north", "droga");
+        bp.model(1, 0, 1, "south", "skrzynia_wojskowa");
+
+        assertEquals("minecraft:air", bp.get(1, 0, 1), "model nie stawia bloku");
+        List<Blueprint.SpawnPoint> at = bp.spawnPoints().stream()
+                .filter(p -> p.pos().equals(new Blueprint.Pos(1, 0, 1)))
+                .toList();
+        assertEquals(1, at.size(), "stare miejsce musi zostać zastąpione");
+        assertEquals(Blueprint.SpawnKind.MODEL, at.get(0).kind());
+    }
+
+    @Test
     void zapisIOdczytDajaTeSameNaglowkiIBloki() throws IOException {
         Blueprint bp = read(file("""
                 grunt: 21

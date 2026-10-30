@@ -28,6 +28,8 @@ import java.util.Map;
  * 16 1 8 north paliwo        (x y z kierunek pula)
  * ramki:
  * 11 2 24 up karta
+ * modele:
+ * 20 1 8 north skrzynia_wojskowa   (pojemnik-model: ItemDisplay + Interaction)
  * napisy:
  * 1 4 4|OXUM'S|GAS||
  * </pre>
@@ -110,6 +112,12 @@ public final class StructureFile {
                 out.write(p.pos().x() + " " + p.pos().y() + " " + p.pos().z() + " " + p.facing() + " " + p.pool() + "\n");
             }
         }
+        out.write("modele:\n");
+        for (Blueprint.SpawnPoint p : bp.spawnPoints()) {
+            if (p.kind() == Blueprint.SpawnKind.MODEL) {
+                out.write(p.pos().x() + " " + p.pos().y() + " " + p.pos().z() + " " + p.facing() + " " + p.pool() + "\n");
+            }
+        }
         out.write("napisy:\n");
         for (Blueprint.SignSpec sign : bp.signs()) {
             out.write(sign.pos().x() + " " + sign.pos().y() + " " + sign.pos().z()
@@ -155,7 +163,7 @@ public final class StructureFile {
                         palette.add(Blueprint.normalize(parts[1].trim()));
                     }
                     case "warstwy" -> readRow(bp, palette, line);
-                    case "skrzynie", "ramki" -> {
+                    case "skrzynie", "ramki", "modele" -> {
                         String[] p = line.trim().split("\\s+");
                         if (p.length != 5) {
                             throw new IOException("oczekiwano 'x y z kierunek pula'");
@@ -163,10 +171,10 @@ public final class StructureFile {
                         int x = Integer.parseInt(p[0]);
                         int y = Integer.parseInt(p[1]);
                         int z = Integer.parseInt(p[2]);
-                        if (section.equals("skrzynie")) {
-                            bp.crate(x, y, z, p[3], p[4]);
-                        } else {
-                            bp.frame(x, y, z, p[3], p[4]);
+                        switch (section) {
+                            case "skrzynie" -> bp.crate(x, y, z, p[3], p[4]);
+                            case "ramki" -> bp.frame(x, y, z, p[3], p[4]);
+                            default -> bp.model(x, y, z, p[3], p[4]);
                         }
                     }
                     case "napisy" -> {

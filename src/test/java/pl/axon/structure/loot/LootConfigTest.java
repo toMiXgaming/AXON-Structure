@@ -185,6 +185,135 @@ class LootConfigTest {
     }
 
     @Test
+    void rodzajModelJestRozpoznawany() throws InvalidConfigurationException {
+        LootConfig config = load("""
+                klasy:
+                  skrzynia-wojskowa:
+                    blok: model
+                    nazwa: "&cSkrzynia wojskowa"
+                    model: skrzynia_wojskowa
+                    strefa: "&6Baza wojskowa"
+                    loot:
+                      - {tabela: skrzynia_wojskowa, szansa: 100}
+                """);
+
+        CrateClass crate = config.crateClass("skrzynia-wojskowa");
+        assertNotNull(crate);
+        assertEquals(CrateClass.Kind.MODEL, crate.kind());
+        assertFalse(crate.kind().isBlock(), "model nie stawia prawdziwego bloku");
+        assertEquals("skrzynia_wojskowa", crate.modelName());
+        assertEquals("§6Baza wojskowa", crate.zone());
+    }
+
+    @Test
+    void rodzajModelPrzyjmujeAliasy() throws InvalidConfigurationException {
+        for (String alias : List.of("model", "pojemnik", "pojemnik-model", "MODEL")) {
+            LootConfig config = load("""
+                    klasy:
+                      testowa:
+                        blok: %s
+                        loot: []
+                    """.formatted(alias));
+            assertEquals(CrateClass.Kind.MODEL, config.crateClass("testowa").kind(), alias);
+        }
+    }
+
+    @Test
+    void modelBezKluczaModelUzywaIdKlasy() throws InvalidConfigurationException {
+        LootConfig config = load("""
+                klasy:
+                  skrzynia-wojskowa:
+                    blok: model
+                    loot: []
+                """);
+
+        CrateClass crate = config.crateClass("skrzynia-wojskowa");
+        assertEquals("skrzynia-wojskowa", crate.modelName());
+        assertEquals("", crate.zone());
+    }
+
+    @Test
+    void skrzynieBlokoweNadalSaBlokami() throws InvalidConfigurationException {
+        LootConfig config = load("""
+                klasy:
+                  skrzynia:
+                    blok: skrzynia
+                    loot: []
+                  beczka:
+                    blok: beczka
+                    loot: []
+                  ramka:
+                    blok: ramka
+                    loot: []
+                """);
+
+        assertTrue(config.crateClass("skrzynia").kind().isBlock());
+        assertTrue(config.crateClass("beczka").kind().isBlock());
+        assertFalse(config.crateClass("ramka").kind().isBlock());
+    }
+
+    @Test
+    void odswiezanieMinutJestWczytywane() throws InvalidConfigurationException {
+        LootConfig config = load("""
+                klasy:
+                  skrzynia-wojskowa:
+                    blok: model
+                    odswiezanie-minut: 30
+                    loot: []
+                """);
+
+        CrateClass crate = config.crateClass("skrzynia-wojskowa");
+        assertEquals(30, crate.refreshMinutes());
+        assertTrue(crate.hasOwnRefresh());
+    }
+
+    @Test
+    void brakOdswiezaniaMinutZnaczyGlobalnyInterwal() throws InvalidConfigurationException {
+        LootConfig config = load("""
+                klasy:
+                  zwykla:
+                    blok: beczka
+                    loot: []
+                """);
+
+        CrateClass crate = config.crateClass("zwykla");
+        assertEquals(0, crate.refreshMinutes());
+        assertFalse(crate.hasOwnRefresh());
+    }
+
+    @Test
+    void ujemneOdswiezanieMinutJestZerowane() throws InvalidConfigurationException {
+        LootConfig config = load("""
+                klasy:
+                  dziwna:
+                    blok: beczka
+                    odswiezanie-minut: -5
+                    loot: []
+                """);
+
+        assertEquals(0, config.crateClass("dziwna").refreshMinutes());
+    }
+
+    @Test
+    void prawdziwyConfigMaSkrzynieWojskowa() throws Exception {
+        java.io.File file = new java.io.File("src/main/resources/config.yml");
+        YamlConfiguration configuration = new YamlConfiguration();
+        configuration.load(file);
+        LootConfig config = LootConfig.load(configuration, LOGGER);
+
+        CrateClass crate = config.crateClass("skrzynia-wojskowa");
+        assertNotNull(crate, "config.yml musi mieć klasę skrzynia-wojskowa");
+        assertEquals(CrateClass.Kind.MODEL, crate.kind());
+        assertEquals("skrzynia_wojskowa", crate.modelName());
+        assertEquals(30, crate.refreshMinutes());
+        assertFalse(crate.zone().isBlank(), "skrzynia wojskowa musi mieć nazwę strefy do ogłoszeń");
+
+        CratePool pool = config.pool("wojskowa");
+        assertNotNull(pool, "config.yml musi mieć pulę wojskowa");
+        assertTrue(pool.weights().containsKey("skrzynia-wojskowa"));
+    }
+
+    @Test
     void klasaBezLootuNieWysypujeSie() throws InvalidConfigurationException {
         LootConfig config = load("""
                 klasy:

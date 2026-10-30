@@ -11,7 +11,7 @@ softdepend: [WorldGuard, AxonItems]
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|przeladuj]
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|loot|zrzut|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
 permissions:

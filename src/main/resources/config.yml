@@ -13,6 +13,26 @@ odswiezanie:
   # false = losuj tylko puste i zniszczone skrzynie, pełne zostają; true = zawsze losuj od nowa.
   zastepuj-pelne: false
 
+# ------------------------------------------------------------
+#  ZRZUTY ZAOPATRZENIA
+#  Skrzynia-model z tabeli "zrzut" (AxonItems/loot.yml) spada w losowym
+#  punkcie w promieniu od spawnu świata. Gracz może też wezwać zrzut
+#  komendą /struktury zrzut [promień] – wtedy punkt losuje się wokół niego.
+# ------------------------------------------------------------
+zrzuty:
+  wlaczone: true
+  # Światy, w których timer stawia zrzuty automatycznie.
+  swiaty:
+    - world
+  # Co ile minut automatyczny zrzut (0 = timer wyłączony, zostaje tylko komenda).
+  co-ile-minut: 90
+  # Promień losowania od spawnu świata (w blokach).
+  promien: 500
+  # Najmniejszy promień – zrzut nie spadnie na głowę temu, kto go wzywa.
+  min-promien: 120
+  # Ogłoszenie na czacie tylko dla graczy w tym promieniu od zrzutu (0 = wszyscy w świecie).
+  ogloszenie-promien: 0
+
 stawianie:
   # Ile bloków stawiać na tick (mniej = mniejsze lagi, dłużej trwa).
   bloki-na-tick: 4000
@@ -119,12 +139,26 @@ pule:
     brazowa: 45
     narzedziowa: 35
     brak: 20
+  # Pula dla skrzyń wojskowych w strefach PvP (bazy wojskowe, posterunki).
+  # Skrzynia wojskowa odradza się co 30 min i ogłasza na czacie nazwę strefy.
+  wojskowa:
+    skrzynia-wojskowa: 80
+    brak: 20
+  # Pula dla zrzutów zaopatrzenia (/struktury zrzut i automatyczny timer).
+  # Zrzut to zawsze pojemnik-model z tabeli "zrzut" w AxonItems/loot.yml.
+  zrzut:
+    zrzut-zaopatrzenia: 100
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
-#  blok: skrzynia | beczka | ramka (ramka = przedmiot w ramce, np. karta dostępu)
+#  blok: skrzynia | beczka | ramka | model
+#        (ramka = przedmiot w ramce, np. karta dostępu;
+#         model = pojemnik-model: ItemDisplay + Interaction, bez prawdziwego bloku)
 #  dekoracja: blok stawiany na wieku (np. czerwona świeczka na beczce paliwa), "" = brak
 #  min-przedmiotow: gdy nic nie wylosuje się z szans, dobierz tyle losowych pozycji
+#  model: nazwa modelu z paczki dla bloku: model (domyślnie id klasy)
+#  strefa: nazwa strefy do ogłoszenia na czacie, gdy skrzynia się pojawi ("" = bez ogłoszenia)
+#  odswiezanie-minut: własny interwał odświeżania w minutach (0 = globalny z odswiezanie.co-ile-minut)
 #  loot: każda pozycja losowana osobno
 #    przedmiot: nazwa z Minecrafta (np. iron_ingot) ALBO przedmiot AxonCore (axon:scrap)
 #    tabela: id tabeli lootu z AxonItems/loot.yml (np. beczka_przydrozna) – cała tabela naraz
@@ -246,3 +280,29 @@ klasy:
         nazwa: "&aZielona karta dostępu"
         opis:
           - "&7Poziom dostępu: 1"
+
+  # Skrzynia wojskowa – pojemnik-model w strefach PvP. Odradza się co 30 min
+  # i ogłasza na czacie nazwę strefy. Cały loot pochodzi z tabeli skrzynia_wojskowa
+  # w AxonItems/loot.yml (tam też są progi od-dnia: korpusy T2 od dnia 3, HQM od dnia 5).
+  skrzynia-wojskowa:
+    nazwa: "&4Skrzynia wojskowa"
+    blok: model
+    model: skrzynia_wojskowa
+    strefa: "&6Baza wojskowa"
+    odswiezanie-minut: 30
+    min-przedmiotow: 2
+    loot:
+      - {tabela: skrzynia_wojskowa, szansa: 100}
+
+  # Zrzut zaopatrzenia – pojemnik-model stawiany przez /struktury zrzut oraz
+  # automatyczny timer (sekcja "zrzuty"). Cały loot pochodzi z tabeli "zrzut"
+  # w AxonItems/loot.yml – najbogatszej tabeli w grze, z progami od-dnia,
+  # więc pierwszy zrzut nie łamie progresji wipe'u.
+  zrzut-zaopatrzenia:
+    nazwa: "&6Zrzut zaopatrzenia"
+    blok: model
+    model: zrzut
+    strefa: "&6Zrzut zaopatrzenia"
+    min-przedmiotow: 3
+    loot:
+      - {tabela: zrzut, szansa: 100}

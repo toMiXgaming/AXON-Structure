@@ -22,19 +22,57 @@ import java.util.Random;
  * Dzięki temu beczki przy drogach dają prawdziwy złom AxonCore, a nie przemianowane żelazne bryłki.
  */
 public record CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
-                         List<LootEntry> loot) {
+                         List<LootEntry> loot, String modelName, String zone, int refreshMinutes) {
+
+    /** Stary konstruktor – bez modelu i strefy (skrzynie blokowe). */
+    public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
+                      List<LootEntry> loot) {
+        this(id, displayName, kind, decoration, minItems, loot, null, null, 0);
+    }
+
+    /** Konstruktor z modelem i strefą, bez własnego interwału odświeżania. */
+    public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
+                      List<LootEntry> loot, String modelName, String zone) {
+        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, 0);
+    }
+
+    public CrateClass {
+        if (modelName == null || modelName.isBlank()) {
+            modelName = id;
+        }
+        if (zone == null) {
+            zone = "";
+        }
+        if (refreshMinutes < 0) {
+            refreshMinutes = 0;
+        }
+    }
+
+    /**
+     * Własny interwał odświeżania w minutach (0 = użyj globalnego z {@code odswiezanie.co-ile-minut}).
+     * Skrzynia wojskowa ustawia tu 30, żeby odradzała się częściej niż reszta struktur.
+     */
+    public boolean hasOwnRefresh() {
+        return refreshMinutes > 0;
+    }
 
     public enum Kind {
-        CHEST, BARREL, FRAME;
+        CHEST, BARREL, FRAME, MODEL;
 
         public static Kind parse(String value) {
             return switch (value.toLowerCase(java.util.Locale.ROOT)) {
                 case "chest", "skrzynia" -> CHEST;
                 case "barrel", "beczka" -> BARREL;
                 case "frame", "item_frame", "ramka" -> FRAME;
+                case "model", "pojemnik", "pojemnik-model" -> MODEL;
                 default -> throw new IllegalArgumentException("nieznany blok '" + value
-                        + "' (dozwolone: skrzynia, beczka, ramka)");
+                        + "' (dozwolone: skrzynia, beczka, ramka, model)");
             };
+        }
+
+        /** Czy klasa stawia prawdziwy blok (skrzynia/beczka) zamiast pojemnika-modelu. */
+        public boolean isBlock() {
+            return this == CHEST || this == BARREL;
         }
     }
 

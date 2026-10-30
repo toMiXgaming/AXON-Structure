@@ -40,6 +40,7 @@ public final class CrateService {
     private final Set<String> warnedPools = new HashSet<>();
     private final Set<Material> decorationTypes = new HashSet<>();
     private final AxonLootBridge axonLoot;
+    private final ModelCrateService models;
     private LootConfig loot;
     private Settings settings;
     private BukkitTask task;
@@ -49,6 +50,7 @@ public final class CrateService {
         this.library = library;
         this.store = store;
         this.axonLoot = new AxonLootBridge(plugin.getLogger());
+        this.models = new ModelCrateService(plugin);
     }
 
     public void configure(LootConfig loot, Settings settings) {
@@ -58,6 +60,7 @@ public final class CrateService {
         decorationTypes.clear();
         // AxonItems mógł wystartować po nas – sprawdzamy most przy każdym przeładowaniu.
         axonLoot.resolve();
+        models.configure(loot, axonLoot);
         for (CrateClass crate : loot.classes().values()) {
             if (!crate.decoration().isBlank()) {
                 try {
@@ -78,6 +81,11 @@ public final class CrateService {
         return axonLoot;
     }
 
+    /** Pojemniki-modele (ItemDisplay + Interaction) – rejestruje też listener kliknięć. */
+    public ModelCrateService models() {
+        return models;
+    }
+
     public void start() {
         stop();
         task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L * 30, 20L * 30);
@@ -94,7 +102,8 @@ public final class CrateService {
         long now = System.currentTimeMillis();
         boolean changed = false;
         for (StructureInstance instance : store.all()) {
-            if (now - instance.lastRefresh() < settings.intervalMillis()) {
+            long interval = effectiveInterval(instance);
+            if (now - instance.lastRefresh() < interval) {
                 continue;
             }
             World world = Bukkit.getWorld(instance.world());
@@ -111,6 +120,39 @@ public final class CrateService {
         if (changed) {
             store.save();
         }
+    }
+
+    /**
+     * Najkrótszy interwał odświeżania wśród miejsc struktury. Skrzynia wojskowa ma własne
+     * 30 minut, więc struktura z nią odświeża się częściej niż wynika to z globalnego ustawienia.
+     * Gdy żadna klasa nie ma własnego interwału, zwracamy globalny.
+     */
+    private long effectiveInterval(StructureInstance instance) {
+        long global = settings.intervalMillis();
+        Blueprint bp = library.get(instance.structureId());
+        if (bp == null) {
+            return global;
+        }
+        long shortest = global;
+        for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+            if (point.kind() != Blueprint.SpawnKind.MODEL) {
+                continue;
+            }
+            CratePool pool = loot.pool(point.pool());
+            if (pool == null) {
+                continue;
+            }
+            for (String classId : pool.weights().keySet()) {
+                CrateClass crate = loot.crateClass(classId);
+                if (crate != null && crate.hasOwnRefresh()) {
+                    long millis = crate.refreshMinutes() * 60_000L;
+                    if (millis < shortest) {
+                        shortest = millis;
+                    }
+                }
+            }
+        }
+        return shortest;
     }
 
     private boolean playerNearby(World world, StructureInstance instance) {
@@ -148,9 +190,11 @@ public final class CrateService {
                 continue;
             }
             String facing = placement.rotateFacing(point.facing());
-            boolean ok = point.kind() == Blueprint.SpawnKind.FRAME
-                    ? refreshFrame(world, w, facing, point.pool(), force)
-                    : refreshCrate(world, w, facing, point.pool(), force);
+            boolean ok = switch (point.kind()) {
+                case FRAME -> refreshFrame(world, w, facing, point.pool(), force);
+                case MODEL -> refreshModel(world, w, facing, point.pool(), force);
+                case CRATE -> refreshCrate(world, w, facing, point.pool(), force);
+            };
             if (ok) {
                 placed++;
             }
@@ -168,12 +212,14 @@ public final class CrateService {
         }
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
             int[] w = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
-            if (point.kind() == Blueprint.SpawnKind.FRAME) {
-                removeFrames(world, w);
-            } else {
-                Block block = world.getBlockAt(w[0], w[1], w[2]);
-                if (isCrateBlock(block.getType())) {
-                    removeCrate(block);
+            switch (point.kind()) {
+                case FRAME -> removeFrames(world, w);
+                case MODEL -> models.remove(world, w);
+                case CRATE -> {
+                    Block block = world.getBlockAt(w[0], w[1], w[2]);
+                    if (isCrateBlock(block.getType())) {
+                        removeCrate(block);
+                    }
                 }
             }
         }
@@ -264,6 +310,49 @@ public final class CrateService {
             plugin.getLogger().warning("Nie udało się postawić ramki na " + w[0] + " " + w[1] + " " + w[2]
                     + ": " + e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Odświeża pojemnik-model. Loot jest losowany leniwie – przy pierwszym otwarciu,
+     * więc tutaj tylko stawiamy ItemDisplay + Interaction z modelem z klasy.
+     *
+     * <p>Gdy klasa ma własny interwał ({@code odswiezanie-minut}, np. skrzynia wojskowa 30 min),
+     * stary pojemnik jest usuwany i stawiany od nowa, a zapamiętana zawartość czyszczona –
+     * dzięki temu loot losuje się ponownie. Po postawieniu leci ogłoszenie na czacie z nazwą strefy.
+     */
+    private boolean refreshModel(World world, int[] w, String facing, String poolId, boolean force) {
+        if (!force && models.exists(world, w)) {
+            return false; // już stoi – nie ruszamy (zawartość trzyma wirtualny ekwipunek)
+        }
+        CrateClass crate = pick(poolId);
+        if (crate == null) {
+            return false;
+        }
+        String modelName = crate.modelName();
+        if (modelName == null || modelName.isBlank()) {
+            modelName = "skrzynia";
+        }
+        // Stary pojemnik i jego zapamiętany loot znikają – następne otwarcie losuje od nowa.
+        models.forgetAt(world, w);
+        boolean placed = models.place(world, w, modelName, facing, poolId, crate.zone());
+        if (placed) {
+            announce(crate, world, w);
+        }
+        return placed;
+    }
+
+    /** Ogłoszenie na czacie, gdy pojawi się nowa skrzynia z własną strefą (np. wojskowa). */
+    private void announce(CrateClass crate, World world, int[] w) {
+        String zone = crate.zone();
+        if (zone == null || zone.isBlank()) {
+            return;
+        }
+        String message = "&e&l[Zaopatrzenie] &fW strefie " + zone + " &fpojawiła się "
+                + crate.displayName() + "&f!";
+        String colored = LootConfig.color(message);
+        for (Player player : world.getPlayers()) {
+            player.sendMessage(colored);
         }
     }
 
