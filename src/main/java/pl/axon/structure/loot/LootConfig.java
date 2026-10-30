@@ -83,6 +83,16 @@ public final class LootConfig {
             String itemId = itemName == null ? "" : String.valueOf(itemName).trim();
             String axonId = null;
             Material material = null;
+            if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.TABLE_PREFIX)) {
+                String table = itemId.substring(AxonItemsBridge.TABLE_PREFIX.length()).toLowerCase(Locale.ROOT);
+                if (table.isBlank()) {
+                    logger.warning("Klasa '" + id + "': pusta nazwa tabeli w '" + itemName + "', pomijam");
+                    continue;
+                }
+                double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
+                loot.add(CrateClass.LootEntry.table(table, chance));
+                continue;
+            }
             if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.PREFIX)) {
                 // sprawdzane dopiero przy losowaniu: AxonItems włącza się po nas (load: STARTUP)
                 axonId = itemId.substring(AxonItemsBridge.PREFIX.length()).toLowerCase(Locale.ROOT);
