@@ -60,7 +60,12 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
      * np. {@code scrap} z wpisu {@code axon:scrap}) tworzony przez plugin AxonItems.
      */
     public record LootEntry(Material material, String axonId, int min, int max, double chance, String name,
-                            List<String> lore, String table) {
+                            List<String> lore, String table, int fromDay) {
+
+        public LootEntry(Material material, String axonId, int min, int max, double chance, String name,
+                         List<String> lore, String table) {
+            this(material, axonId, min, max, chance, name, lore, table, 0);
+        }
 
         public LootEntry(Material material, String axonId, int min, int max, double chance, String name,
                          List<String> lore) {
@@ -127,6 +132,9 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
     }
 
     private static void add(List<ItemStack> items, LootEntry entry, Random random) {
+        if (entry.fromDay() > 0 && AxonItemsBridge.wipeDay() < entry.fromDay()) {
+            return; // jak od-dnia w loot.yml AxonItems: za wcześnie w wipe'ie
+        }
         if (entry.table() != null && entry.table().startsWith(LootEntry.CARD_PREFIX)) {
             add(items, AccessCardService.createCard(entry.table().substring(LootEntry.CARD_PREFIX.length())));
         } else if (entry.table() != null) {

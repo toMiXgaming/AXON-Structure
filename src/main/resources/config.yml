@@ -570,6 +570,7 @@ pojemniki:
   #   odnowienie-minut: własny czas odnowienia klasy
   #   blokada-minut: ile minut po odnowieniu nie da się otworzyć (odliczanie nad modelem); 0 = bez blokady
   #   karta-poziom: karta dostępu zużywana przy pierwszym otwarciu (1 niebieska, 2 czerwona, 3 zielona); 0 = bez
+  #   od-dnia: przy pozycji lootu – wypada dopiero od tego dnia wipe'u (jak w loot.yml AxonItems)
   #   loot "karta:<kolor>": prawdziwa karta dostępu (niebieska + czerwona w stole = zielona)
   #   ogloszenie: komunikat na czacie przy odnowieniu ({nazwa}, {miejsce}); "" = bez komunikatu
   #   dlugosc: ile bloków zajmuje (skrzynia wojskowa: 2); szerokosc / wysokosc: klikalny obszar w blokach
@@ -641,8 +642,8 @@ pojemniki:
         - {przedmiot: "axon:steel", ilosc: "2-4", szansa: 25}
         - {przedmiot: "axon:cloth", ilosc: "2-6", szansa: 25}
         - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 8}
-        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 4}
-        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 4}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 4, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 4, od-dnia: 3}
 
     mala-skrzynka:
       nazwa: "&7Mała drewniana skrzynka"
@@ -676,9 +677,9 @@ pojemniki:
         - {przedmiot: "axon:gunpowder", ilosc: "2-4", szansa: 20}
         - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 12}
         - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 8}
-        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 6}
-        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 5}
-        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 5}
+        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 6, od-dnia: 3}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 5, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 5, od-dnia: 3}
         - {przedmiot: golden_apple, ilosc: "1", szansa: 8, nazwa: "&fApteczka"}
 
     rzadka-skrzynia:
@@ -692,9 +693,9 @@ pojemniki:
         - {przedmiot: "axon:gunpowder", ilosc: "3-6", szansa: 35}
         - {przedmiot: "axon:tech_notes", ilosc: "1-2", szansa: 25}
         - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
-        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 8}
-        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 8}
-        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 8, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 8, od-dnia: 3}
+        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 8, od-dnia: 3}
         - {przedmiot: golden_apple, ilosc: "1-2", szansa: 25, nazwa: "&fApteczka"}
         - {przedmiot: ender_pearl, ilosc: "1", szansa: 10}
 
@@ -710,9 +711,9 @@ pojemniki:
         - {przedmiot: "axon:stock", ilosc: "1", szansa: 30}
         - {przedmiot: "axon:screw", ilosc: "2-5", szansa: 40}
         - {przedmiot: "axon:gunpowder", ilosc: "2-6", szansa: 35}
-        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 12}
-        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 10}
-        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 6}
+        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 12, od-dnia: 3}
+        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 10, od-dnia: 3}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 6, od-dnia: 3}
         - {przedmiot: shield, ilosc: "1", szansa: 15}
         - {przedmiot: spyglass, ilosc: "1", szansa: 8, nazwa: "&fLornetka"}
 
@@ -730,8 +731,8 @@ pojemniki:
         - {przedmiot: "axon:spring", ilosc: "1-2", szansa: 30}
         - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 30}
         - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
-        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 3}
-        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 3}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 3, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 3, od-dnia: 3}
         # Niebieska karta dostępu (poziom 1). Z czerwoną łączy się w stole w zieloną.
         - {przedmiot: "karta:niebieska", szansa: 6}
 
