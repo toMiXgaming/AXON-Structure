@@ -41,6 +41,7 @@ public final class CrateService {
     private final Set<Material> decorationTypes = new HashSet<>();
     private final AxonLootBridge axonLoot;
     private final ModelCrateService models;
+    private final AccessCardService cards;
     private LootConfig loot;
     private Settings settings;
     private BukkitTask task;
@@ -51,6 +52,8 @@ public final class CrateService {
         this.store = store;
         this.axonLoot = new AxonLootBridge(plugin.getLogger());
         this.models = new ModelCrateService(plugin);
+        this.cards = new AccessCardService(plugin);
+        this.models.cards(this.cards);
     }
 
     public void configure(LootConfig loot, Settings settings) {
@@ -84,6 +87,11 @@ public final class CrateService {
     /** Pojemniki-modele (ItemDisplay + Interaction) – rejestruje też listener kliknięć. */
     public ModelCrateService models() {
         return models;
+    }
+
+    /** Karty dostępu – tworzenie, łączenie i zużycie przy skrzyniach elitarnych. */
+    public AccessCardService cards() {
+        return cards;
     }
 
     public void start() {

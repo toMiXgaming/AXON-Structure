@@ -81,6 +81,7 @@ public final class ModelCrateService implements Listener {
 
     private AxonLootBridge axonLoot;
     private LootConfig loot;
+    private AccessCardService cards;
 
     public ModelCrateService(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -93,6 +94,11 @@ public final class ModelCrateService implements Listener {
     public void configure(LootConfig loot, AxonLootBridge axonLoot) {
         this.loot = loot;
         this.axonLoot = axonLoot;
+    }
+
+    /** Karty dostępu – sprawdzanie i zużycie przy otwieraniu skrzyń elitarnych. */
+    public void cards(AccessCardService cards) {
+        this.cards = cards;
     }
 
     // ------------------------------------------------------------------
@@ -327,6 +333,21 @@ public final class ModelCrateService implements Listener {
                     .deserialize("&c&lZABLOKOWANA &7jeszcze &f" + CrateLockMath.countdown(left)));
             return;
         }
+        // Skrzynie elitarne wymagają karty dostępu – sprawdzamy i zużywamy ją przed otwarciem.
+        CrateClass crate = pick(poolId);
+        if (crate != null && crate.needsCard() && cards != null) {
+            if (!cards.has(player, crate.accessLevel())) {
+                player.sendActionBar(LegacyComponentSerializer.legacyAmpersand().deserialize(
+                        "&c&lBRAK KARTY &7wymagany poziom &f" + crate.accessLevel()
+                                + " &7(masz &f" + cards.bestLevel(player) + "&7)"));
+                return;
+            }
+            if (!cards.consume(player, crate.accessLevel())) {
+                return;
+            }
+            player.sendActionBar(LegacyComponentSerializer.legacyAmpersand()
+                    .deserialize("&a&lKARTA ZUŻYTA &7otwieram " + crate.displayName()));
+        }
         openCrate(player, hitbox, poolId, pdc.get(zoneKey, PersistentDataType.STRING));
     }
 
@@ -358,6 +379,16 @@ public final class ModelCrateService implements Listener {
         ItemStack[] stored = contents.get(hitbox.getUniqueId());
         if (stored == null) {
             crate.fill(inventory, random, axonLoot);
+            // Opcjonalny drop karty dostępu – prawdziwy przedmiot z PDC, nie zwykły papier.
+            if (crate.dropsCard() && cards != null && random.nextDouble() * 100.0 < crate.cardChance()) {
+                ItemStack card = cards.create(crate.cardDrop());
+                if (card != null) {
+                    int free = inventory.firstEmpty();
+                    if (free >= 0) {
+                        inventory.setItem(free, card);
+                    }
+                }
+            }
             stored = inventory.getContents();
             contents.put(hitbox.getUniqueId(), stored);
         } else {

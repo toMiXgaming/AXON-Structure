@@ -23,24 +23,41 @@ import java.util.Random;
  */
 public record CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
                          List<LootEntry> loot, String modelName, String zone, int refreshMinutes,
-                         int lockMinutes) {
+                         int lockMinutes, int accessLevel, String cardDrop, double cardChance) {
 
     /** Stary konstruktor – bez modelu i strefy (skrzynie blokowe). */
     public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
                       List<LootEntry> loot) {
-        this(id, displayName, kind, decoration, minItems, loot, null, null, 0, 0);
+        this(id, displayName, kind, decoration, minItems, loot, null, null, 0, 0, 0, null, 0);
     }
 
     /** Konstruktor z modelem i strefą, bez własnego interwału odświeżania i bez blokady. */
     public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
                       List<LootEntry> loot, String modelName, String zone) {
-        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, 0, 0);
+        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, 0, 0, 0, null, 0);
     }
 
     /** Konstruktor z modelem, strefą i interwałem odświeżania, bez blokady. */
     public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
                       List<LootEntry> loot, String modelName, String zone, int refreshMinutes) {
-        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, refreshMinutes, 0);
+        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, refreshMinutes, 0, 0,
+                null, 0);
+    }
+
+    /** Konstruktor z modelem, strefą, interwałem i blokadą, bez wymogu karty. */
+    public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
+                      List<LootEntry> loot, String modelName, String zone, int refreshMinutes,
+                      int lockMinutes) {
+        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, refreshMinutes,
+                lockMinutes, 0, null, 0);
+    }
+
+    /** Konstruktor z modelem, strefą, interwałem, blokadą i wymogiem karty, bez dropu karty. */
+    public CrateClass(String id, String displayName, Kind kind, String decoration, int minItems,
+                      List<LootEntry> loot, String modelName, String zone, int refreshMinutes,
+                      int lockMinutes, int accessLevel) {
+        this(id, displayName, kind, decoration, minItems, loot, modelName, zone, refreshMinutes,
+                lockMinutes, accessLevel, null, 0);
     }
 
     public CrateClass {
@@ -55,6 +72,18 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
         }
         if (lockMinutes < 0) {
             lockMinutes = 0;
+        }
+        if (accessLevel < 0) {
+            accessLevel = 0;
+        }
+        if (cardDrop != null && !AccessCardMath.known(cardDrop)) {
+            cardDrop = null;
+        }
+        if (cardChance < 0) {
+            cardChance = 0;
+        }
+        if (cardChance > 100) {
+            cardChance = 100;
         }
     }
 
@@ -72,6 +101,25 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
      */
     public boolean locked() {
         return lockMinutes > 0;
+    }
+
+    /**
+     * Wymagany poziom karty dostępu (0 = skrzynia otwiera się bez karty).
+     *
+     * <p>Skrzynie elitarne ustawiają tu 3 – otwiera je tylko zielona karta, która powstaje
+     * z niebieskiej i czerwonej. Karta jest zużywana przy użyciu.
+     */
+    public boolean needsCard() {
+        return accessLevel > 0;
+    }
+
+    /**
+     * Czy skrzynia może wypaść kartę dostępu (np. niebieska w zwykłych skrzyniach,
+     * czerwona w wojskowych). Karta jest prawdziwym przedmiotem z PDC, więc działa
+     * w stole i przy elitarnych skrzyniach.
+     */
+    public boolean dropsCard() {
+        return cardDrop != null && cardChance > 0;
     }
 
     public enum Kind {

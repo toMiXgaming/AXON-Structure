@@ -144,6 +144,10 @@ pule:
   wojskowa:
     skrzynia-wojskowa: 80
     brak: 20
+  # Pula dla skrzyń elitarnych – wymagają zielonej karty dostępu (poziom 3).
+  # Stawiane ręcznie przez /struktury (pula "elitarna") albo w strukturach wojskowych.
+  elitarna:
+    skrzynia-elitarna: 100
   # Pula dla zrzutów zaopatrzenia (/struktury zrzut i automatyczny timer).
   # Zrzut to zawsze pojemnik-model z tabeli "zrzut" w AxonItems/loot.yml.
   zrzut:
@@ -161,6 +165,11 @@ pule:
 #  odswiezanie-minut: własny interwał odświeżania w minutach (0 = globalny z odswiezanie.co-ile-minut)
 #  blokada-minut: ile minut od postawienia skrzyni nie da się jej otworzyć (0 = brak blokady).
 #                 Nad modelem wisi odliczanie, a po odblokowaniu leci ogłoszenie na czacie.
+#  karta-poziom: minimalny poziom karty dostępu potrzebny do otwarcia (0 = bez karty).
+#                1 = niebieska, 2 = czerwona, 3 = zielona. Karta jest ZUŻYWANA przy otwarciu.
+#                Karty: niebieska + czerwona łączą się w stole w zieloną.
+#  karta-drop:   opcjonalny drop karty dostępu z tej skrzyni (niebieska/czerwona/zielona).
+#  karta-szansa: szansa na ten drop w % (0-100). Karta to prawdziwy przedmiot z PDC.
 #  loot: każda pozycja losowana osobno
 #    przedmiot: nazwa z Minecrafta (np. iron_ingot) ALBO przedmiot AxonCore (axon:scrap)
 #    tabela: id tabeli lootu z AxonItems/loot.yml (np. beczka_przydrozna) – cała tabela naraz
@@ -204,6 +213,9 @@ klasy:
     nazwa: "&6Brązowa skrzynia"
     blok: skrzynia
     min-przedmiotow: 2
+    # Rzadki drop niebieskiej karty dostępu – pierwszy szczebel do skrzyń elitarnych.
+    karta-drop: niebieska
+    karta-szansa: 6
     loot:
       - {przedmiot: axon:scrap, ilosc: "6-20", szansa: 100}
       - {przedmiot: axon:metal_fragments, ilosc: "3-8", szansa: 55}
@@ -272,6 +284,37 @@ klasy:
       - {przedmiot: spyglass, ilosc: "1", szansa: 10}
       - {przedmiot: crossbow, ilosc: "1", szansa: 8}
 
+  # Karty dostępu (etap 16 #7). Wszystkie trzy to papier z ukrytym znacznikiem PDC,
+  # więc zwykły papier ich nie podrobi. Niebieska i czerwona wypadają w skrzyniach,
+  # zieloną robi się w stole (niebieska + czerwona) i ona otwiera skrzynie elitarne.
+  niebieska-karta:
+    nazwa: "&9Niebieska karta dostępu"
+    blok: ramka
+    loot:
+      - przedmiot: paper
+        ilosc: "1"
+        szansa: 100
+        nazwa: "&9Niebieska karta dostępu"
+        opis:
+          - "&7Poziom dostępu: 1"
+          - "&8Karta dostępu AXON"
+          - "&7Połącz z czerwoną w stole,"
+          - "&7żeby zrobić zieloną."
+
+  czerwona-karta:
+    nazwa: "&cCzerwona karta dostępu"
+    blok: ramka
+    loot:
+      - przedmiot: paper
+        ilosc: "1"
+        szansa: 100
+        nazwa: "&cCzerwona karta dostępu"
+        opis:
+          - "&7Poziom dostępu: 2"
+          - "&8Karta dostępu AXON"
+          - "&7Połącz z niebieską w stole,"
+          - "&7żeby zrobić zieloną."
+
   zielona-karta:
     nazwa: "&aZielona karta dostępu"
     blok: ramka
@@ -281,7 +324,10 @@ klasy:
         szansa: 100
         nazwa: "&aZielona karta dostępu"
         opis:
-          - "&7Poziom dostępu: 1"
+          - "&7Poziom dostępu: 3"
+          - "&8Karta dostępu AXON"
+          - "&7Otwiera skrzynie elitarne."
+          - "&7Zużywana przy użyciu."
 
   # Skrzynia wojskowa – pojemnik-model w strefach PvP. Odradza się co 30 min
   # i ogłasza na czacie nazwę strefy. Cały loot pochodzi z tabeli skrzynia_wojskowa
@@ -295,9 +341,27 @@ klasy:
     # 10 minut kłódki – skrzynia pojawia się z odliczaniem nad modelem,
     # więc nie da się jej opróżnić w pierwszej sekundzie po odświeżeniu.
     blokada-minut: 10
+    # Czerwona karta dostępu – drugi szczebel. Wypada tylko w strefach wojskowych.
+    karta-drop: czerwona
+    karta-szansa: 12
     min-przedmiotow: 2
     loot:
       - {tabela: skrzynia_wojskowa, szansa: 100}
+
+  # Skrzynia elitarna – najrzadsza skrzynia w grze. Wymaga zielonej karty dostępu
+  # (poziom 3), która jest zużywana przy otwarciu. Odradza się co 45 min z 15-minutową
+  # blokadą, więc jedna karta = jedno otwarcie. Cały loot z tabeli skrzynia_elitarna.
+  skrzynia-elitarna:
+    nazwa: "&5Skrzynia elitarna"
+    blok: model
+    model: skrzynia_wojskowa
+    strefa: "&5Skrzynia elitarna"
+    odswiezanie-minut: 45
+    blokada-minut: 15
+    karta-poziom: 3
+    min-przedmiotow: 3
+    loot:
+      - {tabela: skrzynia_elitarna, szansa: 100}
 
   # Zrzut zaopatrzenia – pojemnik-model stawiany przez /struktury zrzut oraz
   # automatyczny timer (sekcja "zrzuty"). Cały loot pochodzi z tabeli "zrzut"

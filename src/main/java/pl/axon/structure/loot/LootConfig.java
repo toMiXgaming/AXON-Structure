@@ -67,6 +67,20 @@ public final class LootConfig {
         int refreshMinutes = Math.max(0, section.getInt("odswiezanie-minut", 0));
         // 0 = brak blokady; elitarna skrzynia ustawia 10, żeby nie dało się jej otworzyć od razu.
         int lockMinutes = Math.max(0, section.getInt("blokada-minut", 0));
+        // 0 = bez karty; elitarna skrzynia ustawia 3 (tylko zielona karta ją otwiera).
+        int accessLevel = Math.max(0, section.getInt("karta-poziom", 0));
+        // Opcjonalny drop karty dostępu: {karta-drop: niebieska, karta-szansa: 8}
+        // Karta jest prawdziwym przedmiotem z PDC (tworzona przez AccessCardService),
+        // więc działa w stole i przy elitarnych skrzyniach.
+        String cardDrop = section.getString("karta-drop", null);
+        if (cardDrop != null) {
+            cardDrop = cardDrop.trim().toLowerCase(Locale.ROOT);
+            if (!AccessCardMath.known(cardDrop)) {
+                logger.warning("Klasa '" + id + "': nieznana karta-drop '" + cardDrop + "', pomijam");
+                cardDrop = null;
+            }
+        }
+        double cardChance = cardDrop == null ? 0 : section.getDouble("karta-szansa", 0);
         List<CrateClass.LootEntry> loot = new ArrayList<>();
         for (Map<?, ?> raw : section.getMapList("loot")) {
             Map<String, Object> entry = new HashMap<>();
@@ -115,7 +129,7 @@ public final class LootConfig {
             loot.add(CrateClass.LootEntry.ofMaterial(material, amount[0], amount[1], chance, display, lore));
         }
         return new CrateClass(id, name, kind, decoration == null ? "" : decoration, minItems, loot,
-                modelName, zone, refreshMinutes, lockMinutes);
+                modelName, zone, refreshMinutes, lockMinutes, accessLevel, cardDrop, cardChance);
     }
 
     private static String raw(Map<String, Object> entry, String key, String fallback) {

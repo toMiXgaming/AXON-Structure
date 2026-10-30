@@ -59,6 +59,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
         getServer().getPluginManager().registerEvents(crates.models(), this);
+        getServer().getPluginManager().registerEvents(crates.cards(), this);
         getServer().getPluginManager().registerEvents(vehicles, this);
         getServer().getServicesManager().register(AxonStructureApi.class, new AxonStructureApiImpl(this), this,
                 ServicePriority.Normal);
