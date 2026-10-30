@@ -579,17 +579,8 @@ pojemniki:
       model-rozbity: "axon:beczka_rozbita"
       min-przedmiotow: 1
       loot:
-        - {przedmiot: "axon:scrap", ilosc: "2-6", szansa: 100}
-        - {przedmiot: "axon:metal_fragments", ilosc: "5-10", szansa: 40}
-        - {przedmiot: "axon:screw", ilosc: "2-4", szansa: 30}
-        - {przedmiot: "axon:rivet", ilosc: "3-6", szansa: 25}
-        - {przedmiot: "axon:rusty_tools", ilosc: "1", szansa: 25}
-        - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 20}
-        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 15}
-        - {przedmiot: "axon:spring", ilosc: "1", szansa: 12}
-        - {przedmiot: "axon:stock", ilosc: "1", szansa: 12}
-        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 2}
-        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 2}
+        # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
+        - {przedmiot: "tabela:beczka_przydrozna", szansa: 100}
 
     beczka-rdza:
       nazwa: "&6Zardzewiała beczka"
@@ -781,13 +772,8 @@ pojemniki:
       ogloszenie: "&2{nazwa} &7odnowiła się: &f{miejsce}"
       min-przedmiotow: 2
       loot:
-        - {przedmiot: "axon:scrap", ilosc: "15-30", szansa: 100}
-        - {przedmiot: "axon:hqm", ilosc: "1-3", szansa: 35}
-        - {przedmiot: "axon:blueprint", ilosc: "1", szansa: 10}
-        - {przedmiot: "axon:body_rifle", ilosc: "1", szansa: 6}
-        - {przedmiot: "axon:scope", ilosc: "1", szansa: 4}
-        - {przedmiot: "axon:body_sniper", ilosc: "1", szansa: 3}
-        - {przedmiot: "axon:silencer", ilosc: "1", szansa: 3}
+        # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
+        - {przedmiot: "tabela:skrzynia_wojskowa", szansa: 100}
 
     skrzynia-elitarna:
       nazwa: "&4Skrzynia elitarna"
@@ -798,13 +784,8 @@ pojemniki:
       ogloszenie: "&4{nazwa} &7odnowiła się: &f{miejsce}"
       min-przedmiotow: 3
       loot:
-        - {przedmiot: "axon:scrap", ilosc: "20-35", szansa: 100}
-        - {przedmiot: "axon:hqm", ilosc: "2-4", szansa: 60}
-        - {przedmiot: "axon:blueprint", ilosc: "1", szansa: 18}
-        - {przedmiot: "axon:body_rifle", ilosc: "1", szansa: 10}
-        - {przedmiot: "axon:scope", ilosc: "1", szansa: 8}
-        - {przedmiot: "axon:body_sniper", ilosc: "1", szansa: 6}
-        - {przedmiot: "axon:silencer", ilosc: "1", szansa: 6}
+        # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
+        - {przedmiot: "tabela:skrzynia_elitarna", szansa: 100}
 
 kopalnia:
   # Żyły rudy: punkty punkt-ruda w pliku struktury (kopalnia) leżą na blokach rudy. Te bloki – i tylko one – gracze

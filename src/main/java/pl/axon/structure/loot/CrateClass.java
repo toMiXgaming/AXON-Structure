@@ -58,7 +58,17 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
      * np. {@code scrap} z wpisu {@code axon:scrap}) tworzony przez plugin AxonItems.
      */
     public record LootEntry(Material material, String axonId, int min, int max, double chance, String name,
-                            List<String> lore) {
+                            List<String> lore, String table) {
+
+        public LootEntry(Material material, String axonId, int min, int max, double chance, String name,
+                         List<String> lore) {
+            this(material, axonId, min, max, chance, name, lore, null);
+        }
+
+        /** Wpis {@code tabela:<id>}: cała tabela z loot.yml w AxonItems. */
+        public static LootEntry table(String table, double chance) {
+            return new LootEntry(null, null, 1, 1, chance, null, List.of(), table);
+        }
 
         /** Nowy przedmiot albo null, gdy to przedmiot AxonCore, a AxonItems nie działa albo nie zna tego id. */
         @SuppressWarnings("deprecation")
@@ -90,12 +100,12 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
         List<ItemStack> items = new ArrayList<>();
         for (LootEntry entry : loot) {
             if (random.nextDouble() * 100.0 < entry.chance()) {
-                add(items, entry.create(random));
+                add(items, entry, random);
             }
         }
         int guard = 0;
         while (items.size() < minItems && !loot.isEmpty() && guard++ < 32) {
-            add(items, loot.get(random.nextInt(loot.size())).create(random));
+            add(items, loot.get(random.nextInt(loot.size())), random);
         }
         return items;
     }
@@ -103,6 +113,14 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
     private static void add(List<ItemStack> items, ItemStack item) {
         if (item != null) {
             items.add(item);
+        }
+    }
+
+    private static void add(List<ItemStack> items, LootEntry entry, Random random) {
+        if (entry.table() != null) {
+            items.addAll(AxonItemsBridge.rollTable(entry.table()));
+        } else {
+            add(items, entry.create(random));
         }
     }
 

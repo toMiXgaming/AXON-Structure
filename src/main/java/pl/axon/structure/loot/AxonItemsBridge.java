@@ -6,7 +6,9 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -17,12 +19,15 @@ import java.util.Set;
 public final class AxonItemsBridge {
 
     public static final String PREFIX = "axon:";
+    /** Wpis lootu, który losuje całą tabelę z loot.yml w AxonItems, np. {@code tabela:skrzynia_wojskowa}. */
+    public static final String TABLE_PREFIX = "tabela:";
     private static final String PLUGIN = "AxonItems";
     private static final String API_CLASS = "pl.axonitems.api.AxonItemsApi";
 
     private static Object api;
     private static Method create;
     private static Method exists;
+    private static Method rollLoot;
     private static boolean warnedMissing;
     private static final Set<String> warnedIds = new HashSet<>();
 
@@ -48,6 +53,38 @@ public final class AxonItemsBridge {
             api = null; // AxonItems mógł zostać przeładowany; następnym razem pobierzemy API od nowa
             log("Błąd przy tworzeniu przedmiotu " + PREFIX + id + " w AxonItems: " + e);
             return null;
+        }
+    }
+
+    /**
+     * Losuje tabelę lootu z {@code loot.yml} w AxonItems (wpis {@code tabela:<id>}). AxonItems pilnuje przy tym
+     * dni wipe'u ({@code od-dnia}), więc np. korpusy T3 nie wypadną przed 10. dniem. Pusta lista, gdy AxonItems
+     * nie działa albo nie zna tabeli.
+     */
+    public static List<ItemStack> rollTable(String table) {
+        if (!resolve() || rollLoot == null) {
+            return List.of();
+        }
+        try {
+            Object result = rollLoot.invoke(api, table);
+            if (!(result instanceof List<?> list)) {
+                return List.of();
+            }
+            List<ItemStack> items = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof ItemStack stack) {
+                    items.add(stack);
+                }
+            }
+            if (items.isEmpty() && warnedIds.add("tabela:" + table)) {
+                log("Tabela lootu '" + table + "' w AxonItems nic nie dała (nieznana tabela albo wszystko zablokowane"
+                        + " dniem wipe'u).");
+            }
+            return items;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            api = null;
+            log("Błąd przy losowaniu tabeli " + TABLE_PREFIX + table + " w AxonItems: " + e);
+            return List.of();
         }
     }
 
@@ -88,6 +125,11 @@ public final class AxonItemsBridge {
             }
             create = type.getMethod("create", String.class, int.class);
             exists = type.getMethod("exists", String.class);
+            try {
+                rollLoot = type.getMethod("rollLoot", String.class);
+            } catch (NoSuchMethodException old) {
+                rollLoot = null; // starszy AxonItems bez tabel lootu
+            }
             api = service;
             warnedMissing = false;
             return true;
