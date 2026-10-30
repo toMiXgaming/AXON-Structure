@@ -28,6 +28,7 @@ public final class AxonItemsBridge {
     private static Method create;
     private static Method exists;
     private static Method rollLoot;
+    private static Method wipeDay;
     private static boolean warnedMissing;
     private static final Set<String> warnedIds = new HashSet<>();
 
@@ -100,6 +101,21 @@ public final class AxonItemsBridge {
         }
     }
 
+    /**
+     * Dzień wipe'u z AxonItems (0 = pierwszy dzień). Bez AxonItems albo bez tej metody zwraca 0, więc wpisy
+     * z {@code od-dnia} wtedy nie wypadają.
+     */
+    public static int wipeDay() {
+        if (!resolve() || wipeDay == null) {
+            return 0;
+        }
+        try {
+            return ((Number) wipeDay.invoke(api)).intValue();
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return 0;
+        }
+    }
+
     public static boolean available() {
         return resolve();
     }
@@ -129,6 +145,11 @@ public final class AxonItemsBridge {
                 rollLoot = type.getMethod("rollLoot", String.class);
             } catch (NoSuchMethodException old) {
                 rollLoot = null; // starszy AxonItems bez tabel lootu
+            }
+            try {
+                wipeDay = type.getMethod("wipeDay");
+            } catch (NoSuchMethodException old) {
+                wipeDay = null;
             }
             api = service;
             warnedMissing = false;

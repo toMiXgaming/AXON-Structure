@@ -124,7 +124,9 @@ public final class LootConfig {
                     lore.add(color(String.valueOf(line)));
                 }
             }
-            loot.add(new CrateClass.LootEntry(material, axonId, amount[0], amount[1], chance, display, lore));
+            int fromDay = Math.max(0, Integer.parseInt(String.valueOf(entry.getOrDefault("od-dnia", 0)).trim()));
+            loot.add(new CrateClass.LootEntry(material, axonId, amount[0], amount[1], chance, display, lore, null,
+                    fromDay));
         }
         CrateClass.ContainerSpec container = null;
         if (kind == CrateClass.Kind.MODEL) {
