@@ -10,8 +10,8 @@ author: toMiXgaming
 softdepend: [WorldGuard, AxonItems]
 commands:
   struktury:
-    description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|loot|zrzut|przeladuj]
+    description: Wklejanie struktur w stylu Rusta, skrzynie, zrzuty i wraki.
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|najblizsza|usun|klasy|loot|zrzut|wrak|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
 permissions:

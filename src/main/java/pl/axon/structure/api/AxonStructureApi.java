@@ -3,6 +3,7 @@ package pl.axon.structure.api;
 import org.bukkit.Bukkit;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -50,4 +51,17 @@ public interface AxonStructureApi {
 
     /** Wyłącza automatyczne stawianie struktur AXON-Structure w tym świecie. */
     void claimWorld(String world);
+
+    /**
+     * Ustawia punkty poboczy dróg w świecie — AXON-Structure stawia tam wraki pojazdów PRL
+     * (z szansą z config.yml) i sprząta poprzednie. Wątek serwera.
+     *
+     * <p>Wołane przez AxonMapGenerator po wygenerowaniu mapy. Powtórne wywołanie zastępuje
+     * poprzednią listę (stare wraki są usuwane razem z barierami).
+     *
+     * @param world nazwa świata
+     * @param spots lista punktów pobocza (może być pusta — wtedy tylko sprzątanie)
+     * @return liczba postawionych wraków
+     */
+    int setRoadsideContainers(String world, List<RoadsideSpot> spots);
 }

@@ -1,7 +1,9 @@
 package pl.axon.structure;
 
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import pl.axon.structure.api.AxonStructureApi;
+import pl.axon.structure.api.RoadsideSpot;
 import pl.axon.structure.api.RotationUtil;
 import pl.axon.structure.api.StructureInstanceInfo;
 import pl.axon.structure.api.StructureTemplate;
@@ -73,6 +75,16 @@ public final class AxonStructureApiImpl implements AxonStructureApi {
     @Override
     public void claimWorld(String world) {
         plugin.autoGenerator().claimWorld(Objects.requireNonNull(world));
+    }
+
+    @Override
+    public int setRoadsideContainers(String world, List<RoadsideSpot> spots) {
+        requireServerThread();
+        World target = Bukkit.getWorld(Objects.requireNonNull(world, "world"));
+        if (target == null) {
+            throw new IllegalArgumentException("Nie ma świata '" + world + "'");
+        }
+        return plugin.vehicles().placeAlongRoads(target, spots == null ? List.of() : spots);
     }
 
     private static StructureInstanceInfo info(String key, StructureInstance instance, int crates) {

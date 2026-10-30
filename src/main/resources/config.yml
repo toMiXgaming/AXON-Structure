@@ -306,3 +306,42 @@ klasy:
     min-przedmiotow: 3
     loot:
       - {tabela: zrzut, szansa: 100}
+
+# ---------------------------------------------------------------------------
+# Wraki pojazdów PRL przy drogach
+# ---------------------------------------------------------------------------
+# AxonMapGenerator po wygenerowaniu mapy zgłasza AXON-Structure listę punktów
+# poboczy dróg (API: setRoadsideContainers). Tutaj decydujesz, co na nich stoi.
+#
+# Modele wraków są w paczce AxonCore (vehicles.py): Fiat 126p, Polonez, Żuk,
+# Nysa, Star 266, Autosan, Ursus, WSK. Duże wraki (Star, Autosan, Polonez, Żuk,
+# Nysa) są dzielone na 2–3 wyświetlacze, żeby model nie był jednym klockiem.
+#
+# Pod wrakiem stawiamy bariery (nie da się przez niego przejść, ale można na
+# niego wskoczyć). Klik w wrak otwiera bagażnik z lootem z tabeli AxonItems
+# (wrak_auto / wrak_wojskowy). Loot losuje się raz na wrak.
+wraki:
+  wlaczone: true
+  swiaty:
+    - world
+  # Szansa, że na danym punkcie pobocza w ogóle stanie wrak (0–100).
+  szansa-procent: 35.0
+  # Minimalny odstęp między wrakami wzdłuż drogi (bloki).
+  min-odstep: 24
+  # Bariery pod wrakiem — gracz nie przechodzi przez model.
+  bariery: true
+  # Bagażnik z lootem (klik w wrak). Gdy false — wrak jest tylko dekoracją.
+  loot: true
+  # Pula lootu z AxonItems/loot.yml dla wraków cywilnych.
+  pula-lootu: wrak
+  # Wagi modeli. "brak" = puste pobocze. Większa waga = częstszy wrak.
+  modele:
+    wrak_fiat_126p: 22
+    wrak_polonez: 18
+    wrak_zuk: 14
+    wrak_nysa: 12
+    wrak_ursus: 12
+    wrak_wsk: 10
+    wrak_star_266: 7
+    wrak_autosan: 5
+    brak: 25

@@ -12,6 +12,8 @@ import pl.axon.structure.loot.LootConfig;
 import pl.axon.structure.loot.SupplyDropService;
 import pl.axon.structure.protect.ProtectionListener;
 import pl.axon.structure.protect.ProtectionService;
+import pl.axon.structure.vehicle.VehicleConfig;
+import pl.axon.structure.vehicle.VehicleService;
 import pl.axon.structure.world.AutoGenerator;
 import pl.axon.structure.world.InstanceStore;
 import pl.axon.structure.world.PasteService;
@@ -31,6 +33,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private PasteService paster;
     private AutoGenerator autoGenerator;
     private ProtectionService protection;
+    private VehicleService vehicles;
 
     @Override
     public void onEnable() {
@@ -42,6 +45,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         protection = new ProtectionService(this, library, store);
         paster = new PasteService(this, store, crates, protection);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
+        vehicles = new VehicleService(this);
 
         reload();
         store.load();
@@ -55,6 +59,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
         getServer().getPluginManager().registerEvents(crates.models(), this);
+        getServer().getPluginManager().registerEvents(vehicles, this);
         getServer().getServicesManager().register(AxonStructureApi.class, new AxonStructureApiImpl(this), this,
                 ServicePriority.Normal);
 
@@ -142,6 +147,8 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 config.getInt("auto-generowanie.maks-roznica-wysokosci", 6),
                 config.getDouble("auto-generowanie.maks-woda-procent", 3),
                 weights));
+
+        vehicles.configure(VehicleConfig.load(config.getConfigurationSection("wraki")), crates.axonLoot());
     }
 
     public StructureLibrary library() {
@@ -170,5 +177,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     public AutoGenerator autoGenerator() {
         return autoGenerator;
+    }
+
+    public VehicleService vehicles() {
+        return vehicles;
     }
 }
