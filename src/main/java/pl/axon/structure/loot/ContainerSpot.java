@@ -45,9 +45,12 @@ final class ContainerSpot implements InventoryHolder {
     State state = State.WAITING;
     CrateClass crate;
     Inventory inventory;
-    /** Postęp rozbijania: 1.0 = rozbita. */
-    double damage;
-    long lastHit;
+    /** Pozostałe punkty życia beczki (pełne = {@code crate.container().hp()}). */
+    double hp;
+    /** Do kiedy (epoch millis) wisi pasek HP nad beczką po ostatnim uderzeniu. */
+    long hpShownUntil;
+    /** Napis z paskiem HP nad beczką. */
+    UUID hpText;
     long brokenAt;
     long emptiedAt;
     long respawnAt;

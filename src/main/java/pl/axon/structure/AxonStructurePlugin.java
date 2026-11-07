@@ -254,7 +254,10 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 Math.max(1, config.getLong("pojemniki.odnowienie-minut", 10)) * 60_000L,
                 Math.max(1, config.getLong("pojemniki.rozbita-znika-po-minutach", 5)) * 60_000L,
                 Math.max(0, config.getInt("pojemniki.blokada-gdy-gracz-blizej-niz", 24)),
-                config.getString("pojemniki.przy-drogach.pula", "droga").toLowerCase(Locale.ROOT)));
+                config.getString("pojemniki.przy-drogach.pula", "droga").toLowerCase(Locale.ROOT),
+                LootConfig.damage(config),
+                // bez domyślnej w wywołaniu: brak wpisu na serwerze bierze wartość z jara
+                Math.max(0L, Math.round(config.getDouble("pojemniki.niszczenie.pasek-hp-sekund") * 1000))));
 
         airdrops.configure(new AirdropService.Settings(
                 config.getBoolean("zrzuty.wlaczone", true),

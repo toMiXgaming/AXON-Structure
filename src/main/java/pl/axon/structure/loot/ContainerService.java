@@ -12,6 +12,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Interaction;
@@ -58,7 +59,7 @@ import java.util.UUID;
 
 /**
  * Pojemniki z lootem bez prawdziwego bloku: model z paczki zasobów (ItemDisplay) i niewidzialna encja Interaction,
- * która przyjmuje uderzenia i kliknięcia. Beczki się rozbija (model zmienia się na rozbity), a PPM otwiera
+ * która przyjmuje uderzenia i kliknięcia. Beczki mają HP i się je rozbija (model zmienia się na rozbity), a PPM otwiera
  * wirtualny ekwipunek; skrzynie otwiera się od razu. Po czasie pojemnik wraca w tym samym miejscu, ale nie wtedy,
  * gdy obok stoi gracz.
  *
@@ -72,8 +73,11 @@ public final class ContainerService implements Listener {
      * @param brokenMillis     po jakim czasie rozbita beczka znika, nawet z lootem w środku
      * @param playerBlockRadius nie odnawiaj, gdy gracz jest bliżej niż tyle bloków (0 = zawsze odnawiaj)
      * @param roadPool         pula pojemników przy drogach
+     * @param damage           obrażenia przedmiotów przy rozbijaniu beczek ({@code pojemniki.niszczenie})
+     * @param hpBarMillis      jak długo pasek HP wisi nad beczką po ostatnim uderzeniu (0 = bez paska nad beczką)
      */
-    public record Settings(long respawnMillis, long brokenMillis, int playerBlockRadius, String roadPool) {
+    public record Settings(long respawnMillis, long brokenMillis, int playerBlockRadius, String roadPool,
+                           BarrelMath.Damage damage, long hpBarMillis) {
     }
 
     private static final String TAG = "axs_pojemnik";
@@ -91,7 +95,9 @@ public final class ContainerService implements Listener {
     private final Map<String, Map<Long, List<ContainerSpot>>> byChunk = new HashMap<>();
     private final Map<UUID, ContainerSpot> byEntity = new HashMap<>();
     private final Map<UUID, Long> lastOpen = new HashMap<>();
-    private Settings settings = new Settings(10 * 60_000L, 5 * 60_000L, 24, "droga");
+    private final Map<UUID, Long> lastHit = new HashMap<>();
+    private Settings settings = new Settings(10 * 60_000L, 5 * 60_000L, 24, "droga", BarrelMath.Damage.DEFAULT,
+            4000L);
     private BukkitTask task;
     private int commandCounter;
     private AccessCardService cards;
@@ -305,7 +311,8 @@ public final class ContainerService implements Listener {
     private void activate(ContainerSpot spot, CrateClass crate) {
         spot.crate = crate;
         spot.inventory = null;
-        spot.damage = 0;
+        spot.hp = crate.container().hp();
+        spot.hpShownUntil = 0;
         spot.emptiedAt = 0;
         spot.lockedUntil = CrateLockMath.unlockAt(System.currentTimeMillis(), crate.container().lockMinutes());
         spot.state = crate.container().breakable() ? ContainerSpot.State.INTACT : ContainerSpot.State.CLOSED;
@@ -594,6 +601,7 @@ public final class ContainerService implements Listener {
         spot.entities.clear();
         spot.display = null;
         spot.lockText = null;
+        spot.hpText = null;
     }
 
     private void closeViewers(ContainerSpot spot) {
@@ -650,7 +658,8 @@ public final class ContainerService implements Listener {
         ContainerSpot spot = byEntity.get(event.getAttacked().getUniqueId());
         if (spot != null) {
             event.setCancelled(true);
-            hit(event.getPlayer(), spot);
+            // naładowanie zamachu czytamy tutaj, zanim gra je wyzeruje po ciosie
+            hit(event.getPlayer(), spot, event.getPlayer().getAttackCooldown());
         }
     }
 
@@ -660,12 +669,16 @@ public final class ContainerService implements Listener {
         if (spot != null) {
             event.setCancelled(true);
             if (event.getDamager() instanceof Player player) {
-                hit(player, spot);
+                hit(player, spot, player.getAttackCooldown());
             }
         }
     }
 
-    private void hit(Player player, ContainerSpot spot) {
+    /**
+     * Uderzenie w beczkę: zabiera HP zależnie od przedmiotu w ręce i naładowania zamachu (jak drzewa w
+     * AxonMapGenerator). Spamowanie LPM daje ułamek obrażeń, bo zamach nie zdąży się naładować.
+     */
+    private void hit(Player player, ContainerSpot spot, float charge) {
         if (spot.state != ContainerSpot.State.INTACT || spot.crate == null) {
             return;
         }
@@ -673,24 +686,45 @@ public final class ContainerService implements Listener {
         if (lockedMessage(player, spot, now)) {
             return;
         }
-        if (now - spot.lastHit < HIT_COOLDOWN_MS) {
-            return;
+        Long last = lastHit.get(player.getUniqueId());
+        if (last != null && now - last < HIT_COOLDOWN_MS) {
+            return; // Paper woła dla jednego ciosu dwa zdarzenia
         }
-        spot.lastHit = now;
+        lastHit.put(player.getUniqueId(), now);
+        // anulowany atak nie zeruje naładowania po stronie serwera, więc robimy to sami (inaczej spam LPM = pełne ciosy)
+        player.resetCooldown();
         CrateClass.ContainerSpec spec = spot.crate.container();
-        boolean tool = !player.getInventory().getItemInMainHand().getType().isAir();
-        spot.damage += 1.0 / (tool ? spec.toolHits() : spec.hits());
+        ItemStack held = player.getInventory().getItemInMainHand();
+        BarrelMath.Damage table = settings.damage();
+        double base = table.base(held.getType().isAir() ? null : held.getType().name());
+        int enchant = held.getType().isAir() ? 0 : Math.max(held.getEnchantmentLevel(Enchantment.SHARPNESS),
+                held.getEnchantmentLevel(Enchantment.EFFICIENCY));
+        double damage = BarrelMath.damage(base, enchant, table.enchant(), charge);
         Location at = new Location(player.getWorld(), spot.x + 0.5, spot.y + 0.6, spot.z + 0.5);
-        if (spot.damage < 0.999) {
-            at.getWorld().playSound(at, Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 0.5f, 1.4f);
-            at.getWorld().spawnParticle(Particle.BLOCK, at, 8, 0.25, 0.3, 0.25, Material.IRON_BLOCK.createBlockData());
-            int left = (int) Math.ceil((1.0 - spot.damage) * (tool ? spec.toolHits() : spec.hits()) - 1e-6);
-            actionBar(player, "§7" + spot.crate.displayName() + "§7: jeszcze §f" + left + "§7 "
-                    + (left == 1 ? "uderzenie" : "uderzenia"));
+        if (damage <= 0) {
+            actionBar(player, "§7Tym nie rozbijesz: " + spot.crate.displayName());
             return;
         }
+        spot.hp -= damage;
+        if (spot.hp > 1e-6) {
+            at.getWorld().playSound(at, Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 0.5f, charge < 0.9f ? 1.7f : 1.4f);
+            at.getWorld().spawnParticle(Particle.BLOCK, at, charge < 0.9f ? 4 : 8, 0.25, 0.3, 0.25,
+                    Material.IRON_BLOCK.createBlockData());
+            int percent = BarrelMath.percent(spot.hp, spec.hp());
+            String color = BarrelMath.color(percent);
+            String bar = BarrelMath.bar(spot.hp, spec.hp(), 10, "|", ".");
+            int left = BarrelMath.hitsLeft(spot.hp, BarrelMath.damage(base, enchant, table.enchant(), 1f));
+            actionBar(player, spot.crate.displayName() + " " + color + percent + "% §8[" + color + bar + "§8]"
+                    + " §7jeszcze ~" + left + " " + (left == 1 ? "uderzenie" : left < 5 ? "uderzenia" : "uderzeń")
+                    + (charge < 0.9f ? " §c(słaby cios)" : ""));
+            showHpBar(spot, now);
+            wobble(spot);
+            return;
+        }
+        spot.hp = 0;
         spot.state = ContainerSpot.State.BROKEN;
         spot.brokenAt = now;
+        removeHpBar(spot);
         spot.inventory = newInventory(spot);
         if (!crates.emptyLoot()) {
             spot.crate.fill(spot.inventory, random); // loot losuje się w chwili rozbicia
@@ -702,6 +736,79 @@ public final class ContainerService implements Listener {
         at.getWorld().playSound(at, Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 0.7f, 1.3f);
         at.getWorld().spawnParticle(Particle.BLOCK, at, 30, 0.35, 0.35, 0.35, Material.IRON_BLOCK.createBlockData());
         actionBar(player, "§a" + spot.crate.displayName() + "§a rozbita. §7PPM, żeby przeszukać.");
+    }
+
+    /** Pasek HP nad beczką, widoczny dla wszystkich; znika po {@code hpBarMillis} od ostatniego uderzenia. */
+    private void showHpBar(ContainerSpot spot, long now) {
+        long keep = settings.hpBarMillis();
+        World world = Bukkit.getWorld(spot.world);
+        if (keep <= 0 || world == null || spot.crate == null || spot.entities.isEmpty()) {
+            return;
+        }
+        double max = spot.crate.container().hp();
+        int percent = BarrelMath.percent(spot.hp, max);
+        String color = BarrelMath.color(percent);
+        var text = LegacyComponentSerializer.legacySection().deserialize(
+                color + BarrelMath.bar(spot.hp, max, 12, "▌", "§8▌") + " §f" + percent + "%");
+        Entity existing = spot.hpText == null ? null : Bukkit.getEntity(spot.hpText);
+        if (existing instanceof TextDisplay display) {
+            display.text(text);
+        } else {
+            Location above = new Location(world, spot.x + 0.5, spot.y + spot.crate.container().height() + 0.35,
+                    spot.z + 0.5);
+            TextDisplay display = world.spawn(above, TextDisplay.class, entity -> {
+                entity.text(text);
+                entity.setBillboard(Display.Billboard.CENTER);
+                entity.setSeeThrough(false);
+                entity.setShadowed(true);
+                entity.setBackgroundColor(org.bukkit.Color.fromARGB(96, 0, 0, 0));
+                entity.setViewRange(0.25f); // ok. 16 bloków: widać z bliska, nie z drugiego końca drogi
+                entity.setPersistent(false);
+                entity.addScoreboardTag(TAG);
+            });
+            spot.hpText = display.getUniqueId();
+            track(spot, display);
+        }
+        spot.hpShownUntil = now + keep;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (spots.get(spot.key) == spot && System.currentTimeMillis() >= spot.hpShownUntil) {
+                removeHpBar(spot);
+            }
+        }, keep / 50L + 2L);
+    }
+
+    private void removeHpBar(ContainerSpot spot) {
+        if (spot.hpText == null) {
+            return;
+        }
+        Entity text = Bukkit.getEntity(spot.hpText);
+        if (text != null) {
+            text.remove();
+        }
+        spot.entities.remove(spot.hpText);
+        byEntity.remove(spot.hpText);
+        spot.hpText = null;
+    }
+
+    /** Beczka lekko podskakuje i kurczy się przy uderzeniu, a po chwili wraca (interpolacja po stronie klienta). */
+    private void wobble(ContainerSpot spot) {
+        if (spot.display == null || !(Bukkit.getEntity(spot.display) instanceof ItemDisplay display)) {
+            return;
+        }
+        float tilt = (random.nextBoolean() ? 1 : -1) * 0.07f;
+        display.setInterpolationDelay(0);
+        display.setInterpolationDuration(2);
+        display.setTransformation(new Transformation(new Vector3f(0f, 0.03f, 0f),
+                new Quaternionf().rotateZ(tilt), new Vector3f(0.94f, 0.94f, 0.94f), new Quaternionf()));
+        UUID id = spot.display;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (Bukkit.getEntity(id) instanceof ItemDisplay d) {
+                d.setInterpolationDelay(0);
+                d.setInterpolationDuration(3);
+                d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(1f, 1f, 1f),
+                        new Quaternionf()));
+            }
+        }, 2L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

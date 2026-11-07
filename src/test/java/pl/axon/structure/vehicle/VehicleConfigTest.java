@@ -203,7 +203,13 @@ class VehicleConfigTest {
     @Test
     void rollNieWywalaSieNaPustychWagach() {
         VehicleConfig config = VehicleConfig.load(null);
-        assertNotNull(config.roll(new Random(1)));
+        // domyślne wagi mają „brak” (25 na 125), więc pojedynczy rzut może dać null; seed 1 trafia akurat w „brak”
+        Random random = new Random(1);
+        VehicleModel rolled = null;
+        for (int i = 0; i < 20 && rolled == null; i++) {
+            rolled = config.roll(random);
+        }
+        assertNotNull(rolled);
         assertNull(config.roll(null));
     }
 }

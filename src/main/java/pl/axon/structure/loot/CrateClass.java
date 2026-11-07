@@ -37,8 +37,8 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
      * Pojemnik-model (ItemDisplay + Interaction, bez bloku).
      *
      * @param brokenModel   model po rozbiciu; pusty = pojemnik się nie rozbija, PPM od razu go otwiera
-     * @param hits          uderzenia ręką potrzebne do rozbicia
-     * @param toolHits      uderzenia czymkolwiek w ręce (narzędzie, broń)
+     * @param hp            punkty życia beczki; każde uderzenie zabiera tyle, ile daje przedmiot w ręce
+     *                      ({@code pojemniki.niszczenie}, patrz {@link BarrelMath})
      * @param respawnMillis po jakim czasie pojemnik wraca; -1 = wartość z {@code pojemniki.odnowienie-minut}
      * @param announce      komunikat na czacie, gdy pojemnik się odnowi; pusty = bez komunikatu
      * @param length        ile bloków zajmuje wzdłuż swojej osi x (skrzynia wojskowa: 2)
@@ -47,7 +47,7 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
      * @param lockMinutes   ile minut po odnowieniu pojemnik jest zablokowany (odliczanie nad modelem); 0 = bez
      * @param cardLevel     poziom karty dostępu zużywanej przy pierwszym otwarciu (1–3); 0 = bez karty
      */
-    public record ContainerSpec(String brokenModel, int hits, int toolHits, long respawnMillis, String announce,
+    public record ContainerSpec(String brokenModel, double hp, long respawnMillis, String announce,
                                 int length, float width, float height, int lockMinutes, int cardLevel) {
 
         public boolean breakable() {
