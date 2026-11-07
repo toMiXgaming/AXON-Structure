@@ -537,7 +537,8 @@ loot:
 #  ani nic w nich schować. Stoją w miejscach skrzyń w strukturach (pule niżej i w pule:) i przy drogach
 #  (punkty podaje AxonMapGenerator). Stan jest tylko w pamięci: po restarcie wszystko losuje się od nowa.
 #
-#  Beczki (model-rozbity ustawiony): LPM rozbija beczkę, model zmienia się na rozbity, PPM otwiera loot (losowany
+#  Beczki (model-rozbity ustawiony): beczka ma HP, każde LPM zabiera tyle, ile daje przedmiot w ręce (niszczenie:
+#  niżej). Przy zerze model zmienia się na rozbity, PPM otwiera loot (losowany
 #  w chwili rozbicia). Rozbita znika, gdy jest pusta albo po rozbita-znika-po-minutach, i wraca w tym samym miejscu
 #  po odnowienie-minut od rozbicia. Skrzynie (bez model-rozbity): PPM otwiera od razu, loot losuje się przy
 #  pierwszym otwarciu, a po opróżnieniu wraca po odnowienie-minut.
@@ -551,6 +552,40 @@ pojemniki:
   rozbita-znika-po-minutach: 5
   # Nie odnawiaj, gdy gracz jest bliżej niż tyle bloków (0 = wyłączone).
   blokada-gdy-gracz-blizej-niz: 24
+  # Rozbijanie beczek jak ścinanie drzew: beczka ma HP (klasa: hp), uderzenie zabiera obrażenia przedmiotu w ręce.
+  # Obrażenia narzędzia = rodzaj (końcówka nazwy: iron_AXE -> axe) × materiał (początek: IRON_axe -> iron).
+  # Niedoładowany zamach (spam LPM) zadaje mniej, jak w walce: 20% + 80% × naładowanie².
+  # Przykład dla beczki 24 HP: ręka 8 uderzeń, drewniana siekiera 3, żelazna i lepsze 2.
+  niszczenie:
+    # HP klasy bez własnego hp.
+    hp-domyslne: 30
+    # Goła ręka.
+    reka: 3
+    # Wszystko inne w ręce (bloki, jedzenie, broń palna itd.).
+    inne: 4
+    # Obrażenia rodzaju narzędzia.
+    rodzaje:
+      axe: 8
+      sword: 7
+      pickaxe: 6
+      shovel: 5
+      hoe: 4
+      mace: 12
+      trident: 8
+    # Mnożnik materiału narzędzia.
+    materialy:
+      wooden: 1.0
+      stone: 1.25
+      iron: 1.5
+      golden: 1.1
+      diamond: 1.75
+      netherite: 2.0
+    # Dokładne obrażenia konkretnego przedmiotu (nazwa materiału); nadpisują rodzaj i materiał. Np. stick: 5
+    przedmioty: {}
+    # Ile dodaje każdy poziom Ostrości albo Wydajności (0.15 = +15%).
+    zaczarowanie-za-poziom: 0.15
+    # Ile sekund pasek HP wisi nad beczką po ostatnim uderzeniu (0 = tylko pasek akcji u gracza).
+    pasek-hp-sekund: 4
   przy-drogach:
     # Pula dla punktów przy drogach z AxonMapGenerator (drogi.beczki w jego configu).
     pula: droga
@@ -566,7 +601,7 @@ pojemniki:
   #   blok: model
   #   model: model z paczki (axon:beczka)
   #   model-rozbity: model po rozbiciu; brak = skrzynia, którą otwiera się od razu
-  #   uderzenia / uderzenia-narzedziem: ile uderzeń ręką / czymkolwiek w ręce, żeby rozbić (domyślnie 3 / 2)
+  #   hp: punkty życia beczki (domyślnie niszczenie.hp-domyslne); obrażenia przedmiotów w niszczenie:
   #   odnowienie-minut: własny czas odnowienia klasy
   #   blokada-minut: ile minut po odnowieniu nie da się otworzyć (odliczanie nad modelem); 0 = bez blokady
   #   karta-poziom: karta dostępu zużywana przy pierwszym otwarciu (1 niebieska, 2 czerwona, 3 zielona); 0 = bez
@@ -581,6 +616,7 @@ pojemniki:
       blok: model
       model: "axon:beczka"
       model-rozbity: "axon:beczka_rozbita"
+      hp: 24
       min-przedmiotow: 1
       loot:
         # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
@@ -591,6 +627,7 @@ pojemniki:
       blok: model
       model: "axon:beczka_rdza"
       model-rozbity: "axon:beczka_rdza_rozbita"
+      hp: 30
       min-przedmiotow: 1
       loot:
         - {przedmiot: "axon:scrap", ilosc: "1-5", szansa: 100}
@@ -607,6 +644,7 @@ pojemniki:
       blok: model
       model: "axon:beczka_paliwa"
       model-rozbity: "axon:beczka_paliwa_rozbita"
+      hp: 36
       min-przedmiotow: 1
       loot:
         - {przedmiot: coal, ilosc: "4-12", szansa: 100, nazwa: "&fPaliwo niskiej jakości"}

@@ -21,13 +21,56 @@ public final class LootConfig {
     /** Sekcja z pojemnikami-modelami; jej klasy i pule zastępują te o tym samym id z {@code klasy} i {@code pule}. */
     public static final String CONTAINERS = "pojemniki";
 
+    /** HP beczki, gdy klasa nie ma własnego {@code hp} ani w configu serwera, ani w domyślnym configu z jara. */
+    private double defaultHp = 30;
+
     public static LootConfig load(ConfigurationSection root, Logger logger) {
         LootConfig config = new LootConfig();
+        // bez wartości domyślnej w wywołaniu: brak wpisu na serwerze bierze wartość z configu w jarze
+        double hp = root.getDouble(CONTAINERS + ".niszczenie.hp-domyslne");
+        config.defaultHp = hp > 0 ? hp : 30;
         config.loadClasses(root.getConfigurationSection("klasy"), logger);
         config.loadClasses(root.getConfigurationSection(CONTAINERS + ".klasy"), logger);
         config.loadPools(root.getConfigurationSection("pule"), logger);
         config.loadPools(root.getConfigurationSection(CONTAINERS + ".pule"), logger);
         return config;
+    }
+
+    /**
+     * Obrażenia przedmiotów przy rozbijaniu beczek z {@code pojemniki.niszczenie}. Czego nie ma w configu serwera,
+     * bierze się z domyślnego configu w jarze (sekcja {@code pojemniki} istnieje na serwerze sprzed tej zmiany, więc
+     * nie dopisuje się sama).
+     */
+    public static BarrelMath.Damage damage(ConfigurationSection root) {
+        String base = CONTAINERS + ".niszczenie.";
+        BarrelMath.Damage def = BarrelMath.Damage.DEFAULT;
+        return new BarrelMath.Damage(
+                number(root, base + "reka", def.hand()),
+                number(root, base + "inne", def.other()),
+                numbers(root, base + "rodzaje", def.types()),
+                numbers(root, base + "materialy", def.tiers()),
+                numbers(root, base + "przedmioty", def.items()),
+                number(root, base + "zaczarowanie-za-poziom", def.enchant()));
+    }
+
+    private static double number(ConfigurationSection root, String path, double fallback) {
+        return root.contains(path) ? Math.max(0, root.getDouble(path)) : fallback;
+    }
+
+    private static Map<String, Double> numbers(ConfigurationSection root, String path, Map<String, Double> fallback) {
+        ConfigurationSection section = root.isSet(path) ? root.getConfigurationSection(path) : null;
+        if (section == null && root.getRoot() != null && root.getRoot().getDefaults() != null) {
+            section = root.getRoot().getDefaults().getConfigurationSection(
+                    root.getCurrentPath().isEmpty() ? path : root.getCurrentPath() + "." + path);
+        }
+        if (section == null) {
+            return fallback;
+        }
+        Map<String, Double> map = new HashMap<>();
+        for (String key : section.getKeys(false)) {
+            map.put(key.toLowerCase(Locale.ROOT), Math.max(0, section.getDouble(key)));
+        }
+        return map;
     }
 
     private void loadClasses(ConfigurationSection classesSection, Logger logger) {
@@ -40,7 +83,7 @@ public final class LootConfig {
                 continue;
             }
             try {
-                classes.put(id.toLowerCase(Locale.ROOT), parseClass(id, section, logger));
+                classes.put(id.toLowerCase(Locale.ROOT), parseClass(id, section, defaultHp, logger));
             } catch (IllegalArgumentException e) {
                 logger.severe("Klasa skrzyni '" + id + "': " + e.getMessage());
             }
@@ -69,7 +112,7 @@ public final class LootConfig {
         }
     }
 
-    private static CrateClass parseClass(String id, ConfigurationSection section, Logger logger) {
+    private static CrateClass parseClass(String id, ConfigurationSection section, double defaultHp, Logger logger) {
         CrateClass.Kind kind = CrateClass.Kind.parse(section.getString("blok", "skrzynia"));
         String name = color(section.getString("nazwa", id));
         String decoration = section.getString("dekoracja", "");
@@ -136,8 +179,8 @@ public final class LootConfig {
             long respawn = section.contains("odnowienie-minut")
                     ? Math.max(1, section.getLong("odnowienie-minut")) * 60_000L : -1;
             container = new CrateClass.ContainerSpec(section.getString("model-rozbity", ""),
-                    Math.max(1, section.getInt("uderzenia", 3)),
-                    Math.max(1, section.getInt("uderzenia-narzedziem", 2)),
+                    // contains/getDouble bez domyślnej: klasa z configu serwera dostaje hp z jara, jeśli go nie ma
+                    BarrelMath.hp(section.contains("hp") ? section.getDouble("hp") : defaultHp),
                     respawn,
                     color(section.getString("ogloszenie", "")),
                     Math.max(1, Math.min(3, section.getInt("dlugosc", 1))),
