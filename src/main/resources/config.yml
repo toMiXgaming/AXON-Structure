@@ -146,8 +146,7 @@ klasy:
     dekoracja: "red_candle[candles=1,lit=false]"
     min-przedmiotow: 1
     loot:
-      - {przedmiot: coal, ilosc: "4-12", szansa: 100, nazwa: "&fPaliwo niskiej jakości"}
-      - {przedmiot: charcoal, ilosc: "2-6", szansa: 50}
+      - {przedmiot: coal, ilosc: "4-12", szansa: 100}
       - {przedmiot: iron_nugget, ilosc: "2-6", szansa: 40, nazwa: "&fZłom"}
       - {przedmiot: lava_bucket, ilosc: "1", szansa: 8, nazwa: "&fRopa naftowa"}
       - {przedmiot: blaze_powder, ilosc: "1", szansa: 5}
