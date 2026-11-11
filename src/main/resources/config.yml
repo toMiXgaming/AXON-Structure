@@ -156,8 +156,10 @@ straznicy:
   promien-aktywacji: 64
   # Po ilu minutach zabity strażnik wraca na swoje miejsce.
   odradzanie-minut: 10
-  # celnosc: rozrzut strzałów – 0 = trafia zawsze; przy broni QualityArmory mnoży rozrzut samej broni,
-  # więc już 1 to sporo pudeł, a 3+ to strzelanie prawie na ślepo
+  # celnosc: rozrzut strzałów – 0 = trafia zawsze. Mniej więcej (cel stojący, strzał w głowę):
+  #   0.25 – trafia prawie zawsze do ~28 bloków, 0.4 – 9/10 na 20 bloków, ale tylko ~6/10 na 28,
+  #   0.5 – ~2/3 na 20 bloków, 1 – co czwarty na 20 bloków, 2 – prawie na ślepo.
+  # Głowa strażnika co tick płynnie podąża za celem, więc lufa zawsze jest już wycelowana przed strzałem.
   zestawy:
     zolnierz:
       nazwa: "&2Żołnierz"
@@ -174,7 +176,7 @@ straznicy:
       # z jakiej odległości widzi i strzela
       zasieg: 28
       # rozrzut strzałów: 0 = idealnie celny, im więcej, tym częściej pudłuje
-      celnosc: 0.8
+      celnosc: 0.3
       # klasa skrzyni (sekcja klasy:), z której losuje się loot po zabiciu; "" = nic
       loot: lepsza-skrzynia
       # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
@@ -193,7 +195,7 @@ straznicy:
       zycie: 24
       obrazenia: -1
       zasieg: 20
-      celnosc: 1.2
+      celnosc: 0.5
       loot: mala-skrzynka
       # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
       cele: [players]
