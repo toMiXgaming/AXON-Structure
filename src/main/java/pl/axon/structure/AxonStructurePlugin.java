@@ -19,6 +19,7 @@ import pl.axon.structure.oasis.OasisService;
 import pl.axon.structure.command.OazaCommand;
 import pl.axon.structure.life.AmbientService;
 import pl.axon.structure.life.AnimalService;
+import pl.axon.structure.life.MonsterLimitService;
 import pl.axon.structure.protect.ProtectionListener;
 import pl.axon.structure.protect.ProtectionService;
 import pl.axon.structure.vehicle.VehicleConfig;
@@ -58,6 +59,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private OreVeinService veins;
     private AnimalService animals;
     private AmbientService ambient;
+    private MonsterLimitService monsters;
     private VehicleService vehicles;
 
     @Override
@@ -80,6 +82,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         protection.veins(veins);
         animals = new AnimalService(this, library, store, oasis);
         ambient = new AmbientService(this, store);
+        monsters = new MonsterLimitService(store);
         props = new PropService(this);
         paster = new PasteService(this, store, crates, protection, props);
         autoGenerator = new AutoGenerator(this, library, store, paster, protection);
@@ -95,6 +98,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(guards, this);
         getServer().getPluginManager().registerEvents(veins, this);
         getServer().getPluginManager().registerEvents(animals, this);
+        getServer().getPluginManager().registerEvents(monsters, this);
         getServer().getPluginManager().registerEvents(oasis, this);
         getServer().getPluginManager().registerEvents(autoGenerator, this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
@@ -347,6 +351,21 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 Math.max(0, config.getDouble("zycie.szansa-procent", 35)),
                 (float) Math.max(0.05, config.getDouble("zycie.glosnosc", 0.6)),
                 sounds));
+
+        Map<String, MonsterLimitService.Limit> monsterLimits = new LinkedHashMap<>();
+        ConfigurationSection monsterSection = config.getConfigurationSection("potwory.ograniczenia");
+        if (config.getBoolean("potwory.wlaczone", true) && monsterSection != null) {
+            for (String key : monsterSection.getKeys(false)) {
+                ConfigurationSection m = monsterSection.getConfigurationSection(key);
+                if (m == null) {
+                    continue;
+                }
+                monsterLimits.put(key.toLowerCase(Locale.ROOT), new MonsterLimitService.Limit(
+                        Math.max(0, Math.min(1, m.getDouble("szansa", 1))),
+                        Math.max(0, m.getInt("maks", 0))));
+            }
+        }
+        monsters.configure(monsterLimits);
 
         Set<String> skipFurniture = new HashSet<>();
         for (String id : config.getStringList("meble.bez-zamiany")) {
