@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -74,6 +75,8 @@ public final class GuardService implements Listener {
         final Kit kit;
         final Location location;
         Object npc;
+        /** SentinelTrait tego NPC (do śledzenia celu głową co tick). */
+        Object sentinel;
         UUID entityId;
         long deadUntil;
 
@@ -93,6 +96,12 @@ public final class GuardService implements Listener {
     private final Map<UUID, Guard> byEntity = new HashMap<>();
     private Settings settings;
     private BukkitTask task;
+    /** Co tick: płynne obracanie głów strażników w stronę celu. */
+    private BukkitTask aimTask;
+    private Field chasingField;
+    private Method lookMethod;
+    private boolean lookResolved;
+    private boolean warnedAim;
     private Object registry;
     private boolean warned;
     private boolean warnedWander;
@@ -117,6 +126,7 @@ public final class GuardService implements Listener {
     public void start() {
         stopTimer();
         task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L * 15, 20L * 5);
+        aimTask = Bukkit.getScheduler().runTaskTimer(plugin, this::aimTick, 20L, 1L);
     }
 
     public void stop() {
@@ -128,6 +138,10 @@ public final class GuardService implements Listener {
         if (task != null) {
             task.cancel();
             task = null;
+        }
+        if (aimTask != null) {
+            aimTask.cancel();
+            aimTask = null;
         }
     }
 
@@ -348,6 +362,7 @@ public final class GuardService implements Listener {
             }
             guard.npc = null;
         }
+        guard.sentinel = null;
     }
 
     private boolean isSpawned(Object npc) {
@@ -569,12 +584,92 @@ public final class GuardService implements Listener {
         }
         setField(sentinel, "damage", kit.damage());
         setField(sentinel, "range", kit.range());
-        setField(sentinel, "accuracy", kit.accuracy());
+        // surowe „celnosc” byłoby dla Sentinela + QualityArmory ogromnym rozrzutem, patrz AimMath.ACCURACY_SCALE
+        setField(sentinel, "accuracy", AimMath.sentinelAccuracy(kit.accuracy()));
         setField(sentinel, "chaseRange", Math.max(12.0, kit.range()));
         setField(sentinel, "respawnTime", -1L); // odradzaniem zajmuje się ten plugin
         setField(sentinel, "spawnPoint", guard.location.clone());
         setField(sentinel, "fightback", kit.attacksPlayers());
         setField(sentinel, "needsAmmo", false);
+        guard.sentinel = sentinel;
+    }
+
+    // ------------------------------------------------------------------ płynne celowanie
+
+    /**
+     * Sentinel obraca NPC w stronę celu tylko co swój „update rate” (domyślnie 10 ticków), więc głowa
+     * przeskakuje. Co tick obracamy ją o kawałek w stronę oczu celu (AimMath), więc ruch jest płynny,
+     * a w chwili strzału lufa już patrzy na cel.
+     */
+    private void aimTick() {
+        if (byEntity.isEmpty()) {
+            return;
+        }
+        for (Guard guard : byEntity.values()) {
+            if (guard.sentinel == null || guard.entityId == null) {
+                continue;
+            }
+            Entity entity = Bukkit.getEntity(guard.entityId);
+            if (!(entity instanceof LivingEntity self) || !self.isValid() || self.isDead()) {
+                continue;
+            }
+            LivingEntity target = chasing(guard.sentinel);
+            if (target == null || !target.isValid() || target.isDead() || target.getWorld() != self.getWorld()) {
+                continue;
+            }
+            Location eye = self.getEyeLocation();
+            Location aim = target.getEyeLocation();
+            double reach = guard.kit.range() + 8;
+            double dist2 = eye.distanceSquared(aim);
+            if (dist2 < 0.25 || dist2 > reach * reach) {
+                continue;
+            }
+            float[] want = AimMath.yawPitch(eye.getX(), eye.getY(), eye.getZ(), aim.getX(), aim.getY(), aim.getZ());
+            Location now = self.getLocation();
+            float[] next = AimMath.step(now.getYaw(), now.getPitch(), want[0], want[1]);
+            if (next[0] != now.getYaw() || next[1] != now.getPitch()) {
+                look(self, next[0], next[1]);
+            }
+        }
+    }
+
+    /** Aktualny cel Sentinela (pole {@code chasing}) albo null. */
+    private LivingEntity chasing(Object sentinel) {
+        try {
+            if (chasingField == null) {
+                chasingField = sentinel.getClass().getField("chasing");
+            }
+            Object value = chasingField.get(sentinel);
+            return value instanceof LivingEntity living ? living : null;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            if (!warnedAim) {
+                warnedAim = true;
+                plugin.getLogger().warning("Płynne celowanie strażników wyłączone (inna wersja Sentinela?): " + e);
+            }
+            return null;
+        }
+    }
+
+    /** Obrót ciała i głowy NPC: przez Citizens (NMS.look), a gdy go nie ma – zwykłe setRotation. */
+    private void look(LivingEntity entity, float yaw, float pitch) {
+        if (!lookResolved) {
+            lookResolved = true;
+            try {
+                lookMethod = Class.forName("net.citizensnpcs.util.NMS")
+                        .getMethod("look", Entity.class, float.class, float.class);
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                lookMethod = null;
+            }
+        }
+        if (lookMethod != null) {
+            try {
+                lookMethod.invoke(null, entity, yaw, pitch);
+                return;
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                lookMethod = null;
+            }
+        }
+        entity.setRotation(yaw, pitch);
     }
 
     private static Object call(Object target, String method, Class<?>[] types, Object... args)
