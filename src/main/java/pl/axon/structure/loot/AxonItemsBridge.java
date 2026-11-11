@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Przedmioty AxonCore z pluginu AxonItems ({@code axon:scrap} w lootcie). Przez refleksję, bo AxonItems nie jest
+ * Przedmioty AxonCore z pluginu AxonItems ({@code axon:scrap} w lootcie) oraz pancerze z AxonArmor ({@code axon:cien_helm}). Przez refleksję, bo AxonItems nie jest
  * zależnością przy budowaniu i może go nie być na serwerze. Wtedy pozycje {@code axon:} są po prostu pomijane.
  */
 public final class AxonItemsBridge {
@@ -37,6 +37,11 @@ public final class AxonItemsBridge {
 
     /** Przedmiot AxonCore albo null (brak AxonItems albo nieznane id; ostrzeżenie w logu raz). */
     public static ItemStack create(String id, int amount) {
+        // pancerze AXON (AxonArmor, np. cien_helm) mają własne id, więc sprawdzamy je najpierw
+        ItemStack armor = AxonArmorBridge.create(id, amount);
+        if (armor != null) {
+            return armor;
+        }
         if (!resolve()) {
             return null;
         }
@@ -91,6 +96,9 @@ public final class AxonItemsBridge {
 
     /** Czy AxonItems działa i zna to id (do komend i podglądu klas). */
     public static boolean known(String id) {
+        if (AxonArmorBridge.known(id)) {
+            return true;
+        }
         if (!resolve()) {
             return false;
         }

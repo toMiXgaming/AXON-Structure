@@ -542,7 +542,8 @@ loot:
 #  w chwili rozbicia). Rozbita znika, gdy jest pusta albo po rozbita-znika-po-minutach, i wraca w tym samym miejscu
 #  po odnowienie-minut od rozbicia. Skrzynie (bez model-rozbity): PPM otwiera od razu, loot losuje się przy
 #  pierwszym otwarciu, a po opróżnieniu wraca po odnowienie-minut.
-#  Przedmioty "axon:<id>" tworzy plugin AxonItems (id z jego items.yml); bez niego te pozycje są pomijane.
+#  Przedmioty "axon:<id>" tworzy plugin AxonItems (id z jego items.yml) albo AxonArmor (pancerze, np. axon:cien_helm,
+#  axon:legion_kamizelka; lista: /axonarmor list); bez nich te pozycje są pomijane. W sklepach (oasis) też działa axon:<id>.
 #  Gdy loot.puste: true, pojemniki stoją i dają się rozbić, ale są puste.
 # ------------------------------------------------------------
 pojemniki:
