@@ -17,7 +17,7 @@ final class Items {
     private Items() {
     }
 
-    /** Przedmiot z opisu: nazwa z Minecrafta albo {@code qa:<nazwa>} z QualityArmory; null, gdy nie istnieje. */
+    /** Przedmiot z opisu: nazwa z Minecrafta, {@code qa:<nazwa>} z QualityArmory albo {@code axon:<id>} (AxonItems, AxonArmor); null, gdy nie istnieje. */
     static ItemStack create(String spec, int amount) {
         if (spec == null || spec.isBlank()) {
             return null;
@@ -29,6 +29,10 @@ final class Items {
                 return null;
             }
             item = stack;
+        } else if (spec.toLowerCase(Locale.ROOT).startsWith(pl.axon.structure.loot.AxonItemsBridge.PREFIX)) {
+            // przedmioty AxonCore (AxonItems) i pancerze (AxonArmor): axon:<id>
+            item = pl.axon.structure.loot.AxonItemsBridge.create(
+                    spec.substring(pl.axon.structure.loot.AxonItemsBridge.PREFIX.length()).toLowerCase(Locale.ROOT), 1);
         } else {
             Material material = Material.matchMaterial(spec);
             if (material != null && material.isItem() && material != Material.AIR) {
