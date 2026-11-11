@@ -647,7 +647,7 @@ pojemniki:
       hp: 36
       min-przedmiotow: 1
       loot:
-        - {przedmiot: coal, ilosc: "4-12", szansa: 100, nazwa: "&fPaliwo niskiej jakości"}
+        - {przedmiot: coal, ilosc: "4-12", szansa: 100}
         - {przedmiot: "axon:scrap", ilosc: "1-4", szansa: 40}
         - {przedmiot: "axon:metal_fragments", ilosc: "2-5", szansa: 20}
 
