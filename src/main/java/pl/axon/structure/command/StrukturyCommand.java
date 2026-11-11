@@ -25,7 +25,7 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "najblizsza", "usun", "klasy", "pojemniki", "pojemnik", "zrzut", "straznicy", "oaza", "zycie", "wrak", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "meble", "najblizsza", "usun", "klasy", "pojemniki", "pojemnik", "zrzut", "straznicy", "oaza", "zycie", "wrak", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -44,6 +44,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "generuj" -> generate(sender, label, args);
             case "cofnij" -> undo(sender);
             case "odswiez" -> refresh(sender);
+            case "meble" -> restoreProps(sender, args);
             case "najblizsza" -> nearest(sender);
             case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
@@ -82,6 +83,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " generuj <nazwa> §7– stawia ją wokół ciebie, dopasowaną do terenu");
         sender.sendMessage("§e/" + label + " cofnij §7– cofa twoje ostatnie postawienie");
         sender.sendMessage("§e/" + label + " odswiez §7– od razu losuje skrzynie w najbliższej strukturze");
+        sender.sendMessage("§e/" + label + " meble [wszystkie] §7– stawia od nowa zniknięte modele mebli i pojemników "
+                + "(np. po §f/killall all§7) w najbliższej albo we wszystkich wczytanych strukturach");
         sender.sendMessage("§e/" + label + " najblizsza §7– gdzie jest najbliższa postawiona struktura");
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
@@ -228,6 +231,50 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§aWylosowano skrzynie w §e" + instance.structureId() + "§a: " + placed + " z "
                     + plugin.crates().crateSlots(plugin.library().get(instance.structureId())) + " miejsc.");
         }
+    }
+
+    /** {@code meble [wszystkie]}: modele mebli od nowa w najbliższej (albo każdej wczytanej) strukturze. */
+    private void restoreProps(CommandSender sender, String[] args) {
+        if (plugin.paster().isBusy()) {
+            sender.sendMessage("§cTrwa już stawianie albo cofanie, poczekaj chwilę.");
+            return;
+        }
+        boolean all = args.length >= 2 && args[1].equalsIgnoreCase("wszystkie");
+        List<StructureInstance> targets = new ArrayList<>();
+        if (all) {
+            targets.addAll(plugin.store().all());
+        } else {
+            StructureInstance instance = nearestTo(sender);
+            if (instance == null) {
+                return;
+            }
+            targets.add(instance);
+        }
+        int structures = 0;
+        int models = 0;
+        int skipped = 0;
+        for (StructureInstance instance : targets) {
+            Blueprint bp = plugin.library().get(instance.structureId());
+            if (bp == null) {
+                continue;
+            }
+            int placed = plugin.paster().restoreProps(instance, bp);
+            if (placed < 0) {
+                skipped++;
+                if (!all) {
+                    sender.sendMessage("§cStruktura §e" + instance.structureId()
+                            + "§c nie jest cała wczytana. Podejdź bliżej i spróbuj jeszcze raz.");
+                    return;
+                }
+                continue;
+            }
+            structures++;
+            models += placed;
+        }
+        int containers = plugin.containers().respawnMissing();
+        sender.sendMessage("§aModele mebli od nowa: §f" + models + "§a w " + structures + " strukturach"
+                + (skipped > 0 ? "§7 (niewczytane pominięte: " + skipped + ")" : "")
+                + "§a. Pojemniki postawione od nowa: §f" + containers + "§a.");
     }
 
     private void nearest(CommandSender sender) {

@@ -18,6 +18,7 @@ Plugin na serwer **Paper 1.21.4** (Java 21) do stawiania struktur w stylu monume
 | `/struktury generuj <nazwa>` | stawia ją wokół ciebie na wysokości terenu (jak auto-generowanie) |
 | `/struktury cofnij` | cofa twoje ostatnie postawienie (pamięta 5) |
 | `/struktury odswiez` | od razu losuje skrzynie w najbliższej strukturze |
+| `/struktury meble [wszystkie]` | stawia od nowa zniknięte modele mebli i pojemników w najbliższej (albo każdej wczytanej) strukturze, np. po `/killall all` z Essentials, które usuwa też modele i zostawia same bariery |
 | `/struktury najblizsza` | pokazuje najbliższą postawioną strukturę |
 | `/struktury usun [id]` | zapomina strukturę: zdejmuje ochronę i skrzynie, bloki zostają |
 | `/struktury klasy` | klasy skrzyń i pule z szansami |
