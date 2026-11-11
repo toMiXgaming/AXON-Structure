@@ -887,6 +887,18 @@ zwierzeta:
   # Zwierzę, które odejdzie dalej niż tyle bloków od punktu, wraca na miejsce (0 = może chodzić, gdzie chce).
   maks-odejscie: 24
 
+potwory:
+  # Ograniczenie naturalnego spawnu potworów (zombie, szkielety, pająki…) w obrysie wybranych struktur, np. w ciemnej
+  # galerii. Dotyczy tylko spawnu naturalnego: strażnicy, spawnery, jajka i komendy działają jak zwykle.
+  wlaczone: true
+  # Wpis: id struktury (oilen, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek, galeria…).
+  # szansa: jaka część spawnów się udaje (0 = żadne potwory, 0.25 = co czwarty, 1 = normalnie);
+  # maks: najwięcej potworów naraz w obrysie struktury (0 = bez limitu).
+  ograniczenia:
+    galeria:
+      szansa: 0.25
+      maks: 6
+
 zycie:
   # Odgłosy w strukturach: gracz w obrysie struktury co jakiś czas słyszy (tylko on) dźwięk z listy dla tej
   # struktury, gdzieś obok siebie. Jeden zegar na cały serwer, liczą się tylko gracze w strukturach.
