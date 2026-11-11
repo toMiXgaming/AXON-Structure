@@ -478,6 +478,38 @@ public final class ContainerService implements Listener {
         return world != null && world.isChunkLoaded(spot.chunkX(), spot.chunkZ());
     }
 
+    /**
+     * Stawia od nowa modele pojemników we wczytanych chunkach, którym ktoś usunął encje (np. {@code /killall all}).
+     * Bez tego wróciłyby dopiero po ponownym wczytaniu chunka.
+     *
+     * @return ile pojemników postawiono od nowa
+     */
+    public int respawnMissing() {
+        if (!running()) {
+            return 0;
+        }
+        int count = 0;
+        for (ContainerSpot spot : List.copyOf(spots.values())) {
+            if (!loaded(spot) || spot.entities.isEmpty()) {
+                continue;
+            }
+            boolean missing = false;
+            for (UUID id : spot.entities) {
+                Entity entity = Bukkit.getEntity(id);
+                if (entity == null || !entity.isValid()) {
+                    missing = true;
+                    break;
+                }
+            }
+            if (missing) {
+                despawnEntities(spot);
+                spawnEntities(spot);
+                count++;
+            }
+        }
+        return count;
+    }
+
     private void showIfLoaded(ContainerSpot spot) {
         if (!running() || !loaded(spot)) {
             return;

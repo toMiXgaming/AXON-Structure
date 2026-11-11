@@ -266,6 +266,56 @@ public final class PasteService {
         return new Registered(instance, placed);
     }
 
+    /**
+     * Stawia od nowa modele mebli i rekwizytów w postawionej strukturze. Modele to encje (wyświetlacze
+     * przedmiotów), więc np. {@code /killall all} z Essentials usuwa je razem z potworami, a w strukturze
+     * zostają same bariery. Stare modele w obrysie są najpierw zdejmowane, więc można to wołać wiele razy.
+     * Mebel wraca tylko tam, gdzie w świecie nadal stoi bariera (czyli przy stawianiu była zamiana).
+     *
+     * @return liczba postawionych modeli albo -1, gdy struktura nie jest cała wczytana
+     */
+    public int restoreProps(StructureInstance instance, Blueprint bp) {
+        Placement placement = instance.placement();
+        World world = Bukkit.getWorld(placement.world());
+        if (world == null) {
+            return -1;
+        }
+        Box box = Box.of(bp, placement);
+        for (int cx = box.minX() >> 4; cx <= box.maxX() >> 4; cx++) {
+            for (int cz = box.minZ() >> 4; cz <= box.maxZ() >> 4; cz++) {
+                // modele w niewczytanym chunku nie dałyby się zdjąć i stałyby podwójnie
+                if (!world.isChunkLoaded(cx, cz) || !world.getChunkAt(cx, cz).isEntitiesLoaded()) {
+                    return -1;
+                }
+            }
+        }
+        List<PropService.WorldProp> list = new ArrayList<>();
+        props.fromBlueprint(world, bp, placement, list);
+        if (props.replacesFurniture(bp)) {
+            // struktury z generatora chunków mają zwykłe meble i drzwi bez modeli
+            boolean pasted = instance.externalKey() == null;
+            int steps = placement.steps();
+            List<PropService.WorldProp> found = new ArrayList<>();
+            for (Map.Entry<Blueprint.Pos, String> entry : bp.blocks().entrySet()) {
+                Blueprint.Pos p = entry.getKey();
+                int[] w = placement.toWorld(p.x(), p.y(), p.z());
+                found.clear();
+                BlockData data = rotated(entry.getValue(), steps);
+                BlockData placed = props.furniture(world, w[0], w[1], w[2], data, found);
+                if (found.isEmpty()) {
+                    continue;
+                }
+                boolean door = placed == data;
+                if (door ? pasted : world.getBlockAt(w[0], w[1], w[2]).getType() == Material.BARRIER) {
+                    list.addAll(found);
+                }
+            }
+        }
+        props.remove(world, box, placement.originY(), placement.originY() + bp.height());
+        props.spawn(list);
+        return list.size();
+    }
+
     private StructureInstance finish(Blueprint bp, Placement placement, PasteRecord record, boolean automatic) {
         World world = record.world;
         connectNeighbours(world, record);
