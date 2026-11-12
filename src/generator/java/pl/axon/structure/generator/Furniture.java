@@ -50,6 +50,38 @@ final class Furniture {
     static final String MASZYNA = "magenta_glazed_terracotta";  // axon:maszyna (pompa/silnik przemysłowy)
     static final String GRUZ = "green_glazed_terracotta";       // axon:gruz
 
+    // Czwarta partia (szpital, koszary, magazyn, warsztat, dom): nośnikami są szulkery, które nie występują w strukturach.
+    static final String STOL_OPERACYJNY = "white_shulker_box";        // axon:stol_operacyjny
+    static final String LOZKO_SZPITALNE = "light_gray_shulker_box";   // axon:lozko_szpitalne
+    static final String WOZEK_INWALIDZKI = "gray_shulker_box";        // axon:wozek_inwalidzki
+    static final String SPIND = "black_shulker_box";                  // axon:spind (2 kratki)
+    static final String PALETA = "brown_shulker_box";                 // axon:paleta_towaru
+    static final String REGAL_MAGAZYNOWY = "orange_shulker_box";      // axon:regal_magazynowy (2 kratki)
+    static final String BUTLE = "red_shulker_box";                    // axon:butla_gazowa
+    static final String TOKARKA = "yellow_shulker_box";               // axon:tokarka
+    static final String STOL_ODPRAW = "lime_shulker_box";             // axon:stol_odpraw
+    static final String KRZESLO_BIUROWE = "green_shulker_box";        // axon:krzeslo_biurowe
+    static final String LODOWKA_DOMOWA = "cyan_shulker_box";          // axon:lodowka_domowa (2 kratki)
+    static final String LAMPA = "light_blue_shulker_box";             // axon:lampa_podlogowa (2 kratki)
+    static final String PRYCZA = "blue_shulker_box";                  // axon:lozko_pietrowe (2 kratki)
+    static final String AMUNICJA = "purple_shulker_box";              // axon:skrzynia_amunicji
+    static final String BEBEN_KABLA = "magenta_shulker_box";          // axon:beben_kabla
+    static final String KOMODA = "pink_shulker_box";                  // axon:komoda
+    static final String FOTEL = "shulker_box";                        // axon:fotel
+
+    /** Czy blok to nośnik mebla z paczki (szkliwiona terakota albo szulker). */
+    static boolean isCarrier(String state) {
+        String n = state.replace("minecraft:", "");
+        return n.contains("glazed_terracotta") || n.contains("shulker_box");
+    }
+
+    /** Czy mebel ma dwie kratki wysokości (bariera nad nim). */
+    static boolean isTall(String state) {
+        String n = state.replace("minecraft:", "");
+        return n.startsWith(SZAFA) || n.startsWith(AUTOMAT_GIER) || n.startsWith(SPIND) || n.startsWith(REGAL_MAGAZYNOWY)
+                || n.startsWith(LODOWKA_DOMOWA) || n.startsWith(LAMPA) || n.startsWith(PRYCZA);
+    }
+
     /** Stan bloku-nośnika mebla z paczki, przodem w stronę {@code facing}. */
     static String model(String carrier, String facing) {
         return carrier + "[facing=" + facing + "]";
@@ -58,7 +90,7 @@ final class Furniture {
     /** Mebel z paczki w (x, y, z); dwukratkowe (szafa, automat) dostają barierę nad sobą. */
     void prop(int x, int y, int z, String carrier, String facing) {
         set(x, y, z, model(carrier, facing));
-        if (carrier.equals(SZAFA) || carrier.equals(AUTOMAT_GIER)) {
+        if (isTall(carrier)) {
             set(x, y + 1, z, "barrier");
         }
     }
@@ -119,7 +151,7 @@ final class Furniture {
                 int nz = z + dz(d);
                 for (int dy = -1; dy <= 1; dy++) {
                     String n = bp.get(nx, y + dy + yOffset, nz);
-                    if (n.contains("door") || n.contains("ladder") || n.contains("rail") || n.contains("glazed_terracotta") && dy == 0) {
+                    if (n.contains("door") || n.contains("ladder") || n.contains("rail") || isCarrier(n) && dy == 0) {
                         blocked = true;
                     }
                 }
@@ -141,7 +173,7 @@ final class Furniture {
                 continue;
             }
             String carrier = carriers[rnd.nextInt(carriers.length)];
-            if ((carrier.equals(SZAFA) || carrier.equals(AUTOMAT_GIER)) && !bp.isAir(x, y + 2 + yOffset, z)) {
+            if (isTall(carrier) && !bp.isAir(x, y + 2 + yOffset, z)) {
                 continue;
             }
             prop(x, y, z, carrier, front);
@@ -154,7 +186,7 @@ final class Furniture {
     private boolean nearProp(int x, int y, int z) {
         for (int ox = -3; ox <= 3; ox++) {
             for (int oz = -3; oz <= 3; oz++) {
-                if (bp.get(x + ox, y + yOffset, z + oz).contains("glazed_terracotta")) {
+                if (isCarrier(bp.get(x + ox, y + yOffset, z + oz))) {
                     return true;
                 }
             }

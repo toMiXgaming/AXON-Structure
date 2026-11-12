@@ -4,7 +4,29 @@ import pl.axon.structure.core.Blueprint;
 
 import java.util.Random;
 
+import static pl.axon.structure.generator.Furniture.AMUNICJA;
+import static pl.axon.structure.generator.Furniture.BEBEN_KABLA;
+import static pl.axon.structure.generator.Furniture.BUTLE;
+import static pl.axon.structure.generator.Furniture.FOTEL;
 import static pl.axon.structure.generator.Furniture.GRUZ;
+import static pl.axon.structure.generator.Furniture.KOMODA;
+import static pl.axon.structure.generator.Furniture.KANAPA;
+import static pl.axon.structure.generator.Furniture.KRZESLO;
+import static pl.axon.structure.generator.Furniture.KRZESLO_BIUROWE;
+import static pl.axon.structure.generator.Furniture.LAMPA;
+import static pl.axon.structure.generator.Furniture.LODOWKA_DOMOWA;
+import static pl.axon.structure.generator.Furniture.LOZKO_SZPITALNE;
+import static pl.axon.structure.generator.Furniture.PALETA;
+import static pl.axon.structure.generator.Furniture.PRALKA;
+import static pl.axon.structure.generator.Furniture.PRYCZA;
+import static pl.axon.structure.generator.Furniture.REGAL_MAGAZYNOWY;
+import static pl.axon.structure.generator.Furniture.SKRZYNKA_WARZYW;
+import static pl.axon.structure.generator.Furniture.SPIND;
+import static pl.axon.structure.generator.Furniture.STOL;
+import static pl.axon.structure.generator.Furniture.STOL_ODPRAW;
+import static pl.axon.structure.generator.Furniture.STOL_OPERACYJNY;
+import static pl.axon.structure.generator.Furniture.TOKARKA;
+import static pl.axon.structure.generator.Furniture.WOZEK_INWALIDZKI;
 import static pl.axon.structure.generator.Furniture.KALORYFER;
 import static pl.axon.structure.generator.Furniture.KARTONY;
 import static pl.axon.structure.generator.Furniture.LAWKA;
@@ -28,17 +50,28 @@ final class Furnishing {
         int top = bp.height() - 3;
         int g = bp.ground();
         switch (id) {
-            case "oilen" -> both(f, top, g, 6, 6, new String[]{KARTONY, OPONY, KALORYFER}, OPONY, GRUZ);
-            case "gospodarstwo" -> both(f, top, g, 6, 5, new String[]{WORKI, KARTONY, OPONY}, OPONY, GRUZ);
-            case "kombinat" -> both(f, top, g, 10, 6, new String[]{WORKI, MASZYNA, OPONY, KARTONY}, OPONY, GRUZ);
-            case "kopalnia" -> both(f, top, g, 12, 6, new String[]{MASZYNA, KARTONY, GRUZ, SZAFA}, GRUZ, OPONY);
-            case "jednostka" -> both(f, top, g, 25, 10, new String[]{KARTONY, SZAFA, KALORYFER, OPONY}, OPONY, GRUZ, KARTONY);
-            case "szpital" -> both(f, top, g, 25, 5, new String[]{KALORYFER, SZAFA, KARTONY, GRUZ}, GRUZ);
-            case "czarny-rynek" -> both(f, top, g, 4, 2, new String[]{KARTONY, WORKI}, GRUZ);
-            case "elektrownia" -> both(f, top, g, 14, 6, new String[]{MASZYNA, KARTONY, SZAFA, GRUZ}, GRUZ, OPONY);
-            case "osiedle" -> both(f, top, g, 20, 8, new String[]{KALORYFER, SZAFA, KARTONY, GRUZ}, OPONY, GRUZ);
-            case "zajezdnia" -> both(f, top, g, 10, 6, new String[]{MASZYNA, OPONY, KARTONY}, GRUZ, OPONY);
-            case "galeria" -> both(f, top, g, 30, 10, new String[]{KARTONY, GRUZ, LAWKA}, OPONY, GRUZ);
+            case "oilen" -> both(f, top, g, 10, 8, new String[]{KARTONY, PALETA, REGAL_MAGAZYNOWY, KRZESLO_BIUROWE, BUTLE, KALORYFER, LAMPA},
+                    new String[]{OPONY, BUTLE, PALETA, GRUZ});
+            case "gospodarstwo" -> both(f, top, g, 16, 8, new String[]{KOMODA, FOTEL, LODOWKA_DOMOWA, LAMPA, WORKI, SKRZYNKA_WARZYW, KARTONY, STOL, KRZESLO},
+                    new String[]{OPONY, GRUZ, PALETA, WORKI, BEBEN_KABLA});
+            case "kombinat" -> both(f, top, g, 24, 10, new String[]{PALETA, WORKI, REGAL_MAGAZYNOWY, MASZYNA, TOKARKA, BUTLE, SKRZYNKA_WARZYW, SPIND, KRZESLO_BIUROWE},
+                    new String[]{OPONY, PALETA, WORKI, BEBEN_KABLA, GRUZ});
+            case "kopalnia" -> both(f, top, g, 22, 8, new String[]{SPIND, BEBEN_KABLA, BUTLE, AMUNICJA, PALETA, KRZESLO_BIUROWE, STOL, TOKARKA, MASZYNA, LAMPA},
+                    new String[]{GRUZ, OPONY, BEBEN_KABLA, PALETA});
+            case "jednostka" -> both(f, top, g, 70, 14, new String[]{PRYCZA, PRYCZA, SPIND, SPIND, AMUNICJA, STOL_ODPRAW, KRZESLO_BIUROWE, REGAL_MAGAZYNOWY, PALETA, KALORYFER, BEBEN_KABLA, BUTLE, LAMPA},
+                    new String[]{OPONY, AMUNICJA, PALETA, BEBEN_KABLA, GRUZ});
+            case "szpital" -> both(f, top, g, 70, 8, new String[]{LOZKO_SZPITALNE, LOZKO_SZPITALNE, WOZEK_INWALIDZKI, SPIND, STOL_OPERACYJNY, KRZESLO_BIUROWE, KALORYFER, LAMPA, SZAFA, KARTONY, LODOWKA_DOMOWA},
+                    new String[]{GRUZ, WOZEK_INWALIDZKI, KARTONY});
+            case "czarny-rynek" -> both(f, top, g, 10, 3, new String[]{STOL, KRZESLO, KOMODA, LODOWKA_DOMOWA, AMUNICJA, PALETA, KARTONY, LAMPA},
+                    new String[]{GRUZ, KARTONY});
+            case "elektrownia" -> both(f, top, g, 40, 12, new String[]{BEBEN_KABLA, TOKARKA, MASZYNA, SPIND, BUTLE, REGAL_MAGAZYNOWY, PALETA, KRZESLO_BIUROWE, STOL, LAMPA},
+                    new String[]{GRUZ, OPONY, BEBEN_KABLA, BUTLE, PALETA});
+            case "osiedle" -> both(f, top, g, 70, 10, new String[]{KOMODA, FOTEL, LODOWKA_DOMOWA, LAMPA, KANAPA, SZAFA, KALORYFER, PRALKA, STOL, KRZESLO, KARTONY},
+                    new String[]{OPONY, GRUZ, KARTONY});
+            case "zajezdnia" -> both(f, top, g, 24, 12, new String[]{TOKARKA, SPIND, BEBEN_KABLA, BUTLE, PALETA, MASZYNA, REGAL_MAGAZYNOWY, STOL, KRZESLO_BIUROWE},
+                    new String[]{GRUZ, OPONY, BEBEN_KABLA, BUTLE, PALETA});
+            case "galeria" -> both(f, top, g, 70, 12, new String[]{KARTONY, GRUZ, LAWKA, REGAL_MAGAZYNOWY, PALETA, KANAPA, KRZESLO, STOL, LAMPA, WOZEK_INWALIDZKI},
+                    new String[]{OPONY, GRUZ, PALETA});
             default -> {
             }
         }
@@ -60,8 +93,7 @@ final class Furnishing {
             }
             Blueprint.Pos p = e.getKey();
             String below = bp.get(p.x(), p.y() - 1, p.z());
-            if (!(below.contains("calibrated_sculk_sensor") || below.contains("damaged_anvil")
-                    || below.contains(Furniture.SZAFA) || below.contains(Furniture.AUTOMAT_GIER))) {
+            if (!(below.contains("calibrated_sculk_sensor") || below.contains("damaged_anvil") || Furniture.isTall(below))) {
                 orphans.add(p);
             }
         }
@@ -71,7 +103,7 @@ final class Furnishing {
         return orphans.size();
     }
 
-    private static void both(Furniture f, int top, int g, int inside, int outside, String[] in, String... out) {
+    private static void both(Furniture f, int top, int g, int inside, int outside, String[] in, String[] out) {
         int a = f.scatter(1, top, inside, true, in);
         int b = f.scatter(Math.max(1, g), g + 2, outside, false, out);
         if (System.getenv("AXS_DEBUG") != null) {
