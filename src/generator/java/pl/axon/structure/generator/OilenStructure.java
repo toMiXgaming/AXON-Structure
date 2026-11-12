@@ -695,7 +695,7 @@ public final class OilenStructure implements StructureDefinition {
             bp.crate(42, ROOF_Y + 1, 25, "west", "dach");
             // osłona z worków przy krawędzi od frontu
             for (int x = 28; x <= 30; x++) {
-                bp.set(x, ROOF_Y + 1, BZ1 + 1, "brown_wool");
+                bp.set(x, ROOF_Y + 1, BZ1 + 1, Furniture.model(Furniture.WORKI, "south"));
             }
             bp.crate(33, ROOF_Y + 1, 32, "south", "npc-szabrownik");
         }
@@ -763,7 +763,7 @@ public final class OilenStructure implements StructureDefinition {
             // na dachu myjni
             bp.crate(5, 7, 33, "north", "dach");
             bp.crate(8, 7, 27, "north", "npc-szabrownik");
-            bp.fill(4, 7, 24, 5, 7, 24, "brown_wool");
+            bp.fill(4, 7, 24, 5, 7, 24, Furniture.model(Furniture.WORKI, "south"));
         }
 
         // ------------------------------------------------------------------ przejście między myjnią a pawilonem

@@ -811,7 +811,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 fill(30, 1, wallS + 1, 37, 2, z2 - 1, "air");
                 for (int x = 31; x <= 37; x += 2) {
                     set(x, 1, z2 - 1, "spruce_planks");
-                    set(x, 2, z2 - 1, chance(0.5) ? "green_wool" : "brown_wool");
+                    set(x, 2, z2 - 1, chance(0.5) ? Furniture.model(Furniture.WORKI, "south") : Furniture.model(Furniture.KARTONY, "south"));
                     set(x, 3, z2 - 1, "spruce_slab[type=bottom]");
                 }
                 crate(33, 1, wallS + 1, "south", "strych");
@@ -897,7 +897,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             for (int x = 127; x <= 130; x += 3) {
                 fill(x, 4, 18, x, 5, 18, "chain[axis=y]");
             }
-            fill(126, 1, 20, 131, 1, 20, "packed_ice");
+            fill(126, 1, 20, 131, 1, 20, "jack_o_lantern[facing=north]"); // lada wydawki
             crate(131, 1, 17, "west", "lada");
             crate(126, 1, 18, "east", "zaplecze");
             crate(110, 1, 20, "east", "parter");
@@ -992,7 +992,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(8, 6, 58, "east", "strych");
             crate(44, 6, 64, "west", "strych");
             set(26, 6, 60, "spruce_planks");
-            set(27, 6, 60, "brown_wool");
+            set(27, 6, 60, Furniture.model(Furniture.KARTONY, "south"));
             cobwebs(x1 + 1, z1 + 1, x2 - 1, z2 - 1, 7, 10);
             // boks 1: gazik, boks 3: stół warsztatowy, boks 4: opony, boks 5: kanał
             uaz(8, 59, false);
@@ -1371,7 +1371,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             for (int z : new int[]{77, 81, 85}) {
                 for (int x = 83; x <= 97; x++) {
                     set(x, 1, z, "spruce_planks");
-                    set(x, 2, z, chance(0.5) ? "brown_wool" : "air");
+                    set(x, 2, z, chance(0.5) ? Furniture.model(Furniture.KARTONY, "south") : "air");
                     set(x, 3, z, "spruce_slab[type=bottom]");
                 }
             }
@@ -1422,7 +1422,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                     } else {
                         for (int y = 1; y <= 5; y += 2) {
                             if (chance(0.35)) {
-                                set(x, y, z, chance(0.5) ? "green_wool" : "brown_wool");
+                                set(x, y, z, chance(0.5) ? Furniture.model(Furniture.WORKI, "south") : Furniture.model(Furniture.KARTONY, "south"));
                             }
                         }
                     }
@@ -2213,7 +2213,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
                 set(x, L1, 98, "observer[facing=south,powered=false]");
                 set(x + 1, L1, 98, "lever[face=floor,facing=south,powered=false]");
             }
-            set(74, L1, 104, "note_block");
+            set(74, L1, 104, "observer[facing=south,powered=false]"); // radiostacja
             set(74, L1 + 1, 104, "lightning_rod[facing=up]");
             set(70, L1 + 3, 103, "lantern[hanging=true,waterlogged=false]");
             f.hangingLamp(67, L1 + 3, 100);

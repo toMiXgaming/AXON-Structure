@@ -190,6 +190,25 @@ COL.update({
     'cornflower': (70, 100, 200), 'oxeye_daisy': (230, 230, 210), 'lily_of_the_valley': (235, 235, 235),
     'red_tulip': (200, 40, 30), 'white_tulip': (230, 230, 230), 'spruce_leaves': (50, 85, 50),
 })
+# Meble z paczki na szkliwionej terakocie (meble.bloki): kolor jak model, nie jak blok-nośnik.
+COL.update({
+    'orange_glazed_terracotta': (120, 82, 50),     # axon:krzeslo
+    'yellow_glazed_terracotta': (150, 110, 70),    # axon:stol
+    'cyan_glazed_terracotta': (105, 75, 45),       # axon:szafa
+    'blue_glazed_terracotta': (130, 95, 60),       # axon:lawka
+    'brown_glazed_terracotta': (180, 140, 90),     # axon:kartony
+    'white_glazed_terracotta': (200, 185, 145),    # axon:worki
+    'lime_glazed_terracotta': (110, 150, 60),      # axon:skrzynka_warzywa
+    'pink_glazed_terracotta': (210, 120, 150),     # axon:zabawki
+    'purple_glazed_terracotta': (70, 50, 110),     # axon:automat_gier
+    'black_glazed_terracotta': (35, 35, 38),       # axon:opony
+    'gray_glazed_terracotta': (215, 215, 210),     # axon:kaloryfer
+    'light_gray_glazed_terracotta': (235, 235, 235),  # axon:pralka
+    'red_glazed_terracotta': (140, 45, 40),        # axon:kanapa
+    'light_blue_glazed_terracotta': (90, 90, 95),  # axon:garnek
+    'magenta_glazed_terracotta': (95, 110, 95),    # axon:maszyna
+    'green_glazed_terracotta': (125, 120, 112),    # axon:gruz
+})
 for _k in list(COL):
     COL.setdefault('potted_' + _k, (120, 70, 50))
 COL['potted_dead_bush'] = COL['potted_fern'] = COL['potted_oak_sapling'] = (120, 70, 50)

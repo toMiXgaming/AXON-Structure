@@ -14,11 +14,179 @@ final class Furniture {
     private final Blueprint bp;
     private final int yOffset;
     private final Random rnd;
+    /** false = meble ze zwykłych bloków (struktury z {@code meble.bez-zamiany}, np. oaza). */
+    private boolean models = true;
 
     Furniture(Blueprint bp, int yOffset, Random rnd) {
         this.bp = bp;
         this.yOffset = yOffset;
         this.rnd = rnd;
+    }
+
+    /** Meble ze zwykłych bloków zamiast modeli z paczki (oaza, gdzie plugin niczego nie zamienia). */
+    Furniture vanilla() {
+        this.models = false;
+        return this;
+    }
+
+    // ------------------------------------------------------------------ meble z paczki
+    // Bloki-nośniki z meble.bloki w config.yml: plugin stawia w ich miejscu barierę i model axon:<nazwa>,
+    // przodem w stronę facing. Szkliwiona terakota nie występuje w strukturach w innej roli.
+
+    static final String KRZESLO = "orange_glazed_terracotta";   // axon:krzeslo
+    static final String STOL = "yellow_glazed_terracotta";      // axon:stol
+    static final String SZAFA = "cyan_glazed_terracotta";       // axon:szafa (2 kratki)
+    static final String LAWKA = "blue_glazed_terracotta";       // axon:lawka
+    static final String KARTONY = "brown_glazed_terracotta";    // axon:kartony
+    static final String WORKI = "white_glazed_terracotta";      // axon:worki
+    static final String SKRZYNKA_WARZYW = "lime_glazed_terracotta"; // axon:skrzynka_warzywa
+    static final String ZABAWKI = "pink_glazed_terracotta";     // axon:zabawki
+    static final String AUTOMAT_GIER = "purple_glazed_terracotta"; // axon:automat_gier (2 kratki)
+    static final String OPONY = "black_glazed_terracotta";      // axon:opony
+    static final String KALORYFER = "gray_glazed_terracotta";   // axon:kaloryfer
+    static final String PRALKA = "light_gray_glazed_terracotta"; // axon:pralka
+    static final String KANAPA = "red_glazed_terracotta";       // axon:kanapa
+    static final String GARNEK = "light_blue_glazed_terracotta"; // axon:garnek
+    static final String MASZYNA = "magenta_glazed_terracotta";  // axon:maszyna (pompa/silnik przemysłowy)
+    static final String GRUZ = "green_glazed_terracotta";       // axon:gruz
+
+    /** Stan bloku-nośnika mebla z paczki, przodem w stronę {@code facing}. */
+    static String model(String carrier, String facing) {
+        return carrier + "[facing=" + facing + "]";
+    }
+
+    /** Mebel z paczki w (x, y, z); dwukratkowe (szafa, automat) dostają barierę nad sobą. */
+    void prop(int x, int y, int z, String carrier, String facing) {
+        set(x, y, z, model(carrier, facing));
+        if (carrier.equals(SZAFA) || carrier.equals(AUTOMAT_GIER)) {
+            set(x, y + 1, z, "barrier");
+        }
+    }
+
+    /** Kaloryfer pod oknem, przodem do pokoju. */
+    void radiator(int x, int y, int z, String front) {
+        if (models) {
+            prop(x, y, z, KALORYFER, front);
+        }
+    }
+
+    /** Sterta kartonów (w oazie zwykła brązowa wełna). */
+    void boxes(int x, int y, int z, String front) {
+        if (models) {
+            prop(x, y, z, KARTONY, front);
+        } else {
+            set(x, y, z, "brown_wool");
+        }
+    }
+
+    /**
+     * Rozstawia do {@code count} mebli z paczki pod ścianami w całej strukturze, na poziomach {@code y1..y2}
+     * (względem yOffset). {@code indoor}: true = tylko pod dachem, false = tylko pod gołym niebem. Mebel stoi
+     * przodem od ściany, nie zastawia drzwi, drabin, wąskich przejść ani punktów skrzyń i NPC. Zwraca liczbę.
+     */
+    int scatter(int y1, int y2, int count, boolean indoor, String... carriers) {
+        if (!models) {
+            return 0;
+        }
+        int placed = 0;
+        String[] dirs = {"north", "south", "east", "west"};
+        java.util.List<int[]> cells = new java.util.ArrayList<>();
+        for (int y = y1; y <= y2; y++) {
+            for (int x = 1; x < bp.width() - 1; x++) {
+                for (int z = 1; z < bp.depth() - 1; z++) {
+                    if (bp.isAir(x, y + yOffset, z) && Weathering.isFullBlock(bp.get(x, y - 1 + yOffset, z))) {
+                        cells.add(new int[]{x, y, z});
+                    }
+                }
+            }
+        }
+        java.util.Collections.shuffle(cells, rnd);
+        for (int[] c : cells) {
+            if (placed >= count) {
+                break;
+            }
+            int x = c[0];
+            int y = c[1];
+            int z = c[2];
+            if (!freeFloor(x, y, z) || covered(x, y, z) != indoor || nearProp(x, y, z)) {
+                continue;
+            }
+            String wall = null;
+            int walls = 0;
+            boolean blocked = false;
+            for (String d : dirs) {
+                int nx = x + dx(d);
+                int nz = z + dz(d);
+                for (int dy = -1; dy <= 1; dy++) {
+                    String n = bp.get(nx, y + dy + yOffset, nz);
+                    if (n.contains("door") || n.contains("ladder") || n.contains("rail") || n.contains("glazed_terracotta") && dy == 0) {
+                        blocked = true;
+                    }
+                }
+                if (isMarker(nx, y, nz) || isMarker(nx, y - 1, nz)) {
+                    blocked = true;
+                }
+                if (Weathering.isFullBlock(bp.get(nx, y + yOffset, nz)) && Weathering.isFullBlock(bp.get(nx, y + 1 + yOffset, nz))) {
+                    walls++;
+                    wall = d;
+                }
+            }
+            if (blocked || walls != 1 && indoor || walls > 1) {
+                continue;
+            }
+            String front = wall != null ? opposite(wall) : dirs[rnd.nextInt(4)];
+            int fx = x + dx(front);
+            int fz = z + dz(front);
+            if (!bp.isAir(fx, y + yOffset, fz) || !bp.isAir(fx, y + 1 + yOffset, fz)) {
+                continue;
+            }
+            String carrier = carriers[rnd.nextInt(carriers.length)];
+            if ((carrier.equals(SZAFA) || carrier.equals(AUTOMAT_GIER)) && !bp.isAir(x, y + 2 + yOffset, z)) {
+                continue;
+            }
+            prop(x, y, z, carrier, front);
+            placed++;
+        }
+        return placed;
+    }
+
+    /** Czy w promieniu 3 kratek na tym poziomie stoi już mebel z paczki (żeby się nie zbijały w kupki). */
+    private boolean nearProp(int x, int y, int z) {
+        for (int ox = -3; ox <= 3; ox++) {
+            for (int oz = -3; oz <= 3; oz++) {
+                if (bp.get(x + ox, y + yOffset, z + oz).contains("glazed_terracotta")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Czy nad kratką (do 10 bloków w górę) jest strop. */
+    private boolean covered(int x, int y, int z) {
+        for (int dy = 2; dy <= 10; dy++) {
+            int ay = y + dy + yOffset;
+            if (ay >= bp.height()) {
+                return false;
+            }
+            if (!bp.isAir(x, ay, z)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Kanapa przodem do {@code front}, {@code len} segmentów wzdłuż x albo z. */
+    void sofa(int x, int y, int z, int len, boolean alongX, String front) {
+        for (int i = 0; i < len; i++) {
+            int sx = x + (alongX ? i : 0);
+            int sz = z + (alongX ? 0 : i);
+            if (models) {
+                prop(sx, y, sz, KANAPA, front);
+            } else {
+                set(sx, y, sz, "red_wool");
+            }
+        }
     }
 
     private void set(int x, int y, int z, String state) {
@@ -87,11 +255,19 @@ final class Furniture {
 
     /** Krzesło ze schodków; {@code back} to strona, po której jest oparcie. */
     void chair(int x, int y, int z, String back, String wood) {
+        if (models) {
+            prop(x, y, z, KRZESLO, opposite(back));
+            return;
+        }
         set(x, y, z, wood + "_stairs[facing=" + back + ",half=bottom,shape=straight,waterlogged=false]");
     }
 
     /** Okrągły stolik: płotek z płytką naciskową jako blatem. */
     void table(int x, int y, int z, String wood) {
+        if (models) {
+            prop(x, y, z, STOL, "south");
+            return;
+        }
         set(x, y, z, wood + "_fence[east=false,north=false,south=false,waterlogged=false,west=false]");
         set(x, y + 1, z, wood + "_pressure_plate[powered=false]");
     }
@@ -107,15 +283,23 @@ final class Furniture {
 
     /** Stół z krzesłami po dwóch stronach (wzdłuż x albo z). */
     void dining(int x, int y, int z, boolean alongX, String wood) {
+        if (models) {
+            prop(x, y, z, STOL, alongX ? "south" : "east");
+            prop(x + (alongX ? 1 : 0), y, z + (alongX ? 0 : 1), STOL, alongX ? "south" : "east");
+        }
         if (alongX) {
-            desk(x, y, z, x + 1, z, wood);
+            if (!models) {
+                desk(x, y, z, x + 1, z, wood);
+            }
             chair(x, y, z - 1, "north", wood);
             chair(x + 1, y, z + 1, "south", wood);
             if (rnd.nextBoolean()) {
                 chair(x + 1, y, z - 1, "north", wood);
             }
         } else {
-            desk(x, y, z, x, z + 1, wood);
+            if (!models) {
+                desk(x, y, z, x, z + 1, wood);
+            }
             chair(x - 1, y, z, "west", wood);
             chair(x + 1, y, z + 1, "east", wood);
             if (rnd.nextBoolean()) {
@@ -133,6 +317,9 @@ final class Furniture {
     /** Zlew: kocioł z wodą i dźwignia jako kran na ścianie za nim. */
     void sink(int x, int y, int z, String wallSide) {
         set(x, y, z, "water_cauldron[level=" + (1 + rnd.nextInt(2)) + "]");
+        if (models) {
+            return; // model umywalki ma własny kran
+        }
         int wx = x + dx(wallSide);
         int wz = z + dz(wallSide);
         if (!bp.isAir(wx, y + 1 + yOffset, wz) && bp.isAir(x, y + 1 + yOffset, z)) {
@@ -142,6 +329,10 @@ final class Furniture {
 
     /** Toaleta: kocioł z klapą (otwarta klapa przy ścianie) i spłuczką. */
     void toilet(int x, int y, int z, String wallSide) {
+        if (models) {
+            set(x, y, z, "end_portal_frame[eye=false,facing=" + opposite(wallSide) + "]"); // axon:kibel
+            return;
+        }
         set(x, y, z, "cauldron");
         if (bp.isAir(x, y + 1 + yOffset, z)) {
             set(x, y + 1, z, "birch_trapdoor[facing=" + opposite(wallSide) + ",half=bottom,open=true,powered=false,waterlogged=false]");
@@ -165,6 +356,10 @@ final class Furniture {
 
     /** Szafa: dwa bloki desek z zamkniętymi drzwiczkami (klapy) od frontu. */
     void wardrobe(int x, int y, int z, String front, String wood) {
+        if (models) {
+            prop(x, y, z, SZAFA, front);
+            return;
+        }
         set(x, y, z, wood + "_planks");
         set(x, y + 1, z, wood + "_planks");
         int fx = x + dx(front);
@@ -208,14 +403,19 @@ final class Furniture {
         int bz = z + dx(bedFacing) * 2;
         bed(bx, y, bz, bedFacing, bedColor);
         set(x + dz(bedFacing) * 2, y, z - dx(bedFacing) * 2, "stripped_oak_log[axis=" + (dx(bedFacing) != 0 ? "x" : "z") + "]");
-        set(x + dx(bedFacing) * 2 - dz(bedFacing), y, z + dz(bedFacing) * 2 + dx(bedFacing), "cauldron");
+        set(x + dx(bedFacing) * 2 - dz(bedFacing), y, z + dz(bedFacing) * 2 + dx(bedFacing),
+                models ? model(GARNEK, bedFacing) : "cauldron");
         set(x - dx(bedFacing) * 2, y, z - dz(bedFacing) * 2, "candle[candles=3,lit=true,waterlogged=false]");
     }
 
     /** Ławka ze schodków wzdłuż x albo z, oparcie po stronie {@code back}. */
     void bench(int x, int y, int z, int len, boolean alongX, String back, String wood) {
         for (int i = 0; i < len; i++) {
-            chair(x + (alongX ? i : 0), y, z + (alongX ? 0 : i), back, wood);
+            if (models) {
+                prop(x + (alongX ? i : 0), y, z + (alongX ? 0 : i), LAWKA, opposite(back));
+            } else {
+                chair(x + (alongX ? i : 0), y, z + (alongX ? 0 : i), back, wood);
+            }
         }
     }
 

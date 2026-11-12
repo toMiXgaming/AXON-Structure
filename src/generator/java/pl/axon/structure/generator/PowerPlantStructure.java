@@ -489,7 +489,7 @@ public final class PowerPlantStructure implements StructureDefinition {
             if (stripped) {
                 set(x + 1, 1, z + 1, "exposed_copper");
                 set(x + 3, 1, z + 4, "weathered_cut_copper_slab[type=bottom,waterlogged=false]");
-                set(x + 4, 1, z + 3, "copper_bulb[lit=false,powered=false]");
+                set(x + 4, 1, z + 3, Furniture.model(Furniture.MASZYNA, "west"));
                 return;
             }
             for (int dz = 0; dz <= 2; dz++) {
@@ -740,7 +740,8 @@ public final class PowerPlantStructure implements StructureDefinition {
             for (int x = 55; x <= 58; x++) {
                 set(x, 1, front, "blast_furnace[facing=" + (z0 < 30 ? "south" : "north") + ",lit=false]");
             }
-            fill(54, 1, z0 + 1, 59, 2, z0 + 5, "magma_block");
+            fill(54, 1, z0 + 1, 59, 1, z0 + 5, "coal_block"); // wygasłe palenisko: zalegający węgiel i popiół
+            fill(54, 2, z0 + 1, 59, 2, z0 + 5, "black_concrete_powder");
             fill(54, 3, z0 + 1, 59, 21, z0 + 5, "air");
             // rury do hali
             fill(51, 14, z0 + 3, 52, 14, z0 + 3, "light_gray_terracotta");

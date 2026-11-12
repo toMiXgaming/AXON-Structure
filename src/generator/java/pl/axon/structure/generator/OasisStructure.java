@@ -81,7 +81,7 @@ public final class OasisStructure implements StructureDefinition {
 
         Builder(Random rnd) {
             this.rnd = rnd;
-            f = new Furniture(bp, G, rnd);
+            f = new Furniture(bp, G, rnd).vanilla();
             grass = new Palette(rnd)
                     .add("grass_block", 14).add("coarse_dirt", 2).add("dirt", 1);
             asphalt = new Palette(rnd)
