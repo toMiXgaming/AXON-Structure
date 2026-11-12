@@ -201,7 +201,7 @@ COL.update({
     'lime_glazed_terracotta': (110, 150, 60),      # axon:skrzynka_warzywa
     'pink_glazed_terracotta': (210, 120, 150),     # axon:zabawki
     'purple_glazed_terracotta': (70, 50, 110),     # axon:automat_gier
-    'black_glazed_terracotta': (35, 35, 38),       # axon:opony
+    'black_glazed_terracotta': (35, 35, 38),       # axon:sterta_opon
     'gray_glazed_terracotta': (215, 215, 210),     # axon:kaloryfer
     'light_gray_glazed_terracotta': (235, 235, 235),  # axon:pralka
     'red_glazed_terracotta': (140, 45, 40),        # axon:kanapa

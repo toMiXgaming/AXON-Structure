@@ -53,7 +53,7 @@ meble:
     respawn_anchor: "axon:kanistry"      # sterta kanistrów
     lodestone: "axon:wozek"              # porzucony wózek sklepowy
     loom: "axon:telewizor"               # telewizor z kineskopem (blokowisko)
-    # Nowe meble (paczka/axon-meble, generuje tools/paczka/meble.py). Nośnikiem jest szkliwiona terakota,
+    # Nowe meble (QualityArmory-texturepack, zrodla/gen_meble_struktury.py). Nośnikiem jest szkliwiona terakota,
     # której struktury nie używają w innej roli. Szafa i automat do gier mają dwie kratki (bariera nad blokiem).
     orange_glazed_terracotta: "axon:krzeslo"        # drewniane krzesło
     yellow_glazed_terracotta: "axon:stol"           # stół
@@ -64,7 +64,7 @@ meble:
     lime_glazed_terracotta: "axon:skrzynka_warzywa" # skrzynka z warzywami
     pink_glazed_terracotta: "axon:zabawki"          # regał z zabawkami
     purple_glazed_terracotta: "axon:automat_gier"   # automat do gier (galeria)
-    black_glazed_terracotta: "axon:opony"           # sterta opon
+    black_glazed_terracotta: "axon:sterta_opon"           # sterta opon
     gray_glazed_terracotta: "axon:kaloryfer"        # żeliwny kaloryfer
     light_gray_glazed_terracotta: "axon:pralka"     # pralka
     red_glazed_terracotta: "axon:kanapa"            # segment kanapy / boks w barze

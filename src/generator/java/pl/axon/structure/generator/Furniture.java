@@ -42,7 +42,7 @@ final class Furniture {
     static final String SKRZYNKA_WARZYW = "lime_glazed_terracotta"; // axon:skrzynka_warzywa
     static final String ZABAWKI = "pink_glazed_terracotta";     // axon:zabawki
     static final String AUTOMAT_GIER = "purple_glazed_terracotta"; // axon:automat_gier (2 kratki)
-    static final String OPONY = "black_glazed_terracotta";      // axon:opony
+    static final String OPONY = "black_glazed_terracotta";      // axon:sterta_opon
     static final String KALORYFER = "gray_glazed_terracotta";   // axon:kaloryfer
     static final String PRALKA = "light_gray_glazed_terracotta"; // axon:pralka
     static final String KANAPA = "red_glazed_terracotta";       // axon:kanapa
