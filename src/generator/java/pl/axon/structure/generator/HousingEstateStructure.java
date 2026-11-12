@@ -754,7 +754,7 @@ public final class HousingEstateStructure implements StructureDefinition {
             set(bx1, y + 1, north ? za : zb, "end_portal_frame[eye=false,facing=" + (north ? "south" : "north") + "]");
             furniture.sink(bx2, y + 1, north ? za : zb, back);
             if (chance(0.5)) {
-                set(bx1, y + 1, north ? zb : za, "cauldron");
+                set(bx1, y + 1, north ? zb : za, Furniture.model(Furniture.PRALKA, north ? "south" : "north"));
             }
         }
 
@@ -828,8 +828,15 @@ public final class HousingEstateStructure implements StructureDefinition {
             }
             // fotel i telewizor na szafce
             int ax = bedFacing.equals("east") ? xb : xa;
-            if (chance(0.6) && isAir(ax, y + 1, cz)) {
-                furniture.chair(ax, y + 1, cz, bedFacing.equals("east") ? "east" : "west", "dark_oak");
+            String sofaFront = bedFacing.equals("east") ? "west" : "east";
+            if (chance(0.6) && isAir(ax, y + 1, cz) && isAir(ax, y + 1, cz + 1)) {
+                furniture.sofa(ax, y + 1, cz, 2, false, sofaFront);
+            } else if (chance(0.6) && isAir(ax, y + 1, cz)) {
+                furniture.chair(ax, y + 1, cz, bedFacing, "dark_oak");
+            }
+            // kaloryfer pod oknem na ścianie zewnętrznej
+            if (isAir(cx, y + 1, bedZ)) {
+                furniture.radiator(cx, y + 1, bedZ, entryNorth ? "north" : "south");
             }
             if (chance(0.3)) {
                 int lx = cx;

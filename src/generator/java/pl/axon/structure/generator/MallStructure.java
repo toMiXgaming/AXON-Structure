@@ -727,7 +727,7 @@ public final class MallStructure implements StructureDefinition {
             crate(10, GB + 1, 104, "east", "galeria-skarbiec");
             crate(16, GB + 1, 112, "north", "galeria-biuro");
             for (int[] p : new int[][]{{11, 107}, {11, 108}, {13, 110}, {14, 110}, {11, 109}}) {
-                set(p[0], GB + 1, p[1], pick("brown_wool", "brown_wool", "light_gray_wool"));
+                set(p[0], GB + 1, p[1], Furniture.model(Furniture.WORKI, "east")); // worki z gotówką
             }
             set(11, GB + 2, 108, "brown_carpet");
             // właz: drabina z biura Maximarketu (x 12, z 112)
@@ -1207,7 +1207,7 @@ public final class MallStructure implements StructureDefinition {
                 int x = u.a() + rnd.nextInt(u.b() - u.a() - 1);
                 int z = u.br(1 + rnd.nextInt(2));
                 if (isAir(x, fl + 1, z) && x != u.b() - 1) {
-                    set(x, fl + 1, z, pick("barrel[facing=up,open=false]", "brown_wool", "brown_wool", "mushroom_stem"));
+                    set(x, fl + 1, z, pick("barrel[facing=up,open=false]", Furniture.model(Furniture.KARTONY, "south"), Furniture.model(Furniture.KARTONY, "south"), Furniture.model(Furniture.WORKI, "south")));
                 }
             }
             if (chance(0.25)) {
@@ -1340,9 +1340,9 @@ public final class MallStructure implements StructureDefinition {
                         continue;
                     }
                     if (kind == Kind.TOYS && chance(0.5)) {
-                        set(x, fl + 1, u.z(d), pick("red_wool", "yellow_wool", "lime_wool", "light_blue_wool", "pink_wool"));
+                        set(x, fl + 1, u.z(d), Furniture.model(Furniture.ZABAWKI, u.out()));
                     } else if (kind == Kind.BAGS && chance(0.5)) {
-                        set(x, fl + 1, u.z(d), pick("brown_wool", "black_wool", "brown_terracotta"));
+                        set(x, fl + 1, u.z(d), regal(u.out()));
                     } else if (kind == Kind.OPTICIAN) {
                         set(x, fl + 1, u.z(d), d % 2 == 0 ? "smooth_quartz" : "air");
                         if (d % 2 == 0) {
@@ -1587,7 +1587,10 @@ public final class MallStructure implements StructureDefinition {
                         counterMarker(x, fl + 1, u.z(d), face, "punkt-automat", "dispenser[facing=" + face + ",triggered=false]");
                         slots++;
                     } else {
-                        set(x, fl + 1, u.z(d), "note_block[instrument=bit,note=" + rnd.nextInt(24) + ",powered=false]");
+                        // automat do gier z paczki (2 kratki, bariera nad nim)
+                        set(x, fl + 1, u.z(d), Furniture.model(Furniture.AUTOMAT_GIER, face));
+                        set(x, fl + 2, u.z(d), "barrier");
+                        continue;
                     }
                     set(x, fl + 2, u.z(d), chance(0.15) ? "black_stained_glass" : screens[rnd.nextInt(screens.length)]);
                     set(x, fl + 3, u.z(d), pick("black_concrete", "purple_concrete", "red_concrete"));
@@ -1727,11 +1730,9 @@ public final class MallStructure implements StructureDefinition {
             set(u.mid(), fl + 2, u.z(4), kasa(u.in()));
             for (int d = 7; d <= 15; d += 2) {
                 for (int x = u.a() + 1; x <= u.b() - 2; x++) {
-                    set(x, fl + 1, u.z(d), chance(0.8) ? regal(u.out()) : "barrel[facing=up,open=false]");
-                    if (chance(0.5)) {
-                        set(x, fl + 2, u.z(d), pick("end_rod[facing=up]", "brown_wool", "lantern[hanging=false,waterlogged=false]",
-                                "player_head[rotation=" + rnd.nextInt(16) + "]", "red_carpet", "flower_pot"));
-                    }
+                    // półki z zabawkami z paczki, między nimi zwykłe regały i kartony
+                    set(x, fl + 1, u.z(d), chance(0.6) ? Furniture.model(Furniture.ZABAWKI, u.out())
+                            : chance(0.7) ? regal(u.out()) : Furniture.model(Furniture.KARTONY, u.out()));
                 }
             }
             sign(u.a(), fl + 2, u.z(2), "east", "ZNALEZIONO:", "SZTUCZNĄ", "SZCZĘKĘ.", "ODBIÓR W PIĄTEK");
@@ -1863,7 +1864,8 @@ public final class MallStructure implements StructureDefinition {
                 }
             }
             // stoiska z warzywami przy wejściu
-            String[] produce = {"melon", "pumpkin", "hay_block", "dried_kelp_block", "brown_mushroom_block[down=true,east=true,north=true,south=true,up=true,west=true]"};
+            String[] produce = {Furniture.model(Furniture.SKRZYNKA_WARZYW, "east"), Furniture.model(Furniture.SKRZYNKA_WARZYW, "west"),
+                    Furniture.model(Furniture.WORKI, "east")};
             for (int x = 11; x <= 20; x += 4) {
                 for (int z = 68; z <= 84; z += 5) {
                     String p = produce[rnd.nextInt(produce.length)];
@@ -1905,9 +1907,9 @@ public final class MallStructure implements StructureDefinition {
             set(12, 1, 111, "air");
             for (int x = 19; x <= 28; x += 3) {
                 for (int z = 105; z <= 111; z += 3) {
-                    set(x, 1, z, pick("barrel[facing=up,open=false]", "brown_wool", "mushroom_stem", KANISTRY));
+                    set(x, 1, z, pick("barrel[facing=up,open=false]", Furniture.model(Furniture.KARTONY, "south"), Furniture.model(Furniture.WORKI, "south"), KANISTRY));
                     if (chance(0.5)) {
-                        set(x, 2, z, pick("barrel[facing=up,open=false]", "brown_wool"));
+                        set(x, 2, z, pick("barrel[facing=up,open=false]", Furniture.model(Furniture.KARTONY, "south")));
                     }
                 }
             }
@@ -2176,7 +2178,7 @@ public final class MallStructure implements StructureDefinition {
                 int x = 113 + rnd.nextInt(17);
                 int z = 58 + rnd.nextInt(28);
                 if (isAir(x, fl + 1, z) && (z < 70 || z > 83 || x > 118)) {
-                    set(x, fl + 1, z, pick("mushroom_stem", "brown_wool", "barrel[facing=up,open=false]"));
+                    set(x, fl + 1, z, pick(Furniture.model(Furniture.WORKI, "south"), Furniture.model(Furniture.KARTONY, "south"), "barrel[facing=up,open=false]"));
                 }
             }
             // zaplecze
@@ -2187,7 +2189,7 @@ public final class MallStructure implements StructureDefinition {
             }
             fill(120, fl + 1, 104, 121, fl + 2, 104, "air");
             for (int x = 113; x <= 129; x++) {
-                set(x, fl + 1, 112, x % 2 == 0 ? regal("north") : "mushroom_stem");
+                set(x, fl + 1, 112, x % 2 == 0 ? regal("north") : Furniture.model(Furniture.WORKI, "north"));
             }
             crate(116, fl + 1, 108, "north", "galeria-elektronika");
             crate(127, fl + 1, 107, "north", "galeria-zaplecze");

@@ -55,6 +55,70 @@ class S:
         self.set(x, y, z, state)
         self.signs.append((x, y, z, list(lines)))
 
+    def meble(self, count, y1, y2, wnetrze, nosniki, odstep=3, seed=None):
+        """Rozstawia do `count` mebli z paczki (bloki-nośniki: szkliwiona terakota i szulkery z meble.bloki)
+        pod ścianami: `wnetrze` True = tylko pod dachem, False = pod gołym niebem. Mebel stoi przodem od ściany,
+        nie przy drzwiach, drabinach i punktach skrzyń, nie bliżej niż `odstep` kratek od innego mebla.
+        Dwukratkowe (szafa, automat, spind, regał magazynowy, lodówka, lampa, prycza) dostają barierę nad sobą."""
+        rnd = random.Random(seed if seed is not None else self.rng.random())
+        dirs = {'north': (0, -1), 'south': (0, 1), 'east': (1, 0), 'west': (-1, 0)}
+        opp = {'north': 'south', 'south': 'north', 'east': 'west', 'west': 'east'}
+        tall = ('cyan_glazed', 'purple_glazed', 'black_shulker', 'orange_shulker', 'cyan_shulker', 'light_blue_shulker',
+                'blue_shulker')
+        def full(b):
+            if b == 'minecraft:air':
+                return False
+            if 'axis=' in b or b.endswith('grass_block') or 'grass_block[' in b:
+                return True
+            return not any(k in b for k in (
+                '[', 'slab', 'stairs', 'fence', 'wall', 'pane', 'bars', 'carpet', 'ladder', 'door', 'water', 'leaves', 'glass',
+                'grass', 'fern', 'cobweb', 'chain', 'lantern', 'rail', 'sign', 'candle', 'rod', 'cauldron', 'hopper', 'bed',
+                'lichen', 'bush', 'vine', 'plate', 'button', 'lever', 'campfire', 'barrier', 'path', 'farmland', 'mud'))
+        carrier = lambda b: 'glazed_terracotta' in b or 'shulker_box' in b
+        marks = {(c[0], c[1], c[2]) for c in self.crates}
+        cells = [(x, y, z) for y in range(y1, y2 + 1) for x in range(1, self.w - 1) for z in range(1, self.d - 1)
+                 if self.get(x, y, z) == 'minecraft:air' and full(self.get(x, y - 1, z))]
+        rnd.shuffle(cells)
+        placed = 0
+        for x, y, z in cells:
+            if placed >= count:
+                break
+            if self.get(x, y + 1, z) != 'minecraft:air' or (x, y, z) in marks or (x, y - 1, z) in marks:
+                continue
+            covered = any(self.get(x, y + dy, z) != 'minecraft:air' for dy in range(2, 11) if y + dy < self.h)
+            if covered != wnetrze:
+                continue
+            if any(carrier(self.get(x + ox, y, z + oz)) for ox in range(-odstep, odstep + 1) for oz in range(-odstep, odstep + 1)
+                   if 0 <= x + ox < self.w and 0 <= z + oz < self.d):
+                continue
+            wall, walls, blocked = None, 0, False
+            for d, (ox, oz) in dirs.items():
+                nx, nz = x + ox, z + oz
+                for dy in (-1, 0, 1):
+                    nb = self.get(nx, y + dy, nz)
+                    if any(k in nb for k in ('door', 'ladder', 'rail')) or (carrier(nb) and dy == 0):
+                        blocked = True
+                if (nx, y, nz) in marks or (nx, y - 1, nz) in marks:
+                    blocked = True
+                if full(self.get(nx, y, nz)) and full(self.get(nx, y + 1, nz)):
+                    walls += 1
+                    wall = d
+            if blocked or walls > 1 or (wnetrze and walls != 1):
+                continue
+            front = opp[wall] if wall else rnd.choice(list(dirs))
+            fx, fz = x + dirs[front][0], z + dirs[front][1]
+            if self.get(fx, y, fz) != 'minecraft:air' or self.get(fx, y + 1, fz) != 'minecraft:air':
+                continue
+            c = rnd.choice(nosniki)
+            is_tall = any(c.startswith(t) for t in tall)
+            if is_tall and self.get(x, y + 2, z) != 'minecraft:air':
+                continue
+            self.set(x, y, z, '%s[facing=%s]' % (c, front))
+            if is_tall:
+                self.set(x, y + 1, z, 'barrier')
+            placed += 1
+        return placed
+
     def save(self, path):
         pal = ['minecraft:air']
         idx = {'minecraft:air': 0}
@@ -189,6 +253,42 @@ COL.update({
     'poppy': (190, 30, 30), 'dandelion': (240, 220, 40), 'allium': (180, 110, 210), 'azure_bluet': (220, 230, 230),
     'cornflower': (70, 100, 200), 'oxeye_daisy': (230, 230, 210), 'lily_of_the_valley': (235, 235, 235),
     'red_tulip': (200, 40, 30), 'white_tulip': (230, 230, 230), 'spruce_leaves': (50, 85, 50),
+})
+# Meble z paczki na szkliwionej terakocie (meble.bloki): kolor jak model, nie jak blok-nośnik.
+COL.update({
+    'orange_glazed_terracotta': (120, 82, 50),     # axon:krzeslo
+    'yellow_glazed_terracotta': (150, 110, 70),    # axon:stol
+    'cyan_glazed_terracotta': (105, 75, 45),       # axon:szafa
+    'blue_glazed_terracotta': (130, 95, 60),       # axon:lawka
+    'brown_glazed_terracotta': (180, 140, 90),     # axon:kartony
+    'white_glazed_terracotta': (200, 185, 145),    # axon:worki
+    'lime_glazed_terracotta': (110, 150, 60),      # axon:skrzynka_warzywa
+    'pink_glazed_terracotta': (210, 120, 150),     # axon:zabawki
+    'purple_glazed_terracotta': (70, 50, 110),     # axon:automat_gier
+    'black_glazed_terracotta': (35, 35, 38),       # axon:sterta_opon
+    'gray_glazed_terracotta': (215, 215, 210),     # axon:kaloryfer
+    'light_gray_glazed_terracotta': (235, 235, 235),  # axon:pralka
+    'red_glazed_terracotta': (140, 45, 40),        # axon:kanapa
+    'light_blue_glazed_terracotta': (90, 90, 95),  # axon:garnek
+    'magenta_glazed_terracotta': (95, 110, 95),    # axon:maszyna
+    'green_glazed_terracotta': (125, 120, 112),    # axon:gruz
+    'white_shulker_box': (214, 218, 214),
+    'light_gray_shulker_box': (200, 204, 200),
+    'gray_shulker_box': (60, 60, 70),
+    'black_shulker_box': (76, 82, 86),
+    'brown_shulker_box': (170, 130, 84),
+    'orange_shulker_box': (170, 100, 40),
+    'red_shulker_box': (170, 40, 36),
+    'yellow_shulker_box': (214, 170, 40),
+    'lime_shulker_box': (180, 170, 120),
+    'green_shulker_box': (50, 54, 62),
+    'cyan_shulker_box': (228, 228, 222),
+    'light_blue_shulker_box': (222, 196, 130),
+    'blue_shulker_box': (84, 92, 62),
+    'purple_shulker_box': (84, 92, 62),
+    'magenta_shulker_box': (48, 48, 52),
+    'pink_shulker_box': (124, 88, 56),
+    'shulker_box': (120, 70, 40),
 })
 for _k in list(COL):
     COL.setdefault('potted_' + _k, (120, 70, 50))

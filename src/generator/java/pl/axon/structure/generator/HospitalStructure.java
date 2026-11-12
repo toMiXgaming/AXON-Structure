@@ -922,7 +922,7 @@ public final class HospitalStructure implements StructureDefinition {
                 }
             }
             // worki z gruzem i wiadra na pomostach
-            set(28, 5, 49, "brown_wool");
+            set(28, 5, 49, Furniture.model(Furniture.WORKI, "south"));
             set(27, 13, 50, "cauldron");
             set(28, 21, 43, "brown_wool");
         }
@@ -1166,7 +1166,7 @@ public final class HospitalStructure implements StructureDefinition {
             fill(50, B, 48, 50, B + 1, 48, "air");
             for (int x = 45; x <= 54; x += 3) {
                 fill(x, B, 50, x, B + 2, 50, "bookshelf");
-                fill(x, B, 51, x, B + 1, 51, "brown_wool");
+                fill(x, B, 51, x, B + 1, 51, Furniture.model(Furniture.KARTONY, "south"));
             }
             room(57, B, 49, 64, B + 2, 52);
             fill(60, B, 48, 60, B + 1, 48, "air");

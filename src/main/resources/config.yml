@@ -53,6 +53,42 @@ meble:
     respawn_anchor: "axon:kanistry"      # sterta kanistrów
     lodestone: "axon:wozek"              # porzucony wózek sklepowy
     loom: "axon:telewizor"               # telewizor z kineskopem (blokowisko)
+    # Nowe meble (QualityArmory-texturepack, zrodla/gen_meble_struktury.py). Nośnikiem jest szkliwiona terakota,
+    # której struktury nie używają w innej roli. Szafa i automat do gier mają dwie kratki (bariera nad blokiem).
+    orange_glazed_terracotta: "axon:krzeslo"        # drewniane krzesło
+    yellow_glazed_terracotta: "axon:stol"           # stół
+    cyan_glazed_terracotta: "axon:szafa"            # dwudrzwiowa szafa
+    blue_glazed_terracotta: "axon:lawka"            # ławka z oparciem
+    brown_glazed_terracotta: "axon:kartony"         # sterta kartonów
+    white_glazed_terracotta: "axon:worki"           # worki (piasek, mąka, gotówka)
+    lime_glazed_terracotta: "axon:skrzynka_warzywa" # skrzynka z warzywami
+    pink_glazed_terracotta: "axon:zabawki"          # regał z zabawkami
+    purple_glazed_terracotta: "axon:automat_gier"   # automat do gier (galeria)
+    black_glazed_terracotta: "axon:sterta_opon"           # sterta opon
+    gray_glazed_terracotta: "axon:kaloryfer"        # żeliwny kaloryfer
+    light_gray_glazed_terracotta: "axon:pralka"     # pralka
+    red_glazed_terracotta: "axon:kanapa"            # segment kanapy / boks w barze
+    light_blue_glazed_terracotta: "axon:garnek"     # garnek na stojaku (obozowiska)
+    magenta_glazed_terracotta: "axon:maszyna"       # silnik / pompa przemysłowa
+    green_glazed_terracotta: "axon:gruz"            # kupka gruzu
+    # Czwarta partia (szpital, koszary, magazyn, warsztat, dom): nośnikami są szulkery.
+    white_shulker_box: "axon:stol_operacyjny"            # stół operacyjny
+    light_gray_shulker_box: "axon:lozko_szpitalne"       # łóżko szpitalne
+    gray_shulker_box: "axon:wozek_inwalidzki"            # wózek inwalidzki
+    black_shulker_box: "axon:spind"                      # metalowy spind (2 kratki)
+    brown_shulker_box: "axon:paleta_towaru"              # paleta z towarem
+    orange_shulker_box: "axon:regal_magazynowy"          # regał magazynowy (2 kratki)
+    red_shulker_box: "axon:butla_gazowa"                 # butle gazowe
+    yellow_shulker_box: "axon:tokarka"                   # tokarka
+    lime_shulker_box: "axon:stol_odpraw"                 # stół odpraw z mapą
+    green_shulker_box: "axon:krzeslo_biurowe"            # krzesło biurowe
+    cyan_shulker_box: "axon:lodowka_domowa"              # domowa lodówka (2 kratki)
+    light_blue_shulker_box: "axon:lampa_podlogowa"       # lampa podłogowa (2 kratki)
+    blue_shulker_box: "axon:lozko_pietrowe"              # prycza piętrowa (2 kratki)
+    purple_shulker_box: "axon:skrzynia_amunicji"         # skrzynie amunicyjne
+    magenta_shulker_box: "axon:beben_kabla"              # bęben z kablem
+    pink_shulker_box: "axon:komoda"                      # komoda
+    shulker_box: "axon:fotel"                        # fotel
   # Drzwi zostają prawdziwymi drzwiami (otwierają się), model idzie za nimi przy otwieraniu.
   drzwi:
     spruce_door: "axon:drzwi_drewniane"

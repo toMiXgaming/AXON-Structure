@@ -467,7 +467,7 @@ public final class CollectiveFarmStructure implements StructureDefinition {
             bp.crate(26, 1, 28, "east", "parter");
             bp.crate(34, 1, 38, "west", "parter");
             for (int[] p : new int[][]{{27, 33}, {33, 31}, {26, 37}}) {
-                bp.set(p[0], 1, p[1], "brown_wool");
+                bp.set(p[0], 1, p[1], Furniture.model(Furniture.WORKI, "south"));
             }
             bp.set(30, pigRoofY(30) - 1, 33, "lantern[hanging=true]");
         }

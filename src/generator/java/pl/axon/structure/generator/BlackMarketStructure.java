@@ -40,7 +40,9 @@ public final class BlackMarketStructure implements StructureDefinition {
 
     @Override
     public Blueprint build(Random random) {
-        return new Builder(random).build();
+        pl.axon.structure.core.Traits d = pl.axon.structure.core.Traits.defaults();
+        return new Builder(random).build().traits(new pl.axon.structure.core.Traits(d.entrances(), d.mapAllowed(),
+                d.sizeClass(), java.util.Set.of("ustronnie"), d.climates(), d.safe(), d.tags()));
     }
 
     private static final class Builder {
