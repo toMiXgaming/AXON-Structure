@@ -33,6 +33,10 @@ public final class StructureExporter {
                     .meta(definition.id(), definition.displayName(), definition.description());
             Furnishing.apply(definition.id(), bp, new Random(seed * 17 + definition.id().hashCode()));
             Weathering.apply(bp, new Random(seed * 31 + definition.id().hashCode()));
+            int orphans = Furnishing.removeOrphanBarriers(bp);
+            if (orphans > 0) {
+                System.out.println("  " + definition.id() + ": usunięto " + orphans + " barier bez mebla pod spodem");
+            }
             Path file = out.resolve(definition.id() + StructureFile.EXTENSION);
             try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
                 StructureFile.write(bp, writer);

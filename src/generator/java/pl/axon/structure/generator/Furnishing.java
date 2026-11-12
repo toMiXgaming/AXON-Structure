@@ -44,6 +44,33 @@ final class Furnishing {
         }
     }
 
+    /**
+     * Usuwa bariery-sieroty: w strukturze bez dużych modeli ({@code modele:}) bariera ma sens tylko nad
+     * dwukratkowym meblem (lodówka, dystrybutor, szafa, automat). Gdy mebel pod nią zniknął (zawalony strop,
+     * nadpisana kratka), zostawała niewidzialna ściana. Zwraca liczbę usuniętych.
+     */
+    static int removeOrphanBarriers(Blueprint bp) {
+        if (!bp.props().isEmpty()) {
+            return 0; // bariery dają kolizję wrakom i lokomotywom
+        }
+        java.util.List<Blueprint.Pos> orphans = new java.util.ArrayList<>();
+        for (java.util.Map.Entry<Blueprint.Pos, String> e : bp.blocks().entrySet()) {
+            if (!e.getValue().endsWith("barrier")) {
+                continue;
+            }
+            Blueprint.Pos p = e.getKey();
+            String below = bp.get(p.x(), p.y() - 1, p.z());
+            if (!(below.contains("calibrated_sculk_sensor") || below.contains("damaged_anvil")
+                    || below.contains(Furniture.SZAFA) || below.contains(Furniture.AUTOMAT_GIER))) {
+                orphans.add(p);
+            }
+        }
+        for (Blueprint.Pos p : orphans) {
+            bp.set(p.x(), p.y(), p.z(), Blueprint.AIR);
+        }
+        return orphans.size();
+    }
+
     private static void both(Furniture f, int top, int g, int inside, int outside, String[] in, String... out) {
         int a = f.scatter(1, top, inside, true, in);
         int b = f.scatter(Math.max(1, g), g + 2, outside, false, out);
