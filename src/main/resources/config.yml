@@ -1420,6 +1420,10 @@ wraki:
   bariery: true
   # Bagażnik z lootem (klik w wrak). Gdy false — wrak jest tylko dekoracją.
   loot: true
+  # Jak beczki przy drogach: po ilu minutach od opróżnienia bagażnik dostaje nowy loot.
+  odnowienie-minut: 10
+  # Nie odnawiaj bagażnika, gdy gracz jest bliżej niż tyle bloków (0 = wyłączone).
+  blokada-gdy-gracz-blizej-niz: 24
   # Pula lootu z AxonItems/loot.yml dla wraków cywilnych.
   pula-lootu: wrak
   # Wagi modeli. "brak" = puste pobocze. Większa waga = częstszy wrak.
