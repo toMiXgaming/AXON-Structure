@@ -2597,7 +2597,7 @@ public final class MallStructure implements StructureDefinition {
                 fill(u[0], ROOF + 3, u[1], u[0] + 2, ROOF + 3, u[1] + 2, "iron_bars");
                 set(u[0] + 1, ROOF + 3, u[1] + 1, "iron_block");
                 for (int x = u[0] + 3; x <= u[0] + 6 && x < X2; x++) {
-                    set(x, ROOF + 1, u[1] + 1, "polished_andesite_wall");
+                    set(x, ROOF + 1, u[1] + 1, "andesite_wall");
                 }
             }
             // anteny i talerz
