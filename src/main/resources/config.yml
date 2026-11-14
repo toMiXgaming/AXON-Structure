@@ -524,7 +524,7 @@ stanowiska:
         - {przedmiot: baked_potato, ilosc: 8, kupno: 30, skup: 0}
         - {przedmiot: mushroom_stew, ilosc: 1, kupno: 25, skup: 0}
         - {przedmiot: pumpkin_pie, ilosc: 2, kupno: 30, skup: 0}
-        - {przedmiot: raw_beef, ilosc: 8, kupno: 0, skup: 20}
+        - {przedmiot: beef, ilosc: 8, kupno: 0, skup: 20}
         - {przedmiot: potato, ilosc: 16, kupno: 0, skup: 12}
     # galeria handlowa: sklep sportowo-turystyczny
     galeria:
