@@ -35,9 +35,11 @@ import pl.axon.structure.loot.AxonItemsBridge;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -74,8 +76,8 @@ public final class VehicleService implements Listener {
     /** Otwarte bagażniki: gracz → stan (żeby zapisać zawartość po zamknięciu). */
     private final Map<UUID, OpenTrunk> open = new HashMap<>();
 
-    /** Zawartość bagażników: id hitboxa → ekwipunek (loot losowany raz na wrak). */
-    private final Map<UUID, ItemStack[]> contents = new HashMap<>();
+    /** Zawartość bagażników wraków z komendy: klucz wraku → ekwipunek (loot losowany raz na wrak). */
+    private final Map<String, ItemStack[]> contents = new HashMap<>();
 
     /** Postawione wraki: klucz „świat:x:y:z” → opis (do sprzątania i diagnostyki). */
     private final Map<String, Placed> placed = new HashMap<>();
@@ -362,18 +364,29 @@ public final class VehicleService implements Listener {
         List<Entity> spawned = new ArrayList<>();
         try {
             // Paczka ma jeden model na cały pojazd (axon:wrak_*), więc jeden wyświetlacz w środku obrysu.
-            Location base = new Location(world, x + 0.5, groundY + model.centerHeight(), z + 0.5);
-            float yaw = steps * 90f;
+            // Spód kół leży na powierzchni gruntu (groundY + 1), środek modelu scale/2 wyżej. Wcześniej
+            // środek stał w bloku gruntu: model był w ziemi, a wyświetlacz brał światło z wnętrza
+            // pełnego bloku (0), więc z ziemi wystawała tylko czarna płyta.
+            Location base = new Location(world, x + 0.5, groundY + 1.0 + model.centerHeight(), z + 0.5);
+            // Wyświetlacz przedmiotu sam obraca model o 180° (jak meble w PropService).
+            base.setYaw(steps * 90f + 180f);
+            base.setPitch(0f);
+            float scale = (float) model.scale();
+            float size = (float) (Math.max(model.length(), model.height()) + 1.0);
             ItemDisplay display = world.spawn(base, ItemDisplay.class, entity -> {
                 entity.setItemStack(modelItem(model.id()));
                 entity.setBillboard(Display.Billboard.FIXED);
-                entity.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                entity.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
                 entity.setTransformation(new Transformation(
                         new Vector3f(0f, 0f, 0f),
                         new AxisAngle4f(0f, 0f, 1f, 0f),
-                        new Vector3f(1f, 1f, 1f),
+                        new Vector3f(scale, scale, scale),
                         new AxisAngle4f(0f, 0f, 1f, 0f)));
-                entity.setRotation(yaw, 0f);
+                // Obrys do odcinania poza ekranem: bez tego długi wrak (Autosan, 10 m) znika, gdy jego
+                // środek wyjdzie poza kadr.
+                entity.setDisplayWidth(size);
+                entity.setDisplayHeight(size);
+                entity.setViewRange(Math.max(1f, size / 8f));
                 entity.setPersistent(persistent);
                 entity.setInvulnerable(true);
                 entity.setGravity(false);
@@ -381,22 +394,42 @@ public final class VehicleService implements Listener {
             });
             spawned.add(display);
 
-            // Hitbox bagażnika — jeden na wrak, w środku obrysu.
-            Location trunk = new Location(world, x + 0.5, groundY + 1.0, z + 0.5);
-            Interaction hitbox = world.spawn(trunk, Interaction.class, entity -> {
-                entity.setInteractionWidth(1.0f);
-                entity.setInteractionHeight(1.0f);
-                entity.setResponsive(true);
-                entity.setPersistent(persistent);
-                entity.setInvulnerable(true);
-                tag(entity.getPersistentDataContainer(), model.id(), model.lootTable(), wreckKey);
-            });
-            spawned.add(hitbox);
+            // Hitbox bagażnika na całym wraku (kilka kwadratów wzdłuż długości), trochę większy od barier,
+            // żeby klik w dowolne miejsce wraku otwierał bagażnik zamiast trafiać w barierę.
+            String trunkKey = wreckKey != null ? wreckKey : key(world, x, groundY, z);
+            for (double[] box : VehicleMath.hitboxes(model)) {
+                double[] offset = VehicleMath.rotateOffset(box[0], 0.0, steps);
+                Location at = new Location(world, x + 0.5 + offset[0], groundY + 1.0, z + 0.5 + offset[1]);
+                Interaction hitbox = world.spawn(at, Interaction.class, entity -> {
+                    entity.setInteractionWidth((float) box[1]);
+                    entity.setInteractionHeight((float) box[2]);
+                    entity.setResponsive(true);
+                    entity.setPersistent(persistent);
+                    entity.setInvulnerable(true);
+                    tag(entity.getPersistentDataContainer(), model.id(), model.lootTable(), trunkKey);
+                });
+                spawned.add(hitbox);
+            }
 
             List<int[]> barriers = new ArrayList<>();
             if (config.barriers()) {
+                List<int[]> wanted = VehicleMath.collisionBlocks(model, x, groundY, z, steps);
+                // Bariery ze starej wersji były większe niż model (niewidzialne ściany obok wraku): sprzątamy
+                // te, które wypadają poza nowy obrys.
+                Set<Long> keep = new HashSet<>();
+                for (int[] pos : wanted) {
+                    keep.add(blockKey(pos));
+                }
+                for (int[] pos : VehicleMath.legacyCollisionBlocks(model, x, groundY, z, steps)) {
+                    if (!keep.contains(blockKey(pos))) {
+                        Block block = world.getBlockAt(pos[0], pos[1], pos[2]);
+                        if (block.getType() == Material.BARRIER) {
+                            block.setType(Material.AIR, false);
+                        }
+                    }
+                }
                 BlockData barrier = Material.BARRIER.createBlockData();
-                for (int[] pos : VehicleMath.collisionBlocks(model, x, groundY, z, steps)) {
+                for (int[] pos : wanted) {
                     Block block = world.getBlockAt(pos[0], pos[1], pos[2]);
                     if (block.getType().isAir()) {
                         block.setBlockData(barrier, false);
@@ -462,12 +495,10 @@ public final class VehicleService implements Listener {
         if (record == null) {
             return false;
         }
+        contents.remove(key);
         for (UUID id : record.entities()) {
             Entity entity = Bukkit.getEntity(id);
             if (entity != null) {
-                if (entity instanceof Interaction) {
-                    contents.remove(id);
-                }
                 entity.remove();
             }
         }
@@ -546,7 +577,7 @@ public final class VehicleService implements Listener {
         trunk.holder.contents = snapshot;
         Roadside wreck = trunk.wreckKey() == null ? null : roadside.get(trunk.wreckKey());
         if (wreck == null) {
-            contents.put(trunk.hitbox.getUniqueId(), snapshot);
+            contents.put(trunk.wreckKey(), snapshot);
             return;
         }
         wreck.contents = snapshot;
@@ -565,19 +596,22 @@ public final class VehicleService implements Listener {
         Inventory inventory = Bukkit.createInventory(holder, TRUNK_SLOTS, "Bagażnik wraku");
         holder.inventory = inventory;
         String key = hitbox.getPersistentDataContainer().get(wreckKey, PersistentDataType.STRING);
-        Roadside wreck = key == null ? null : roadside.get(key);
-        ItemStack[] stored = wreck != null ? wreck.contents : contents.get(hitbox.getUniqueId());
+        if (key == null) {
+            key = hitbox.getUniqueId().toString(); // hitbox ze starej wersji (bez klucza wraku)
+        }
+        Roadside wreck = roadside.get(key);
+        ItemStack[] stored = wreck != null ? wreck.contents : contents.get(key);
         if (stored == null) {
             stored = rollLoot(table);
             if (wreck != null) {
                 wreck.contents = stored;
             } else {
-                contents.put(hitbox.getUniqueId(), stored);
+                contents.put(key, stored);
             }
         }
         inventory.setContents(stored);
         holder.contents = stored;
-        open.put(player.getUniqueId(), new OpenTrunk(holder, hitbox, wreck == null ? null : wreck.key));
+        open.put(player.getUniqueId(), new OpenTrunk(holder, hitbox, key));
         player.openInventory(inventory);
     }
 
@@ -655,6 +689,10 @@ public final class VehicleService implements Listener {
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    private static long blockKey(int[] pos) {
+        return ((long) (pos[0] & 0x3FFFFFF) << 38) | ((long) (pos[2] & 0x3FFFFFF) << 12) | (pos[1] & 0xFFF);
     }
 
     private static String key(World world, int x, int y, int z) {

@@ -4,28 +4,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Czysta geometria wraków: obrys kolizji, podział na części i obrót.
+ * Czysta geometria wraków: bariery, hitboxy bagażnika i obrót.
  *
  * <p>Bez Bukkita — wszystko liczy się na intach i double, więc testy jednostkowe pokrywają
  * całą logikę ustawiania wraków bez serwera.
  *
  * <p>Układ współrzędnych: wrak stoi „wzdłuż” osi Z przy obrocie 0 (przód na północ, jak modele
  * z {@code gen_axoncore.py}). {@code length} biegnie po Z, {@code width} po X. Obrót o 90°
- * zamienia osie. Punkt zaczepienia ({@code anchorX}, {@code anchorZ}) to blok, w którym stoi
+ * zamienia osie. Punkt zaczepienia ({@code anchorX}, {@code anchorZ}) to blok, w którego środku stoi
  * środek modelu — wrak rozciąga się wokół niego symetrycznie.
  */
 public final class VehicleMath {
 
-    /** Ile bloków nad gruntem ma górna warstwa barier (dach wraku). */
-    public static final int COLLISION_HEIGHT = 2;
+    /** Ile warstw barier miała stara wersja (2 warstwy, obrys zaokrąglony w górę i poszerzony). */
+    public static final int LEGACY_COLLISION_HEIGHT = 2;
+
+    /** Hitbox bagażnika jest minimalnie większy od barier, żeby klik trafiał w niego, a nie w barierę. */
+    public static final double HITBOX_MARGIN = 0.05;
 
     private VehicleMath() {
     }
 
     /**
-     * Bloki kolizji (bariery) dla wraku. Wrak zajmuje prostokąt {@code length × width} obrócony
-     * o {@code steps} × 90°, wyśrodkowany na punkcie zaczepienia. Bariery stawiamy w dwóch
-     * warstwach nad gruntem, żeby gracz nie wszedł w środek modelu, ale mógł na niego wskoczyć.
+     * Bloki kolizji (bariery) dla wraku. Bariera stoi w bloku, którego środek leży w obrysie modelu
+     * ({@code length × width} obrócone o {@code steps} × 90°, wyśrodkowane na środku bloku zaczepienia),
+     * w tylu warstwach nad gruntem, ile wynosi zaokrąglona wysokość modelu. Dzięki temu bariery nie
+     * wystają poza wrak, a na niski wrak (Fiat, Polonez, WSK) da się wskoczyć.
      *
      * @param anchorX blok X środka modelu
      * @param groundY blok Y gruntu (bariery startują od {@code groundY + 1})
@@ -34,11 +38,46 @@ public final class VehicleMath {
      * @return lista bloków {@code [x, y, z]} do wypełnienia barierą
      */
     public static List<int[]> collisionBlocks(VehicleModel model, int anchorX, int groundY, int anchorZ, int steps) {
+        int[] half = halfBlocks(model, steps);
+        return box(anchorX, groundY, anchorZ, half[0], half[1], collisionLayers(model));
+    }
+
+    /**
+     * Bariery ze starej wersji (obrys {@code ceil(wymiar) / 2} w każdą stronę, 2 warstwy). Były szersze
+     * i dłuższe niż model; przy ponownym stawianiu wraku sprzątamy te, które wypadają poza nowy obrys.
+     */
+    public static List<int[]> legacyCollisionBlocks(VehicleModel model, int anchorX, int groundY, int anchorZ,
+                                                    int steps) {
+        int length = (int) Math.ceil(model.length());
+        int width = (int) Math.ceil(model.width());
+        int[] size = swapped(steps) ? new int[]{length, width} : new int[]{width, length};
+        return box(anchorX, groundY, anchorZ, size[0] / 2, size[1] / 2, LEGACY_COLLISION_HEIGHT);
+    }
+
+    /** Liczba warstw barier: zaokrąglona wysokość modelu, co najmniej 1. */
+    public static int collisionLayers(VehicleModel model) {
+        return Math.max(1, (int) Math.round(model.height()));
+    }
+
+    /**
+     * Ile bloków barier w każdą stronę od zaczepienia: {@code [poX, poZ]}. Blok {@code i} (jego środek
+     * jest {@code i} kratek od środka wraku) dostaje barierę, gdy {@code |i| <= wymiar / 2}.
+     */
+    public static int[] halfBlocks(VehicleModel model, int steps) {
+        int halfLength = (int) Math.floor(model.length() / 2.0 + 1e-9);
+        int halfWidth = (int) Math.floor(model.width() / 2.0 + 1e-9);
+        return swapped(steps) ? new int[]{halfLength, halfWidth} : new int[]{halfWidth, halfLength};
+    }
+
+    /** Rozmiar barier w blokach po obrocie: {@code [rozmiarX, rozmiarZ]}. */
+    public static int[] footprint(VehicleModel model, int steps) {
+        int[] half = halfBlocks(model, steps);
+        return new int[]{2 * half[0] + 1, 2 * half[1] + 1};
+    }
+
+    private static List<int[]> box(int anchorX, int groundY, int anchorZ, int halfX, int halfZ, int layers) {
         List<int[]> out = new ArrayList<>();
-        int[] size = footprint(model, steps);
-        int halfX = size[0] / 2;
-        int halfZ = size[1] / 2;
-        for (int dy = 1; dy <= COLLISION_HEIGHT; dy++) {
+        for (int dy = 1; dy <= layers; dy++) {
             for (int dx = -halfX; dx <= halfX; dx++) {
                 for (int dz = -halfZ; dz <= halfZ; dz++) {
                     out.add(new int[]{anchorX + dx, groundY + dy, anchorZ + dz});
@@ -48,39 +87,31 @@ public final class VehicleMath {
         return out;
     }
 
-    /**
-     * Rozmiar obrysu w kratkach po obrocie: {@code [rozmiarX, rozmiarZ]}.
-     * Przy obrocie 0/180 długość biegnie po Z, przy 90/270 — po X.
-     */
-    public static int[] footprint(VehicleModel model, int steps) {
-        int length = (int) Math.ceil(model.length());
-        int width = (int) Math.ceil(model.width());
-        boolean swapped = Math.floorMod(steps, 4) % 2 == 1;
-        return swapped ? new int[]{length, width} : new int[]{width, length};
+    private static boolean swapped(int steps) {
+        return Math.floorMod(steps, 4) % 2 == 1;
     }
 
     /**
-     * Przesunięcia środków części wraku względem punktu zaczepienia (w kratkach).
+     * Hitboxy bagażnika ({@code Interaction}) pokrywające cały wrak. {@code Interaction} ma kwadratową
+     * podstawę, więc długi wrak dostaje kilka kwadratów wzdłuż długości. Każdy obejmuje i model, i bariery
+     * (z małym zapasem), żeby klik w dowolne miejsce wraku otwierał bagażnik, a nie trafiał w barierę.
      *
-     * <p>Duże wraki (Star, Autosan, Polonez, Żuk, Nysa) są dzielone na 2–3 {@code ItemDisplay},
-     * żeby każdy element miał własny, mniejszy hitbox i żeby model nie znikał w całości przy
-     * jednym uszkodzonym encie. Części leżą wzdłuż długości wraku.
-     *
-     * @return lista {@code [offsetAlongLength, offsetAcrossWidth]} w kratkach
+     * @return lista {@code [offsetWzdłuż, bok, wysokość]} w kratkach; offset liczony od środka wraku
+     *         wzdłuż jego długości (do obrócenia przez {@link #rotateOffset})
      */
-    public static List<double[]> partOffsets(VehicleModel model) {
-        int parts = model.parts();
-        List<double[]> out = new ArrayList<>(parts);
-        if (parts <= 1) {
-            out.add(new double[]{0.0, 0.0});
-            return out;
+    public static List<double[]> hitboxes(VehicleModel model) {
+        int[] size = footprint(model, 0);
+        double side = Math.max(model.width(), size[0]) + 2 * HITBOX_MARGIN;
+        double length = Math.max(model.length(), size[1]) + 2 * HITBOX_MARGIN;
+        double height = Math.max(model.height(), collisionLayers(model)) + HITBOX_MARGIN;
+        if (length <= side) {
+            return List.of(new double[]{0.0, side, height});
         }
-        double span = model.length();
-        double step = span / parts;
-        for (int i = 0; i < parts; i++) {
-            // Środek i-tej części: od -span/2 + step/2 do +span/2 - step/2.
-            double along = -span / 2.0 + step * (i + 0.5);
-            out.add(new double[]{along, 0.0});
+        int count = (int) Math.ceil(length / side - 1e-9);
+        double span = length - side;
+        List<double[]> out = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            out.add(new double[]{-span / 2.0 + span * i / (count - 1), side, height});
         }
         return out;
     }

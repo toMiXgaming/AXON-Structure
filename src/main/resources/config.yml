@@ -1402,11 +1402,11 @@ klasy:
 # poboczy dróg (API: setRoadsideContainers). Tutaj decydujesz, co na nich stoi.
 #
 # Modele wraków są w paczce AxonCore (vehicles.py): Fiat 126p, Polonez, Żuk,
-# Nysa, Star 266, Autosan, Ursus, WSK. Duże wraki (Star, Autosan, Polonez, Żuk,
-# Nysa) są dzielone na 2–3 wyświetlacze, żeby model nie był jednym klockiem.
+# Nysa, Star 266, Autosan, Ursus, WSK. Każdy wrak to jeden model w prawdziwej
+# wielkości (Fiat ~3 m, Autosan ~10 m), stojący kołami na gruncie.
 #
-# Pod wrakiem stawiamy bariery (nie da się przez niego przejść, ale można na
-# niego wskoczyć). Klik w wrak otwiera bagażnik z lootem z tabeli AxonItems
+# W obrysie wraku stawiamy bariery do wysokości dachu (nie da się przez niego
+# przejść, na niskie auta można wskoczyć). Klik w wrak otwiera bagażnik z lootem z tabeli AxonItems
 # (wrak_auto / wrak_wojskowy). Loot losuje się raz na wrak.
 wraki:
   wlaczone: true
