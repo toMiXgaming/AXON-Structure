@@ -192,7 +192,7 @@ class VehicleMathTest {
     void stareBarieryObejmujaNowe() {
         // Sprzątanie starych barier nie może ruszyć nowych: nowe są podzbiorem starego obrysu (Fiat).
         List<int[]> legacy = VehicleMath.legacyCollisionBlocks(FIAT, 0, 64, 0, 0);
-        assertEquals(3 * 5 * 2, legacy.size());
+        assertEquals(3 * 5 * VehicleMath.LEGACY_COLLISION_HEIGHT, legacy.size());
         for (int[] pos : VehicleMath.collisionBlocks(FIAT, 0, 64, 0, 0)) {
             assertTrue(legacy.stream().anyMatch(p -> p[0] == pos[0] && p[1] == pos[1] && p[2] == pos[2]));
         }

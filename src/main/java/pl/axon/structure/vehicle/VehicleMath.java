@@ -16,8 +16,11 @@ import java.util.List;
  */
 public final class VehicleMath {
 
-    /** Ile warstw barier miała stara wersja (2 warstwy, obrys zaokrąglony w górę i poszerzony). */
-    public static final int LEGACY_COLLISION_HEIGHT = 2;
+    /**
+     * Ile warstw nad gruntem sprzątamy ze starych barier: stara wersja stawiała 2 warstwy, ale czasem
+     * od gruntu liczonego na trawie albo liściach (1–2 bloki za wysoko), więc sprzątamy 4.
+     */
+    public static final int LEGACY_COLLISION_HEIGHT = 4;
 
     /** Hitbox bagażnika jest minimalnie większy od barier, żeby klik trafiał w niego, a nie w barierę. */
     public static final double HITBOX_MARGIN = 0.05;

@@ -483,7 +483,11 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         double rad = Math.toRadians(player.getLocation().getYaw());
         int x = player.getLocation().getBlockX() - (int) Math.round(Math.sin(rad) * 3);
         int z = player.getLocation().getBlockZ() + (int) Math.round(Math.cos(rad) * 3);
-        int groundY = world.getHighestBlockYAt(x, z);
+        int groundY = pl.axon.structure.vehicle.VehicleService.groundY(world, x, z, model, steps);
+        if (groundY == Integer.MIN_VALUE) {
+            sender.sendMessage("§cPod wrakiem nie ma gruntu (woda albo niewczytany teren).");
+            return;
+        }
         if (plugin.vehicles().place(world, x, groundY, z, steps, model)) {
             sender.sendMessage("§aPostawiono §f" + model.displayName() + "§a na §f" + x + " " + groundY + " " + z
                     + "§a (obrót " + (steps * 90) + "°).");
