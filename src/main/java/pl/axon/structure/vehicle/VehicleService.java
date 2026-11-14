@@ -32,6 +32,7 @@ import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 import pl.axon.structure.api.RoadsideSpot;
 import pl.axon.structure.loot.AxonItemsBridge;
+import pl.axon.structure.world.Terrain;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -212,7 +213,7 @@ public final class VehicleService implements Listener {
         if (!wreck.entities.isEmpty() || !world.isChunkLoaded(spot.x() >> 4, spot.z() >> 4)) {
             return;
         }
-        int groundY = groundY(world, spot.x(), spot.z());
+        int groundY = groundY(world, spot.x(), spot.z(), wreck.model, spot.steps());
         if (groundY == Integer.MIN_VALUE) {
             return;
         }
@@ -431,7 +432,8 @@ public final class VehicleService implements Listener {
                 BlockData barrier = Material.BARRIER.createBlockData();
                 for (int[] pos : wanted) {
                     Block block = world.getBlockAt(pos[0], pos[1], pos[2]);
-                    if (block.getType().isAir()) {
+                    // powietrze albo roślina (trawa, kwiaty, warstwa śniegu) — nie pełny blok
+                    if (block.getType().isAir() || (!block.getType().isSolid() && !block.isLiquid())) {
                         block.setBlockData(barrier, false);
                         barriers.add(pos);
                     }
@@ -645,13 +647,51 @@ public final class VehicleService implements Listener {
     //  Pomocnicze
     // ------------------------------------------------------------------
 
-    /** Najwyższy nie-powietrzny blok w kolumnie albo {@code Integer.MIN_VALUE}, gdy brak. */
-    private static int groundY(World world, int x, int z) {
-        int max = world.getMaxHeight() - 1;
+    /**
+     * Grunt pod wrakiem: najniższy z gruntów pod wszystkimi kolumnami obrysu (koła stoją na najniższym
+     * miejscu, a nie wiszą nad zboczem). W każdej kolumnie liczy się tylko prawdziwy grunt
+     * ({@link Terrain#isGround}): trawa, kwiaty, warstwy śniegu, liście, pnie i bariery są pomijane.
+     * Wcześniej brany był najwyższy nie-powietrzny blok w środku, więc wrak stał na trawie albo na
+     * koronie drzewa i wisiał w powietrzu.
+     *
+     * @return Y bloku gruntu albo {@code Integer.MIN_VALUE}, gdy w obrysie nie ma gruntu
+     */
+    public static int groundY(World world, int x, int z, VehicleModel model, int steps) {
+        int[] half = model == null ? new int[]{0, 0} : VehicleMath.halfBlocks(model, steps);
+        int best = Integer.MAX_VALUE;
+        int center = columnGround(world, x, z);
+        for (int dx = -half[0]; dx <= half[0]; dx++) {
+            for (int dz = -half[1]; dz <= half[1]; dz++) {
+                int cx = x + dx;
+                int cz = z + dz;
+                if (!world.isChunkLoaded(cx >> 4, cz >> 4)) {
+                    continue;
+                }
+                int y = columnGround(world, cx, cz);
+                // dziura, woda albo urwisko obok drogi: nie zakopujemy wraku głębiej niż 2 bloki pod środkiem
+                if (y != Integer.MIN_VALUE && (center == Integer.MIN_VALUE || y >= center - 2)) {
+                    best = Math.min(best, y);
+                }
+            }
+        }
+        return best == Integer.MAX_VALUE ? center : best;
+    }
+
+    /** Najwyższy blok gruntu w kolumnie albo {@code Integer.MIN_VALUE} (woda, pustka, niewczytany chunk). */
+    private static int columnGround(World world, int x, int z) {
+        if (!world.isChunkLoaded(x >> 4, z >> 4)) {
+            return Integer.MIN_VALUE;
+        }
         int min = world.getMinHeight();
-        for (int y = max; y >= min; y--) {
+        for (int y = world.getMaxHeight() - 1; y >= min; y--) {
             Material type = world.getBlockAt(x, y, z).getType();
-            if (!type.isAir() && type != Material.WATER && type != Material.LAVA && type != Material.BARRIER) {
+            if (type.isAir() || type == Material.BARRIER) {
+                continue;
+            }
+            if (Terrain.isLiquid(type)) {
+                return Integer.MIN_VALUE;
+            }
+            if (Terrain.isGround(type)) {
                 return y;
             }
         }
