@@ -43,6 +43,9 @@ import java.util.Set;
  */
 public final class PropService implements Listener {
 
+    /** Skala mebli względem bloku: odrobinę mniej niż 1, żeby ścianki nie migały na ścianach (z-fighting). */
+    private static final float INSET = 0.992f;
+
     /**
      * Model łóżka, modele innych mebli według bloku (blok zamienia się na barierę), modele drzwi (drzwi
      * zostają i dalej się otwierają, model nad nimi) i struktury, w których meble zostają zwykłe.
@@ -142,11 +145,15 @@ public final class PropService implements Listener {
             location.setYaw((prop.door() ? location.getYaw() : prop.yaw()) + 180f);
             location.setPitch(0f);
             float size = 3f * prop.scale();
+            // Ścianki mebla leżą dokładnie na krawędzi bloku, w tej samej płaszczyźnie co sąsiednia ściana czy podłoga.
+            // Karta graficzna nie umie wtedy wybrać, która powierzchnia jest bliżej, i obraz miga (z-fighting).
+            // Minimalne zmniejszenie wokół środka cofa ścianki o ok. 0,004 bloku, czego nie widać.
+            float scale = prop.door() ? prop.scale() : prop.scale() * INSET;
             prop.center().getWorld().spawn(location, ItemDisplay.class, display -> {
                 display.setItemStack(item);
                 display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
                 display.setTransformation(new Transformation(new Vector3f(), new Quaternionf(),
-                        new Vector3f(prop.scale(), prop.scale(), prop.scale()), new Quaternionf()));
+                        new Vector3f(scale, scale, scale), new Quaternionf()));
                 display.setDisplayWidth(size);
                 display.setDisplayHeight(size);
                 display.setViewRange(Math.max(1f, size / 8f));
