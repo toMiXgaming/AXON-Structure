@@ -211,6 +211,21 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 saveConfig();
             }
         }
+        // Nowe meble z paczki: brakujące wpisy w meble.bloki i meble.drzwi dopisujemy pojedynczo. Bez tego na
+        // serwerze ze starym configiem bloki-nośniki (szkliwiona terakota, szulkery...) zostają zwykłymi blokami.
+        // Mebla nie wyłącza się usunięciem wpisu (wróciłby), tylko pustym modelem: "".
+        for (String path : java.util.List.of("meble.bloki", "meble.drzwi")) {
+            ConfigurationSection defaultSection = defaults.getConfigurationSection(path);
+            if (defaultSection == null || config.isSet(path) && !config.isConfigurationSection(path)) {
+                continue;
+            }
+            for (String block : defaultSection.getKeys(false)) {
+                if (!config.isSet(path + "." + block)) {
+                    config.set(path + "." + block, defaultSection.get(block));
+                    added.add(path + "." + block);
+                }
+            }
+        }
         if (added.isEmpty()) {
             return;
         }

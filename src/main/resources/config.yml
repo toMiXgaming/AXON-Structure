@@ -25,6 +25,7 @@ stawianie:
 
 # Meble z paczki zasobów serwera (QualityArmory-texturepack). Przy stawianiu struktury te bloki zamieniają się
 # na niewidzialną barierę, a w ich miejscu staje model (obrócony jak blok). "" = zwykły blok z Minecrafta.
+# Nowe wpisy z nowszej wersji pluginu dopisują się same przy starcie; żeby wyłączyć mebel, ustaw "" zamiast usuwać.
 meble:
   lozko: "axon:lozko"
   bloki:
