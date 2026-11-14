@@ -252,6 +252,27 @@ public final class PasteService {
         }
         List<PropService.WorldProp> modelList = new ArrayList<>();
         props.fromBlueprint(world, bp, placement, modelList);
+        if (props.replacesFurniture(bp)) {
+            // Generator chunków stawia meble jako zwykłe bloki (np. szkliwiona terakota, szulkery). Zamieniamy je
+            // tak jak przy wklejaniu: bariera w miejscu bloku i model nad nią. Drzwi zostają bez modelu.
+            int steps = placement.steps();
+            List<PropService.WorldProp> found = new ArrayList<>();
+            for (Map.Entry<Blueprint.Pos, String> entry : bp.blocks().entrySet()) {
+                Blueprint.Pos p = entry.getKey();
+                int[] w = placement.toWorld(p.x(), p.y(), p.z());
+                found.clear();
+                BlockData data = rotated(entry.getValue(), steps);
+                BlockData placed = props.furniture(world, w[0], w[1], w[2], data, found);
+                if (placed.getMaterial() != Material.BARRIER || found.isEmpty()) {
+                    continue;
+                }
+                Block block = world.getBlockAt(w[0], w[1], w[2]);
+                if (block.getType() == data.getMaterial()) {
+                    block.setBlockData(placed, false);
+                    modelList.addAll(found);
+                }
+            }
+        }
         props.spawn(modelList);
         int[] center = placement.center(bp);
         String id = UUID.randomUUID().toString().substring(0, 8);
