@@ -32,11 +32,16 @@ public final class VehicleConfig {
     private final boolean loot;
     private final String lootPool;
     private final Map<String, Integer> weights;
+    private final int respawnMinutes;
+    private final int playerBlockRadius;
     private final List<String> errors;
 
     private VehicleConfig(boolean enabled, List<String> worlds, double chancePercent, int minSpacing,
                           boolean barriers, boolean loot, String lootPool,
-                          Map<String, Integer> weights, List<String> errors) {
+                          Map<String, Integer> weights, int respawnMinutes, int playerBlockRadius,
+                          List<String> errors) {
+        this.respawnMinutes = respawnMinutes;
+        this.playerBlockRadius = playerBlockRadius;
         this.enabled = enabled;
         this.worlds = List.copyOf(worlds);
         this.chancePercent = chancePercent;
@@ -60,7 +65,7 @@ public final class VehicleConfig {
         weights.put("wrak_star_266", 7);
         weights.put("wrak_autosan", 5);
         weights.put(NONE, 25);
-        return new VehicleConfig(true, List.of("world"), 35.0, 24, true, true, "wrak", weights, List.of());
+        return new VehicleConfig(true, List.of("world"), 35.0, 24, true, true, "wrak", weights, 10, 24, List.of());
     }
 
     /**
@@ -122,7 +127,21 @@ public final class VehicleConfig {
             }
         }
 
-        return new VehicleConfig(enabled, worlds, chance, spacing, barriers, loot, lootPool, weights, errors);
+        int respawn = clampInt(section.getInt("odnowienie-minut", 10), 1, 10_080, "odnowienie-minut", errors);
+        int block = clampInt(section.getInt("blokada-gdy-gracz-blizej-niz", 24), 0, 256,
+                "blokada-gdy-gracz-blizej-niz", errors);
+        return new VehicleConfig(enabled, worlds, chance, spacing, barriers, loot, lootPool, weights, respawn, block,
+                errors);
+    }
+
+    /** Po ilu minutach od opróżnienia bagażnik wraku przy drodze dostaje nowy loot. */
+    public int respawnMinutes() {
+        return respawnMinutes;
+    }
+
+    /** Nie odnawiaj bagażnika, gdy gracz jest bliżej niż tyle bloków (0 = wyłączone). */
+    public int playerBlockRadius() {
+        return playerBlockRadius;
     }
 
     public boolean enabled() {
