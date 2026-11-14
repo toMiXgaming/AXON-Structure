@@ -1,6 +1,7 @@
 package pl.axon.structure.vehicle;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -17,6 +18,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -40,8 +42,7 @@ import java.util.UUID;
  * Wraki pojazdów PRL przy drogach.
  *
  * <p>Wrak to {@link ItemDisplay} z modelem {@code axon:wrak_*} (patrz {@code vehicles.py}) plus
- * {@link Interaction} jako hitbox bagażnika. Duże wraki (Star, Autosan, Polonez, Żuk, Nysa) są
- * dzielone na 2–3 {@code ItemDisplay}, żeby model nie był jednym wielkim klockiem.
+ * {@link Interaction} jako hitbox bagażnika.
  *
  * <p>Pod wrakiem stawiamy bariery ({@link VehicleMath#collisionBlocks}) — gracz nie przechodzi
  * przez wrak, ale może na niego wskoczyć. Bariery są zapisywane w PDC świata, więc po restarcie
@@ -62,7 +63,6 @@ public final class VehicleService implements Listener {
     private static final String LOOT_TAG = "axon_wrak_loot";
 
     private final JavaPlugin plugin;
-    private final Random random = new Random();
     private final NamespacedKey modelKey;
     private final NamespacedKey lootKey;
 
@@ -74,6 +74,9 @@ public final class VehicleService implements Listener {
 
     /** Postawione wraki: klucz „świat:x:y:z” → opis (do sprzątania i diagnostyki). */
     private final Map<String, Placed> placed = new HashMap<>();
+
+    /** Wraki do postawienia: świat → klucz chunka → lista (z punktów AxonMapGenerator). */
+    private final Map<String, Map<Long, List<Planned>>> planned = new HashMap<>();
 
     private VehicleConfig config = VehicleConfig.defaults();
 
@@ -101,11 +104,12 @@ public final class VehicleService implements Listener {
     /**
      * Stawia wraki na liście punktów pobocza zgłoszonych przez AxonMapGenerator.
      *
-     * <p>Metoda jest idempotentna: powtórne wywołanie dla tego samego świata najpierw sprząta
-     * stare wraki (i bariery), potem stawia nowe. Dzięki temu po regeneracji mapy nie zostają
-     * sieroty.
+     * <p>AxonMapGenerator woła to przy starcie serwera, kiedy prawie żaden chunk przy drogach nie jest
+     * wczytany. Dlatego wraki są tu tylko losowane (z seeda świata, więc tak samo po każdym restarcie),
+     * a stawiane w chunkach już wczytanych i potem przy wczytaniu kolejnych ({@link EntitiesLoadEvent}).
+     * Wrak, który już stoi w świecie, zostaje; powtórne wywołanie podmienia tylko plan.
      *
-     * @return liczba postawionych wraków
+     * @return liczba zaplanowanych wraków
      */
     public int placeAlongRoads(World world, List<RoadsideSpot> spots) {
         if (world == null || spots == null || spots.isEmpty()) {
@@ -114,7 +118,10 @@ public final class VehicleService implements Listener {
         if (!config.inWorld(world.getName())) {
             return 0;
         }
-        clear(world);
+        // Losowanie z seeda świata: po restarcie te same punkty dostają te same wraki, więc wrak już
+        // stojący w świecie (encje są trwałe) zostaje, a brakujący dostawiamy przy wczytaniu chunka.
+        Random roll = new Random(world.getSeed() ^ 0x57524B5FL);
+        Map<Long, List<Planned>> chunks = new HashMap<>();
         int count = 0;
         int lastX = Integer.MIN_VALUE;
         int lastZ = Integer.MIN_VALUE;
@@ -128,20 +135,96 @@ public final class VehicleService implements Listener {
                     && Math.abs(spot.x() - lastX) + Math.abs(spot.z() - lastZ) < config.minSpacing()) {
                 continue;
             }
-            if (random.nextDouble() * 100.0 >= config.chancePercent()) {
+            if (roll.nextDouble() * 100.0 >= config.chancePercent()) {
                 continue;
             }
-            VehicleModel model = config.roll(random);
+            VehicleModel model = config.roll(roll);
             if (model == null) {
                 continue;
             }
-            if (place(world, spot, model)) {
-                count++;
-                lastX = spot.x();
-                lastZ = spot.z();
+            chunks.computeIfAbsent(chunkKey(spot.x() >> 4, spot.z() >> 4), k -> new ArrayList<>())
+                    .add(new Planned(spot, model));
+            count++;
+            lastX = spot.x();
+            lastZ = spot.z();
+        }
+        planned.put(world.getName(), chunks);
+
+        // Chunki już wczytane: od razu (o ile ich encje też są już wczytane, inaczej zrobi to EntitiesLoadEvent).
+        for (Chunk chunk : world.getLoadedChunks()) {
+            if (chunk.isEntitiesLoaded()) {
+                ensure(chunk, List.of(chunk.getEntities()));
             }
         }
+        plugin.getLogger().info("Wraki przy drogach w świecie " + world.getName() + ": " + count
+                + " miejsc, stawiane przy wczytaniu chunków.");
         return count;
+    }
+
+    /** Wraki zaplanowane w świecie (do diagnostyki). */
+    public int plannedCount(World world) {
+        Map<Long, List<Planned>> chunks = world == null ? null : planned.get(world.getName());
+        if (chunks == null) {
+            return 0;
+        }
+        int n = 0;
+        for (List<Planned> list : chunks.values()) {
+            n += list.size();
+        }
+        return n;
+    }
+
+    @EventHandler
+    public void onEntitiesLoad(EntitiesLoadEvent event) {
+        Chunk chunk = event.getChunk();
+        if (plannedIn(chunk).isEmpty()) {
+            return;
+        }
+        List<Entity> entities = List.copyOf(event.getEntities());
+        // w następnym ticku: stawianie encji w trakcie wczytywania chunka bywa gubione
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (chunk.isLoaded()) {
+                ensure(chunk, entities);
+            }
+        });
+    }
+
+    /** Dostawia w chunku zaplanowane wraki, których jeszcze nie ma (wrak sprzed restartu zostaje). */
+    private void ensure(Chunk chunk, List<Entity> entities) {
+        World world = chunk.getWorld();
+        for (Planned plan : plannedIn(chunk)) {
+            RoadsideSpot spot = plan.spot();
+            if (hasWreckNear(entities, spot.x() + 0.5, spot.z() + 0.5)) {
+                continue;
+            }
+            place(world, spot, plan.model());
+        }
+    }
+
+    private boolean hasWreckNear(List<Entity> entities, double x, double z) {
+        for (Entity entity : entities) {
+            if (!entity.isValid() || !isWreckEntity(entity)) {
+                continue;
+            }
+            Location at = entity.getLocation();
+            if (Math.abs(at.getX() - x) <= 1.5 && Math.abs(at.getZ() - z) <= 1.5) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Planned> plannedIn(Chunk chunk) {
+        Map<Long, List<Planned>> chunks = planned.get(chunk.getWorld().getName());
+        if (chunks == null) {
+            return List.of();
+        }
+        List<Planned> list = chunks.get(chunkKey(chunk.getX(), chunk.getZ()));
+        return list == null ? List.of() : list;
+    }
+
+    private static long chunkKey(int x, int z) {
+        return ((long) x << 32) | (z & 0xffffffffL);
     }
 
     /**
@@ -184,11 +267,11 @@ public final class VehicleService implements Listener {
         }
         List<Entity> spawned = new ArrayList<>();
         try {
-            List<double[]> offsets = VehicleMath.partOffsets(model);
-            for (double[] offset : offsets) {
-                double[] worldOffset = VehicleMath.rotateOffset(offset[0], offset[1], steps);
-                double px = x + 0.5 + worldOffset[0];
-                double pz = z + 0.5 + worldOffset[1];
+            // Paczka ma jeden model na cały pojazd (axon:wrak_*), więc jeden wyświetlacz w środku obrysu.
+            // Kilka części z tym samym modelem dawało nałożone na siebie kopie auta.
+            {
+                double px = x + 0.5;
+                double pz = z + 0.5;
                 Location base = new Location(world, px, groundY + model.centerHeight(), pz);
                 float yaw = steps * 90f;
                 ItemDisplay display = world.spawn(base, ItemDisplay.class, entity -> {
@@ -437,13 +520,17 @@ public final class VehicleService implements Listener {
         return entity.getPersistentDataContainer().has(modelKey, PersistentDataType.STRING);
     }
 
-    /** Przedmiot-model z paczki: {@code axon:<nazwa>} przez PDC, bez zależności od AxonItems. */
+    /** Przedmiot-model z paczki: {@code axon:<nazwa>} jako item_model (bez tego widać zwykły papier). */
     private ItemStack modelItem(String modelId) {
         ItemStack item = new ItemStack(Material.PAPER);
         var meta = item.getItemMeta();
         if (meta != null) {
-            meta.getPersistentDataContainer().set(modelKey, PersistentDataType.STRING,
-                    modelId == null ? "" : modelId);
+            String id = modelId == null ? "" : modelId;
+            meta.getPersistentDataContainer().set(modelKey, PersistentDataType.STRING, id);
+            NamespacedKey model = NamespacedKey.fromString(id.contains(":") ? id : "axon:" + id);
+            if (model != null) {
+                meta.setItemModel(model);
+            }
             item.setItemMeta(meta);
         }
         return item;
@@ -456,6 +543,10 @@ public final class VehicleService implements Listener {
     /** Opis postawionego wraku. */
     public record Placed(String world, int x, int groundY, int z, int steps, String modelId,
                          List<UUID> entities, List<int[]> barriers) {
+    }
+
+    /** Wrak wylosowany dla punktu pobocza, stawiany gdy chunk się wczyta. */
+    private record Planned(RoadsideSpot spot, VehicleModel model) {
     }
 
     private record OpenTrunk(TrunkHolder holder, Interaction hitbox) {
