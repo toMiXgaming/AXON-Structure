@@ -15,8 +15,9 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Ograniczenie naturalnego spawnu potworów w obrysie wybranych struktur (np. ciemna galeria, w której bez tego
- * roi się od zombie). Działa tylko na spawn naturalny: potwory z pluginów, komend, spawnerów i jajek przechodzą.
+ * Ograniczenie naturalnego spawnu potworów w obrysie struktur (np. ciemna galeria, w której bez tego roi się od
+ * zombie). Struktury bez własnego wpisu dostają ograniczenie domyślne. Działa tylko na spawn naturalny: potwory
+ * z pluginów, komend, spawnerów i jajek przechodzą.
  */
 public final class MonsterLimitService implements Listener {
 
@@ -30,14 +31,25 @@ public final class MonsterLimitService implements Listener {
     private final InstanceStore store;
     private final Random random = new Random();
     private Map<String, Limit> limits = Map.of();
+    private Limit defaultLimit;
 
     public MonsterLimitService(InstanceStore store) {
         this.store = store;
     }
 
-    /** @param limits id struktury (małymi literami) → ograniczenie */
-    public void configure(Map<String, Limit> limits) {
+    /**
+     * @param limits       id struktury (małymi literami) → ograniczenie
+     * @param defaultLimit ograniczenie dla struktur bez własnego wpisu; null = bez ograniczenia
+     */
+    public void configure(Map<String, Limit> limits, Limit defaultLimit) {
         this.limits = Map.copyOf(limits);
+        this.defaultLimit = defaultLimit;
+    }
+
+    /** Ograniczenie dla struktury: jej własny wpis, a gdy go nie ma, domyślne (może być null). */
+    public static Limit limitFor(Map<String, Limit> limits, Limit defaultLimit, String structureId) {
+        Limit own = limits.get(structureId.toLowerCase(java.util.Locale.ROOT));
+        return own != null ? own : defaultLimit;
     }
 
     /** Czy przepuścić spawn: najpierw limit liczby potworów, potem losowanie szansy. */
@@ -50,7 +62,7 @@ public final class MonsterLimitService implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onSpawn(CreatureSpawnEvent event) {
-        if (limits.isEmpty() || event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL
+        if ((limits.isEmpty() && defaultLimit == null) || event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL
                 || !(event.getEntity() instanceof Enemy)) {
             return;
         }
@@ -61,7 +73,7 @@ public final class MonsterLimitService implements Listener {
         int x = event.getLocation().getBlockX();
         int z = event.getLocation().getBlockZ();
         for (StructureInstance instance : store.all()) {
-            Limit limit = limits.get(instance.structureId().toLowerCase(java.util.Locale.ROOT));
+            Limit limit = limitFor(limits, defaultLimit, instance.structureId());
             Box box = instance.footprint();
             if (limit == null || box == null || !instance.world().equals(world.getName()) || !box.contains(x, z)) {
                 continue;
