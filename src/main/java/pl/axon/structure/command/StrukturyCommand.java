@@ -263,7 +263,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
                 skipped++;
                 if (!all) {
                     sender.sendMessage("§cStruktura §e" + instance.structureId()
-                            + "§c nie jest cała wczytana. Podejdź bliżej i spróbuj jeszcze raz.");
+                            + "§c nie jest wczytana. Podejdź bliżej i spróbuj jeszcze raz.");
                     return;
                 }
                 continue;

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Modele z paczki zasobów serwera stawiane w strukturach jako wyświetlacze przedmiotów: wpisy z sekcji
@@ -215,10 +216,15 @@ public final class PropService implements Listener {
 
     /** Usuwa modele stojące w obrysie struktury (przy cofaniu). */
     public void remove(World world, Box box, int minY, int maxY) {
+        remove(world, box, minY, maxY, location -> true);
+    }
+
+    /** Usuwa modele stojące w obrysie struktury, ale tylko te, których położenie spełnia {@code where}. */
+    public void remove(World world, Box box, int minY, int maxY, Predicate<Location> where) {
         BoundingBox area = new BoundingBox(box.minX(), minY, box.minZ(), box.maxX() + 1, maxY + 1, box.maxZ() + 1);
         for (ItemDisplay display : world.getNearbyEntities(area, e -> e instanceof ItemDisplay)
                 .stream().map(ItemDisplay.class::cast).toList()) {
-            if (display.getScoreboardTags().contains(TAG)) {
+            if (display.getScoreboardTags().contains(TAG) && where.test(display.getLocation())) {
                 display.remove();
             }
         }

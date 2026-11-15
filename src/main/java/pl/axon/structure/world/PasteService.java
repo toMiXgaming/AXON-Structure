@@ -24,10 +24,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -263,7 +265,9 @@ public final class PasteService {
                 found.clear();
                 BlockData data = rotated(entry.getValue(), steps);
                 BlockData placed = props.furniture(world, w[0], w[1], w[2], data, found);
-                if (placed.getMaterial() != Material.BARRIER || found.isEmpty()) {
+                // Łóżko ma model tylko przy wezgłowiu, ale barierą staje się każda połowa. Gdyby nogi zostały
+                // zwykłym łóżkiem, w świecie stałaby ucięta połowa łóżka z Minecrafta obok modelu.
+                if (placed.getMaterial() != Material.BARRIER) {
                     continue;
                 }
                 Block block = world.getBlockAt(w[0], w[1], w[2]);
@@ -290,10 +294,14 @@ public final class PasteService {
     /**
      * Stawia od nowa modele mebli i rekwizytów w postawionej strukturze. Modele to encje (wyświetlacze
      * przedmiotów), więc np. {@code /killall all} z Essentials usuwa je razem z potworami, a w strukturze
-     * zostają same bariery. Stare modele w obrysie są najpierw zdejmowane, więc można to wołać wiele razy.
-     * Mebel wraca tylko tam, gdzie w świecie nadal stoi bariera (czyli przy stawianiu była zamiana).
+     * zostają same bariery. Stare modele są najpierw zdejmowane, więc można to wołać wiele razy.
+     * Mebel wraca tam, gdzie w świecie stoi bariera. Meble, które nadal są zwykłymi blokami (np. połowa
+     * łóżka w nogach w strukturach z generatora chunków), zamieniają się teraz na barierę z modelem.
      *
-     * @return liczba postawionych modeli albo -1, gdy struktura nie jest cała wczytana
+     * <p>Działa tylko w chunkach wczytanych razem z encjami. Niewczytanych {@code /killall} i tak nie
+     * dotyka, a ich modele leżą zapisane na dysku, więc nie stawiamy ich drugi raz.
+     *
+     * @return liczba postawionych modeli albo -1, gdy żaden chunk struktury nie jest wczytany
      */
     public int restoreProps(StructureInstance instance, Blueprint bp) {
         Placement placement = instance.placement();
@@ -302,39 +310,58 @@ public final class PasteService {
             return -1;
         }
         Box box = Box.of(bp, placement);
+        Set<Long> ready = new HashSet<>();
         for (int cx = box.minX() >> 4; cx <= box.maxX() >> 4; cx++) {
             for (int cz = box.minZ() >> 4; cz <= box.maxZ() >> 4; cz++) {
-                // modele w niewczytanym chunku nie dałyby się zdjąć i stałyby podwójnie
-                if (!world.isChunkLoaded(cx, cz) || !world.getChunkAt(cx, cz).isEntitiesLoaded()) {
-                    return -1;
+                if (world.isChunkLoaded(cx, cz) && world.getChunkAt(cx, cz).isEntitiesLoaded()) {
+                    ready.add(chunkKey(cx, cz));
                 }
             }
+        }
+        if (ready.isEmpty()) {
+            return -1;
         }
         List<PropService.WorldProp> list = new ArrayList<>();
         props.fromBlueprint(world, bp, placement, list);
         if (props.replacesFurniture(bp)) {
-            // struktury z generatora chunków mają zwykłe meble i drzwi bez modeli
+            // struktury z generatora chunków mają drzwi bez modeli
             boolean pasted = instance.externalKey() == null;
             int steps = placement.steps();
             List<PropService.WorldProp> found = new ArrayList<>();
             for (Map.Entry<Blueprint.Pos, String> entry : bp.blocks().entrySet()) {
                 Blueprint.Pos p = entry.getKey();
                 int[] w = placement.toWorld(p.x(), p.y(), p.z());
+                if (!ready.contains(chunkKey(w[0] >> 4, w[2] >> 4))) {
+                    continue;
+                }
                 found.clear();
                 BlockData data = rotated(entry.getValue(), steps);
                 BlockData placed = props.furniture(world, w[0], w[1], w[2], data, found);
-                if (found.isEmpty()) {
+                boolean door = placed == data;
+                if (door) {
+                    if (pasted) {
+                        list.addAll(found);
+                    }
                     continue;
                 }
-                boolean door = placed == data;
-                if (door ? pasted : world.getBlockAt(w[0], w[1], w[2]).getType() == Material.BARRIER) {
-                    list.addAll(found);
+                Block block = world.getBlockAt(w[0], w[1], w[2]);
+                if (block.getType() == data.getMaterial()) {
+                    block.setBlockData(placed, false); // mebel został zwykłym blokiem: bariera jak przy wklejaniu
+                } else if (block.getType() != Material.BARRIER) {
+                    continue; // ktoś go rozbił albo stoi tu coś innego
                 }
+                list.addAll(found);
             }
         }
-        props.remove(world, box, placement.originY(), placement.originY() + bp.height());
+        list.removeIf(prop -> !ready.contains(chunkKey(prop.center().getBlockX() >> 4, prop.center().getBlockZ() >> 4)));
+        props.remove(world, box, placement.originY(), placement.originY() + bp.height(),
+                location -> ready.contains(chunkKey(location.getBlockX() >> 4, location.getBlockZ() >> 4)));
         props.spawn(list);
         return list.size();
+    }
+
+    private static long chunkKey(int cx, int cz) {
+        return ((long) cx << 32) ^ (cz & 0xffffffffL);
     }
 
     private StructureInstance finish(Blueprint bp, Placement placement, PasteRecord record, boolean automatic) {
