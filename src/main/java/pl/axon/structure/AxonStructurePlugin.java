@@ -188,6 +188,11 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 added.add(key);
             }
         }
+        // potwory.domyslnie: nowy klucz w istniejącej sekcji, dopisujemy go, żeby był widoczny i edytowalny
+        if (config.isSet("potwory") && !config.isSet("potwory.domyslnie") && defaults.isSet("potwory.domyslnie")) {
+            config.set("potwory.domyslnie", defaults.get("potwory.domyslnie"));
+            added.add("potwory.domyslnie");
+        }
         ConfigurationSection defaultKits = defaults.getConfigurationSection("straznicy.zestawy");
         ConfigurationSection kits = config.getConfigurationSection("straznicy.zestawy");
         if (defaultKits != null && kits != null) {
@@ -353,8 +358,18 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 sounds));
 
         Map<String, MonsterLimitService.Limit> monsterLimits = new LinkedHashMap<>();
+        MonsterLimitService.Limit defaultMonsterLimit = null;
+        boolean monstersOn = config.getBoolean("potwory.wlaczone", true);
+        if (monstersOn) {
+            // domyślnie przechodzi co piąty naturalny spawn w każdej strukturze bez własnego wpisu
+            double chance = Math.max(0, Math.min(1, config.getDouble("potwory.domyslnie.szansa", 0.2)));
+            int max = Math.max(0, config.getInt("potwory.domyslnie.maks", 0));
+            if (chance < 1 || max > 0) {
+                defaultMonsterLimit = new MonsterLimitService.Limit(chance, max);
+            }
+        }
         ConfigurationSection monsterSection = config.getConfigurationSection("potwory.ograniczenia");
-        if (config.getBoolean("potwory.wlaczone", true) && monsterSection != null) {
+        if (monstersOn && monsterSection != null) {
             for (String key : monsterSection.getKeys(false)) {
                 ConfigurationSection m = monsterSection.getConfigurationSection(key);
                 if (m == null) {
@@ -365,7 +380,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
                         Math.max(0, m.getInt("maks", 0))));
             }
         }
-        monsters.configure(monsterLimits);
+        monsters.configure(monsterLimits, defaultMonsterLimit);
 
         Set<String> skipFurniture = new HashSet<>();
         for (String id : config.getStringList("meble.bez-zamiany")) {

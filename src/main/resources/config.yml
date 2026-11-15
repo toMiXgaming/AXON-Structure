@@ -930,6 +930,12 @@ potwory:
   # Ograniczenie naturalnego spawnu potworów (zombie, szkielety, pająki…) w obrysie wybranych struktur, np. w ciemnej
   # galerii. Dotyczy tylko spawnu naturalnego: strażnicy, spawnery, jajka i komendy działają jak zwykle.
   wlaczone: true
+  # Ograniczenie dla każdej struktury, która nie ma własnego wpisu w "ograniczenia" niżej.
+  # szansa 0.2 = przechodzi co piąty spawn; szansa 1 i maks 0 = bez ograniczenia.
+  domyslnie:
+    szansa: 0.2
+    maks: 0
+  # Własne ograniczenia struktur (zastępują domyślne).
   # Wpis: id struktury (oilen, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek, galeria…).
   # szansa: jaka część spawnów się udaje (0 = żadne potwory, 0.25 = co czwarty, 1 = normalnie);
   # maks: najwięcej potworów naraz w obrysie struktury (0 = bez limitu).
