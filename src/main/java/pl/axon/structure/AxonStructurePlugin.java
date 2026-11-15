@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.axon.structure.api.AxonStructureApi;
+import pl.axon.structure.command.EntityWipeListener;
 import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.gui.ShaderGui;
 import pl.axon.structure.loot.AccessCardService;
@@ -106,6 +107,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(containers, this);
         getServer().getPluginManager().registerEvents(cards, this);
         getServer().getPluginManager().registerEvents(vehicles, this);
+        getServer().getPluginManager().registerEvents(new EntityWipeListener(this), this);
 
         StrukturyCommand command = new StrukturyCommand(this);
         PluginCommand pluginCommand = getCommand("struktury");
