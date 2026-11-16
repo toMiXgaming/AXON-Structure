@@ -24,6 +24,7 @@ jobs:
             const kept = new Set()
             let removed = 0
             let bytes = 0
+            let failed = 0
             for (const a of all) {
               if (a.expired) continue
               if (!kept.has(a.name)) {
@@ -31,8 +32,19 @@ jobs:
                 core.info(`zostaje: ${a.name} (${(a.size_in_bytes / 1048576).toFixed(1)} MB, ${a.created_at})`)
                 continue
               }
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: a.id })
+              let ok = false
+              for (let attempt = 0; attempt < 4 && !ok; attempt++) {
+                try {
+                  await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: a.id })
+                  ok = true
+                } catch (e) {
+                  if (e.status === 404) { ok = true; break }
+                  core.info(`błąd ${e.status} przy ${a.name}, ponawiam`)
+                  await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)))
+                }
+              }
+              if (!ok) { failed++; continue }
               removed++
               bytes += a.size_in_bytes
             }
-            core.notice(`Usunięto ${removed} artefaktów, zwolniono ${(bytes / 1048576).toFixed(1)} MB.`)
+            core.notice(`Usunięto ${removed} artefaktów, zwolniono ${(bytes / 1048576).toFixed(1)} MB, nie udało się: ${failed}.`)
