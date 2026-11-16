@@ -182,9 +182,11 @@ zrzuty:
   swiecenie: true
 
 straznicy:
-  # Strażnicy NPC w strukturach (żołnierze w jednostce, szabrownicy w szpitalu). Wymagają pluginów Citizens
-  # i Sentinel (darmowe: ci.citizensnpcs.co). Broń z QualityArmory: "qa:<nazwa broni z QA>"; gdy QA jej nie zna,
-  # strażnik dostaje kuszę. Bez Citizens i Sentinela miejsca strażników zostają puste.
+  # Strażnicy NPC w strukturach (żołnierze w jednostce, szabrownicy w szpitalu). Stawia ich plugin AxonNPC
+  # (rozmowy przez AI, humory, zasadzki, pościgi – ustawienia w plugins/AxonNPC/config.yml); bez niego stare
+  # Citizens i Sentinel (darmowe: ci.citizensnpcs.co). Broń: "qa:<nazwa>" – z AxonNPC strzela bronią AxonGuns
+  # o tej nazwie, z Citizens bronią QualityArmory; gdy takiej broni nie ma, strażnik dostaje kuszę.
+  # Bez AxonNPC i bez Citizens z Sentinelem miejsca strażników zostają puste.
   # Komenda: /struktury straznicy (ilu stoi), /struktury straznicy postaw (od razu, bez czekania na graczy).
   wlaczeni: true
   # Strażnicy pojawiają się, gdy gracz podejdzie bliżej niż tyle bloków do środka struktury,
