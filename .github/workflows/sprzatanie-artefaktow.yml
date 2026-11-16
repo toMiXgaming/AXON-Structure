@@ -1,0 +1,38 @@
+# Usuwa stare pliki z buildów (artefakty), żeby nie zapychały limitu miejsca na GitHubie.
+# Zostawia najnowszy plik o każdej nazwie, resztę kasuje. Można też uruchomić ręcznie w zakładce Actions.
+name: Sprzątanie artefaktów
+
+on:
+  push:
+    branches: [claude/project-thread-dwtj70]
+    paths: [.github/workflows/sprzatanie-artefaktow.yml]
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  sprzatanie:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            const all = await github.paginate(github.rest.actions.listArtifactsForRepo, { owner, repo, per_page: 100 })
+            all.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            const kept = new Set()
+            let removed = 0
+            let bytes = 0
+            for (const a of all) {
+              if (a.expired) continue
+              if (!kept.has(a.name)) {
+                kept.add(a.name)
+                core.info(`zostaje: ${a.name} (${(a.size_in_bytes / 1048576).toFixed(1)} MB, ${a.created_at})`)
+                continue
+              }
+              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: a.id })
+              removed++
+              bytes += a.size_in_bytes
+            }
+            core.notice(`Usunięto ${removed} artefaktów, zwolniono ${(bytes / 1048576).toFixed(1)} MB.`)
