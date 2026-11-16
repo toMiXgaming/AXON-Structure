@@ -35,7 +35,9 @@ import java.util.Random;
 import java.util.UUID;
 
 /**
- * Strażnicy w strukturach: NPC-gracze z Citizens z walką z Sentinela (który obsługuje też broń QualityArmory).
+ * Strażnicy w strukturach. Gdy na serwerze jest AxonNPC, to on stawia NPC (wygląd gracza, walka bronią AxonGuns,
+ * rozmowy przez AI, nastawienie gangu do graczy); grupą NPC jest instancja struktury. Bez AxonNPC zostaje stara
+ * droga: NPC-gracze z Citizens z walką z Sentinela (który obsługuje też broń QualityArmory).
  * Miejsca strażników są w plikach struktur jako punkty z pulą {@code npc-<zestaw>}, a zestawy (skin, broń,
  * zbroja, życie, loot) w sekcji {@code straznicy} configu. Strażnicy pojawiają się, gdy gracz podejdzie do
  * struktury, znikają, gdy w okolicy nikogo nie ma, a zabici wracają po {@code odradzanie-minut}.
@@ -145,9 +147,20 @@ public final class GuardService implements Listener {
         }
     }
 
-    /** Czy Citizens i Sentinel są na serwerze. */
+    /** Czy jest czym stawiać strażników: AxonNPC albo Citizens z Sentinelem. */
     public boolean available() {
-        return Bukkit.getPluginManager().isPluginEnabled("Citizens") && Bukkit.getPluginManager().isPluginEnabled("Sentinel");
+        return axonNpc() || (Bukkit.getPluginManager().isPluginEnabled("Citizens")
+                && Bukkit.getPluginManager().isPluginEnabled("Sentinel"));
+    }
+
+    /** Czy strażników stawia AxonNPC (ma pierwszeństwo przed Citizens). */
+    public boolean axonNpc() {
+        return Bukkit.getPluginManager().isPluginEnabled("AxonNPC");
+    }
+
+    /** Nazwa tego, co stawia strażników (do komendy). */
+    public String backend() {
+        return axonNpc() ? "AxonNPC" : "Citizens + Sentinel";
     }
 
     public int activeCount() {
@@ -201,7 +214,8 @@ public final class GuardService implements Listener {
             }
         }
         for (Guard guard : guards.values()) {
-            if (guard.npc != null && guard.kit.farms()) {
+            // rolników z AxonNPC prowadzi sam AxonNPC
+            if (guard.npc != null && guard.kit.farms() && !(guard.npc instanceof Entity)) {
                 farm(guard);
             }
         }
@@ -315,6 +329,10 @@ public final class GuardService implements Listener {
     // ------------------------------------------------------------------ Citizens i Sentinel przez refleksję
 
     private void spawn(Guard guard) {
+        if (axonNpc()) {
+            spawnAxonNpc(guard);
+            return;
+        }
         try {
             Object npc = call(registry(), "createNPC", new Class<?>[]{EntityType.class, String.class},
                     EntityType.PLAYER, LootConfig.color(guard.kit.name()));
@@ -354,7 +372,14 @@ public final class GuardService implements Listener {
             byEntity.remove(guard.entityId);
             guard.entityId = null;
         }
-        if (guard.npc != null) {
+        if (guard.npc instanceof Entity entity) {
+            try {
+                axonNpcApi().getMethod("remove", Entity.class).invoke(null, entity);
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                entity.remove();
+            }
+            guard.npc = null;
+        } else if (guard.npc != null) {
             try {
                 call(guard.npc, "destroy", new Class<?>[0]);
             } catch (ReflectiveOperationException | RuntimeException ignored) {
@@ -366,6 +391,9 @@ public final class GuardService implements Listener {
     }
 
     private boolean isSpawned(Object npc) {
+        if (npc instanceof Entity entity) {
+            return entity.isValid() && !entity.isDead();
+        }
         try {
             return Boolean.TRUE.equals(call(npc, "isSpawned", new Class<?>[0]));
         } catch (ReflectiveOperationException | RuntimeException e) {
@@ -489,6 +517,60 @@ public final class GuardService implements Listener {
             crop.setBlockData(ageable, false);
             crop.getWorld().playSound(target, org.bukkit.Sound.BLOCK_CROP_BREAK, 0.6f, 1f);
             crop.getWorld().spawnParticle(org.bukkit.Particle.HAPPY_VILLAGER, target.clone().add(0, 0.5, 0), 6, 0.3, 0.3, 0.3);
+        }
+    }
+
+    // ------------------------------------------------------------------ AxonNPC przez refleksję
+
+    private static Class<?> axonNpcApi() throws ClassNotFoundException {
+        org.bukkit.plugin.Plugin p = Bukkit.getPluginManager().getPlugin("AxonNPC");
+        ClassLoader loader = p == null ? GuardService.class.getClassLoader() : p.getClass().getClassLoader();
+        return Class.forName("pl.axon.npc.api.AxonNpcApi", true, loader);
+    }
+
+    /**
+     * Strażnik przez AxonNPC. Zestaw idzie jako mapa z kluczami jak w configu; grupą (wspólne nastawienie gangu
+     * do graczy i alarm) jest instancja struktury.
+     */
+    private void spawnAxonNpc(Guard guard) {
+        Kit kit = guard.kit;
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", kit.id());
+        map.put("nazwa", kit.name());
+        map.put("skin-tekstura", kit.skinTexture());
+        map.put("skin-podpis", kit.skinSignature());
+        map.put("skin-gracza", kit.skinName());
+        map.put("bron", kit.weapon());
+        if (!Bukkit.getPluginManager().isPluginEnabled("AxonGuns") && kit.weapon().toLowerCase(Locale.ROOT).startsWith("qa:")) {
+            // bez AxonGuns w ręce zostaje broń QualityArmory (strzela wtedy z kuszy)
+            ItemStack item = weapon(kit.weapon());
+            if (item != null) {
+                map.put("przedmiot-w-rece", item);
+            }
+        }
+        map.put("zbroja", kit.armor());
+        map.put("zycie", kit.health());
+        map.put("obrazenia", kit.damage());
+        map.put("zasieg", kit.range());
+        map.put("celnosc", kit.accuracy());
+        map.put("cele", kit.targets());
+        map.put("chodzi", kit.walks());
+        map.put("promien-chodzenia", kit.walkRadius());
+        map.put("uprawia", kit.farms());
+        map.put("spi", kit.sleeps());
+        try {
+            Object body = axonNpcApi().getMethod("spawn", Location.class, Map.class, String.class)
+                    .invoke(null, guard.location, map, guard.instanceId);
+            if (body instanceof Entity entity) {
+                guard.npc = entity;
+                guard.entityId = entity.getUniqueId();
+                byEntity.put(entity.getUniqueId(), guard);
+            }
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            if (!warned) {
+                warned = true;
+                plugin.getLogger().warning("Nie udało się postawić strażnika przez AxonNPC: " + e);
+            }
         }
     }
 

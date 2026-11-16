@@ -321,7 +321,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private void guards(CommandSender sender, String[] args) {
         if (!plugin.guards().available()) {
-            sender.sendMessage("§cStrażnicy wymagają pluginów Citizens i Sentinel (ci.citizensnpcs.co). "
+            sender.sendMessage("§cStrażnicy wymagają pluginu AxonNPC (albo starych Citizens i Sentinel). "
                     + "Bez nich miejsca strażników zostają puste.");
             return;
         }
@@ -335,7 +335,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§cW config.yml brakuje zestawów strażników: §f" + String.join(", ", plugin.guards().missingKits())
                     + "§c. Te miejsca zostają puste – dopisz je w straznicy.zestawy albo usuń config.yml, żeby powstał nowy.");
         }
-        sender.sendMessage("§eStrażnicy: §f" + plugin.guards().activeCount() + " §estoi, miejsc w postawionych strukturach: §f"
+        sender.sendMessage("§eStrażnicy (§f" + plugin.guards().backend() + "§e): §f" + plugin.guards().activeCount() + " §estoi, miejsc w postawionych strukturach: §f"
                 + plugin.guards().guardPoints() + "§e. Pojawiają się, gdy gracz podejdzie do struktury.");
     }
 
