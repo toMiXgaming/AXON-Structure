@@ -390,8 +390,10 @@ public final class ContainerService implements Listener {
                 tickLock(spot, now);
             }
             if (spot.visible()) {
-                if (spot.display != null && Bukkit.getEntity(spot.display) == null) {
-                    despawnEntities(spot); // ktoś usunął encje (np. /kill)
+                if (anyMissing(spot)) {
+                    // ktoś usunął część encji (np. /kill albo plugin czyszczący encje): sam model bez hitboxa
+                    // wyglądał jak beczka, ale nie reagował na klik, więc stawiamy cały pojemnik od nowa
+                    despawnEntities(spot);
                 }
                 if (spot.entities.isEmpty()) {
                     showIfLoaded(spot); // np. blok zasłaniał miejsce przy wczytaniu chunka
@@ -441,6 +443,39 @@ public final class ContainerService implements Listener {
         });
         spot.lockText = display.getUniqueId();
         track(spot, display);
+    }
+
+    private static boolean anyMissing(ContainerSpot spot) {
+        for (UUID id : spot.entities) {
+            Entity entity = Bukkit.getEntity(id);
+            if (entity == null || !entity.isValid()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Encja pojemnika, której nie zna żaden punkt (sierota po wcześniejszym postawieniu): usuwamy ją razem z innymi
+     * sierotami obok i od razu stawiamy brakujące pojemniki w tym chunku. Zwraca, czy to była sierota.
+     */
+    private boolean removeOrphan(Entity clicked) {
+        if (!clicked.getScoreboardTags().contains(TAG) || byEntity.containsKey(clicked.getUniqueId())) {
+            return false;
+        }
+        for (Entity near : clicked.getNearbyEntities(3, 3, 3)) {
+            if (near.getScoreboardTags().contains(TAG) && !byEntity.containsKey(near.getUniqueId())) {
+                near.remove();
+            }
+        }
+        clicked.remove();
+        for (ContainerSpot spot : List.copyOf(spotsIn(clicked.getLocation().getChunk()))) {
+            if (anyMissing(spot)) {
+                despawnEntities(spot);
+            }
+            showIfLoaded(spot);
+        }
+        return true;
     }
 
     /** Rozbita beczka znika (pusta albo po czasie); wraca po czasie odnowienia liczonym od rozbicia. */
@@ -688,6 +723,10 @@ public final class ContainerService implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPreAttack(PrePlayerAttackEntityEvent event) {
         ContainerSpot spot = byEntity.get(event.getAttacked().getUniqueId());
+        if (spot == null && removeOrphan(event.getAttacked())) {
+            event.setCancelled(true);
+            return;
+        }
         if (spot != null) {
             event.setCancelled(true);
             // naładowanie zamachu czytamy tutaj, zanim gra je wyzeruje po ciosie
@@ -847,6 +886,9 @@ public final class ContainerService implements Listener {
     public void onInteract(PlayerInteractEntityEvent event) {
         ContainerSpot spot = byEntity.get(event.getRightClicked().getUniqueId());
         if (spot == null) {
+            if (removeOrphan(event.getRightClicked())) {
+                event.setCancelled(true);
+            }
             return;
         }
         event.setCancelled(true);
