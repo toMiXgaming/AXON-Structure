@@ -15,12 +15,19 @@ import java.util.logging.Logger;
 
 /**
  * Tablica zleceń w oazie: kilka zleceń „przynieś N sztuk X” losowanych z configu co {@code odswiezanie-godzin}.
- * Każdy gracz może wykonać każde zlecenie raz w danym okresie i dostaje nagrodę z Vaulta. Ekran GUI
+ * Każdy gracz może wykonać każde zlecenie raz w danym okresie i dostaje nagrodę z Vaulta, przedmiot
+ * ({@code nagroda-przedmiot}, np. HQM) albo jedno i drugie. Zlecenie z {@code od-dnia} pojawia się na tablicy dopiero
+ * od tego dnia wipe'u (zegar z AxonItems). Ekran GUI
  * ({@link JobScreen}) oddaje towar tym samym {@link #complete}.
  */
 final class JobBoard {
 
-    record Job(String spec, ItemStack item, int amount, double reward) {
+    record Job(String spec, ItemStack item, int amount, double reward, String rewardSpec, ItemStack rewardItem,
+               int rewardAmount, int fromDay) {
+
+        boolean hasItemReward() {
+            return rewardItem != null && rewardAmount > 0;
+        }
     }
 
     private final OasisService oasis;
@@ -44,17 +51,69 @@ final class JobBoard {
             String spec = String.valueOf(map.get("przedmiot"));
             int amount = map.get("ilosc") instanceof Number n ? n.intValue() : 1;
             double reward = map.get("nagroda") instanceof Number n ? n.doubleValue() : 0;
+            Object rawRewardSpec = map.get("nagroda-przedmiot");
+            String rewardSpec = rawRewardSpec == null ? null : String.valueOf(rawRewardSpec);
+            int rewardAmount = map.get("nagroda-ilosc") instanceof Number n ? n.intValue() : 1;
+            int fromDay = map.get("od-dnia") instanceof Number n ? n.intValue() : 0;
+            // przedmioty AxonItems i QualityArmory wczytują się po naszym pluginie: brakujące szukamy znów przy otwarciu
             ItemStack item = Items.create(spec, 1);
-            if (item == null || amount <= 0 || reward <= 0) {
+            ItemStack rewardItem = rewardSpec == null ? null : Items.create(rewardSpec, 1);
+            if (rewardSpec != null && ((rewardItem == null && !late(rewardSpec)) || rewardAmount <= 0)) {
+                logger.warning("Tablica zleceń: pomijam zlecenie '" + spec + "' (zła nagroda-przedmiot '" + rewardSpec
+                        + "' albo nagroda-ilosc).");
+                continue;
+            }
+            if ((item == null && !late(spec)) || amount <= 0 || (reward <= 0 && rewardSpec == null)) {
                 logger.warning("Tablica zleceń: pomijam zlecenie '" + spec + "' (zły przedmiot, ilość albo nagroda).");
                 continue;
             }
-            pool.add(new Job(spec, item, amount, reward));
+            pool.add(new Job(spec, item, amount, Math.max(0, reward), rewardSpec, rewardItem, rewardAmount,
+                    Math.max(0, fromDay)));
         }
     }
 
     Job job(int index) {
-        return pool.get(index);
+        Job job = resolve(index);
+        return job == null ? pool.get(index) : job;
+    }
+
+    /** Przedmiot z pluginu, który wczytuje się po nas (AxonItems, QualityArmory). */
+    private static boolean late(String spec) {
+        String lower = spec.toLowerCase(java.util.Locale.ROOT);
+        return lower.startsWith("axon:") || lower.startsWith("qa:");
+    }
+
+    /** Uzupełnia brakujące przedmioty zlecenia; null, gdy dalej ich nie ma. */
+    private Job resolve(int index) {
+        Job job = pool.get(index);
+        if (job.item() != null && (job.rewardSpec() == null || job.rewardItem() != null)) {
+            return job;
+        }
+        ItemStack item = job.item() != null ? job.item() : Items.create(job.spec(), 1);
+        ItemStack prize = job.rewardSpec() == null || job.rewardItem() != null ? job.rewardItem()
+                : Items.create(job.rewardSpec(), 1);
+        if (item == null || (job.rewardSpec() != null && prize == null)) {
+            return null;
+        }
+        job = new Job(job.spec(), item, job.amount(), job.reward(), job.rewardSpec(), prize, job.rewardAmount(),
+                job.fromDay());
+        pool.set(index, job);
+        return job;
+    }
+
+    /** Nagroda do opisu: kwota, przedmiot albo oba („300 zł + 1x HQM”). */
+    String rewardText(Job job) {
+        String money = job.reward() > 0 ? oasis.vault().format(job.reward()) : null;
+        String item = job.hasItemReward() ? job.rewardAmount() + "x " + Items.name(job.rewardItem()) : null;
+        if (money != null && item != null) {
+            return money + " + " + item;
+        }
+        return money != null ? money : item == null ? "-" : item;
+    }
+
+    /** Czy zlecenie może już być na tablicy (dzień wipe'u z AxonItems). */
+    static boolean unlocked(int fromDay, int wipeDay) {
+        return fromDay <= 0 || wipeDay >= fromDay;
     }
 
     /** Ile milisekund do nowych zleceń. */
@@ -70,15 +129,19 @@ final class JobBoard {
     /** Aktualne zlecenia: losowane na nowo, gdy minie okres (zapis w oaza.yml, żeby restart ich nie zmieniał). */
     private List<Integer> current() {
         long period = System.currentTimeMillis() / periodMillis;
+        int day = pl.axon.structure.loot.AxonItemsBridge.wipeDay();
         List<Integer> chosen = oasis.data().getIntegerList("zlecenia.aktywne");
         boolean valid = oasis.data().getLong("zlecenia.okres", -1) == period && !chosen.isEmpty();
         for (int index : chosen) {
-            valid &= index >= 0 && index < pool.size();
+            valid &= index >= 0 && index < pool.size() && unlocked(pool.get(index).fromDay(), day)
+                    && resolve(index) != null;
         }
         if (!valid) {
             List<Integer> all = new ArrayList<>();
             for (int i = 0; i < pool.size(); i++) {
-                all.add(i);
+                if (unlocked(pool.get(i).fromDay(), day) && resolve(i) != null) {
+                    all.add(i);
+                }
             }
             Collections.shuffle(all, random);
             chosen = new ArrayList<>(all.subList(0, Math.min(active, all.size())));
@@ -131,13 +194,13 @@ final class JobBoard {
         long left = periodMillis - System.currentTimeMillis() % periodMillis;
         String refresh = "&7Nowe zlecenia za &f" + (left / 3_600_000L) + " h " + (left / 60_000L % 60) + " min";
         for (int i = 0; i < jobs.size(); i++) {
-            Job job = pool.get(jobs.get(i));
+            Job job = job(jobs.get(i));
             boolean finished = done.contains(jobs.get(i));
             ItemStack icon = finished
                     ? Menu.icon(Material.LIME_STAINED_GLASS_PANE, "&aWykonane", "&7" + job.amount() + "× "
                     + Items.name(job.item()), refresh)
                     : Menu.withLore(job.item(), "", "&ePrzynieś: &f" + job.amount() + " szt.",
-                    "&eNagroda: &f" + oasis.vault().format(job.reward()),
+                    "&eNagroda: &f" + rewardText(job),
                     "&7Masz: &f" + Items.count(player, job.item()), "&aKliknij, żeby oddać.", refresh);
             menu.getInventory().setItem(i, icon);
         }
@@ -149,18 +212,32 @@ final class JobBoard {
             player.sendMessage("§7To zlecenie już wykonałeś. Nowe pojawią się po odświeżeniu tablicy.");
             return;
         }
-        Job job = pool.get(index);
+        Job job = job(index);
         if (Items.count(player, job.item()) < job.amount()) {
             player.sendMessage("§cPotrzebujesz " + job.amount() + "× " + Items.name(job.item()) + "§c.");
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
             return;
         }
+        ItemStack prize = null;
+        if (job.hasItemReward()) {
+            // budujemy na nowo: przedmioty AxonItems mogą zmienić wygląd po przeładowaniu
+            prize = Items.create(job.rewardSpec(), job.rewardAmount());
+            if (prize == null) {
+                player.sendMessage("§cNagroda tego zlecenia jest chwilowo niedostępna. Spróbuj później.");
+                return;
+            }
+        }
         Items.take(player, job.item(), job.amount());
-        oasis.vault().deposit(player, job.reward());
+        if (job.reward() > 0) {
+            oasis.vault().deposit(player, job.reward());
+        }
+        if (prize != null) {
+            Items.give(player, Items.stacks(prize, job.rewardAmount()));
+        }
         done.add(index);
         oasis.data().set(doneKey(player), done);
         oasis.markDirty();
-        player.sendMessage("§aZlecenie wykonane! §7Nagroda: §f" + oasis.vault().format(job.reward()));
+        player.sendMessage("§aZlecenie wykonane! §7Nagroda: §f" + rewardText(job));
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
     }
 }

@@ -416,6 +416,8 @@ oaza:
     oplata: 0
   zlecenia:
     # ile zleceń wisi naraz i co ile godzin losują się nowe; każdy gracz wykonuje każde raz na okres
+    # nagroda: kwota z Vaulta; nagroda-przedmiot + nagroda-ilosc: przedmiot (np. axon:hqm) zamiast albo obok kwoty;
+    # od-dnia: zlecenie trafia na tablicę dopiero od tego dnia wipe'u (zegar wipe.start z loot.yml AxonItems)
     ile: 5
     odswiezanie-godzin: 24
     lista:
@@ -431,6 +433,10 @@ oaza:
       - {przedmiot: diamond, ilosc: 2, nagroda: 500}
       - {przedmiot: rotten_flesh, ilosc: 48, nagroda: 100}
       - {przedmiot: bone, ilosc: 32, nagroda: 120}
+      # HQM za trudne dostawy: raz na dobę na gracza i tylko, gdy wylosują się na tablicę
+      - {przedmiot: "axon:steel", ilosc: 20, nagroda-przedmiot: "axon:hqm", nagroda-ilosc: 1, od-dnia: 7}
+      - {przedmiot: "axon:gears", ilosc: 12, nagroda-przedmiot: "axon:hqm", nagroda-ilosc: 1, od-dnia: 7}
+      - {przedmiot: diamond, ilosc: 3, nagroda-przedmiot: "axon:hqm", nagroda-ilosc: 2, od-dnia: 7}
   automaty:
     # stawka za jedną grę; 3 takie same symbole = stawka × mnoznik, 2 takie same = stawka × para-mnoznik
     # symbol z mnoznik: 0 to pudło (nie płaci nawet w parze). Przy tych wagach wygrywa ok. 31% gier,
@@ -777,6 +783,16 @@ pojemniki:
         - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 8, od-dnia: 3}
         - {przedmiot: golden_apple, ilosc: "1-2", szansa: 25, nazwa: "&fApteczka"}
         - {przedmiot: ender_pearl, ilosc: "1", szansa: 10}
+
+    # zrzut zaopatrzenia: cała tabela "zrzut" z loot.yml AxonItems (HQM 2-4, korpusy T3 od dnia 10).
+    # To główne źródło HQM obok kryształowych monolitów AxonOre i zleceń w oazie.
+    skrzynia-zrzutu:
+      nazwa: "&4&lZrzut zaopatrzenia"
+      blok: model
+      model: "axon:zrzut"
+      min-przedmiotow: 4
+      loot:
+        - {przedmiot: "tabela:zrzut", szansa: 100}
 
     # czarny rynek: części do broni, ale nigdy korpusy T3
     skrzynia-broni:
@@ -1360,8 +1376,7 @@ pule:
     brak: 25
   # zrzut zaopatrzenia (sekcja zrzuty: wskazuje tę pulę)
   zrzut:
-    rzadka-skrzynia: 75
-    skrzynia-broni: 25
+    skrzynia-zrzutu: 100
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
