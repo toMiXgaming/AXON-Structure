@@ -595,7 +595,7 @@ loot:
 #                poza ramką.
 #    dodatki:    pozycje lootu losowane dodatkowo w każdym pojemniku tej struktury, w formacie jak loot klas
 #                (przedmiot, ilosc, szansa, od-dnia, tabela:<id>, karta:<kolor>). od-dnia liczy dzień wipe'u
-#                z AxonItems (wipe.start w jego loot.yml).
+#                z AxonItems (wipe.start w jego loot.yml; pusty start = bez blokad, wszystko od razu).
 #  Tier 0 albo brak poziomu = loot dokładnie jak w klasach i pulach. Podgląd: /struktury tiery.
 #  Po zmianie: /struktury przeladuj (działa od następnego losowania pojemnika).
 # ------------------------------------------------------------

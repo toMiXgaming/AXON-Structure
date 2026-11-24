@@ -155,7 +155,7 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
     }
 
     private static void add(List<ItemStack> items, LootEntry entry, Random random) {
-        if (entry.fromDay() > 0 && AxonItemsBridge.wipeDay() < entry.fromDay()) {
+        if (entry.fromDay() > 0 && AxonItemsBridge.unlockDay() < entry.fromDay()) {
             return; // jak od-dnia w loot.yml AxonItems: za wcześnie w wipe'ie
         }
         if (entry.table() != null && entry.table().startsWith(LootEntry.CARD_PREFIX)) {

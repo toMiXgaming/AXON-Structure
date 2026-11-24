@@ -29,6 +29,7 @@ public final class AxonItemsBridge {
     private static Method exists;
     private static Method rollLoot;
     private static Method wipeDay;
+    private static Method wipeClockEnabled;
     private static boolean warnedMissing;
     private static final Set<String> warnedIds = new HashSet<>();
 
@@ -124,6 +125,23 @@ public final class AxonItemsBridge {
         }
     }
 
+    /**
+     * Dzień do porównań z {@code od-dnia}: dzień wipe'u albo {@link Integer#MAX_VALUE}, gdy w AxonItems zegar jest
+     * wyłączony (pusty {@code wipe.start} w loot.yml = bez blokad czasowych, tak jak w tabelach AxonItems).
+     */
+    public static int unlockDay() {
+        if (resolve() && wipeClockEnabled != null) {
+            try {
+                if (Boolean.FALSE.equals(wipeClockEnabled.invoke(api))) {
+                    return Integer.MAX_VALUE;
+                }
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                // jak przy wipeDay: traktujemy jak zegar włączony
+            }
+        }
+        return wipeDay();
+    }
+
     public static boolean available() {
         return resolve();
     }
@@ -158,6 +176,11 @@ public final class AxonItemsBridge {
                 wipeDay = type.getMethod("wipeDay");
             } catch (NoSuchMethodException old) {
                 wipeDay = null;
+            }
+            try {
+                wipeClockEnabled = type.getMethod("wipeClockEnabled");
+            } catch (NoSuchMethodException old) {
+                wipeClockEnabled = null; // starszy AxonItems: zegar uznajemy za włączony
             }
             api = service;
             warnedMissing = false;

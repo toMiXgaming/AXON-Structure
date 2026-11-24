@@ -129,7 +129,7 @@ final class JobBoard {
     /** Aktualne zlecenia: losowane na nowo, gdy minie okres (zapis w oaza.yml, żeby restart ich nie zmieniał). */
     private List<Integer> current() {
         long period = System.currentTimeMillis() / periodMillis;
-        int day = pl.axon.structure.loot.AxonItemsBridge.wipeDay();
+        int day = pl.axon.structure.loot.AxonItemsBridge.unlockDay();
         List<Integer> chosen = oasis.data().getIntegerList("zlecenia.aktywne");
         boolean valid = oasis.data().getLong("zlecenia.okres", -1) == period && !chosen.isEmpty();
         for (int index : chosen) {
