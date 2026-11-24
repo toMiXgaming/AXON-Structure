@@ -70,7 +70,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
             crates.stop();
         }
         if (store != null) {
-            store.save();
+            store.close();
         }
     }
 

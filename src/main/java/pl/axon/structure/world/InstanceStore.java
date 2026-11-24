@@ -21,6 +21,11 @@ public final class InstanceStore {
     private final File file;
     private final Logger logger;
     private final Map<String, StructureInstance> instances = new LinkedHashMap<>();
+    private final java.util.concurrent.ExecutorService writer = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "AxonStructure-IO");
+        t.setDaemon(true);
+        return t;
+    });
 
     public InstanceStore(File file, Logger logger) {
         this.file = file;
@@ -55,7 +60,28 @@ public final class InstanceStore {
         }
     }
 
+    /** Zapis w tle: tekst powstaje na wątku wołającego (stan nie zmienia się w trakcie), na dysk idzie osobny wątek. */
     public void save() {
+        String data = serialize();
+        try {
+            writer.execute(() -> write(data));
+        } catch (java.util.concurrent.RejectedExecutionException closed) {
+            write(data);
+        }
+    }
+
+    /** Kończy zapisy w tle i zapisuje stan ostatni raz (wyłączenie pluginu). */
+    public void close() {
+        writer.shutdown();
+        try {
+            writer.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        write(serialize());
+    }
+
+    private String serialize() {
         YamlConfiguration yaml = new YamlConfiguration();
         for (StructureInstance instance : instances.values()) {
             String path = "instancje." + instance.id() + ".";
@@ -78,8 +104,15 @@ public final class InstanceStore {
                 yaml.set(path + "klucz", instance.externalKey());
             }
         }
+        return yaml.saveToString();
+    }
+
+    private synchronized void write(String data) {
         try {
-            yaml.save(file);
+            java.nio.file.Path target = file.toPath();
+            java.nio.file.Path tmp = target.resolveSibling(file.getName() + ".tmp");
+            java.nio.file.Files.writeString(tmp, data, java.nio.charset.StandardCharsets.UTF_8);
+            java.nio.file.Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             logger.severe("Nie udało się zapisać " + file.getName() + ": " + e.getMessage());
         }
