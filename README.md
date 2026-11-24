@@ -57,6 +57,8 @@ Tier działa na skrzynie i beczki (bloki i pojemniki-modele), ramki i zabitych s
 
 Domyślnie: **I** – gospodarstwo, osiedle, oilen, zajezdnia i drogi (loot jak w klasach); **II** – kombinat, szpital, kopalnia, elektrownia, czarny rynek (×1,15, mała → lepsza skrzynia 20%, trybiki i notatki w dodatkach); **III** – galeria i jednostka (×1,3, skrzynie wojskowe z ulepszeń, HQM 3% od dnia 7, korpus karabinu 1% od dnia 10); oaza bez tieru.
 
+**Statystyki lootu** (`statystyki.wlaczone`): plik `statystyki.yml` liczy dla każdego gracza, ile pojemników-modeli ograbił w strukturach każdego tieru (`pojemnik-t3`) i przy drogach (`pojemnik-droga`), ilu strażników zabił (`npc-t2`) i ile sztuk każdego przedmiotu z tego wylosował. Razem z czasem gry z `world/stats/<uuid>.json` (`minecraft:play_time`) daje prawdziwy loot na godzinę, żeby po wipe'ie skalibrować tabele i tiery. Skrzynie-bloki się nie liczą (losują się przy odświeżeniu, bez gracza).
+
 Na serwerze ze starym `config.yml` sekcja `tiery:` dopisuje się sama przy starcie (jak każda brakująca sekcja główna) i od razu można ją edytować.
 
 ## Pojemniki bez bloku (beczki i skrzynie-modele)

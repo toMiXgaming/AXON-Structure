@@ -92,6 +92,7 @@ public final class ContainerService implements Listener {
     private final InstanceStore store;
     private final Random random = new Random();
     private final Map<String, ContainerSpot> spots = new LinkedHashMap<>();
+    private LootStats stats;
     private final Map<String, Map<Long, List<ContainerSpot>>> byChunk = new HashMap<>();
     private final Map<UUID, ContainerSpot> byEntity = new HashMap<>();
     private final Map<UUID, Long> lastOpen = new HashMap<>();
@@ -110,6 +111,18 @@ public final class ContainerService implements Listener {
     }
 
     /** Karty dostępu zużywane przy pojemnikach z {@code karta-poziom}. */
+    /** Statystyki lootu ({@code statystyki.yml}); null = nie liczymy. */
+    public void stats(LootStats stats) {
+        this.stats = stats;
+    }
+
+    private void record(Player player, ContainerSpot spot) {
+        if (stats != null && spot.fixedClass == null) {
+            stats.record(player, LootStats.source("pojemnik", tierOf(spot), spot.roadside),
+                    java.util.Arrays.asList(spot.inventory.getContents()));
+        }
+    }
+
     public void cards(AccessCardService cards) {
         this.cards = cards;
     }
@@ -822,6 +835,7 @@ public final class ContainerService implements Listener {
         spot.inventory = newInventory(spot);
         if (!crates.emptyLoot()) {
             spot.crate.fill(spot.inventory, random, tierOf(spot)); // loot losuje się w chwili rozbicia
+            record(player, spot);
         }
         Entity display = spot.display == null ? null : Bukkit.getEntity(spot.display);
         if (display instanceof ItemDisplay itemDisplay) {
@@ -947,6 +961,7 @@ public final class ContainerService implements Listener {
                     spot.inventory = newInventory(spot);
                     if (!crates.emptyLoot()) {
                         spot.crate.fill(spot.inventory, random, tierOf(spot)); // przy pierwszym otwarciu, nie da się podejrzeć z daleka
+                        record(player, spot);
                     }
                 }
                 player.openInventory(spot.inventory);

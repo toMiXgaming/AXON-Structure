@@ -653,6 +653,11 @@ tiery:
         - {przedmiot: "axon:hqm", ilosc: "1", szansa: 3, od-dnia: 7}
         - {przedmiot: "axon:body_rifle", ilosc: "1", szansa: 1, od-dnia: 10}
 
+# Statystyki lootu w statystyki.yml: ile pojemników-modeli (per tier i przy drogach) i strażników ograbił każdy
+# gracz i co z nich wylosował. Razem z czasem gry (world/stats) daje prawdziwy loot na godzinę do kalibracji tabel.
+statystyki:
+  wlaczone: true
+
 # ------------------------------------------------------------
 #  POJEMNIKI – skrzynie i beczki bez prawdziwego bloku: model z paczki zasobów serwera (QualityArmory-texturepack,
 #  axon:<nazwa>, przód na południe) i niewidzialna encja, w którą się klika. Nie da się ich zabrać, rozbudować
