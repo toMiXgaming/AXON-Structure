@@ -112,6 +112,29 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
 
     /** Losuje przedmioty: każdy wpis ma własną szansę, a gdy nic nie wypadnie, dobiera do {@code minItems}. */
     public List<ItemStack> roll(Random random) {
+        return roll(random, TierConfig.Tier.NONE);
+    }
+
+    /**
+     * Jak {@link #roll(Random)}, a potem tier struktury: stosy mnożone przez {@code ilosc} tieru (pojedyncze
+     * przedmioty bez zmian) i dodatki tieru, każdy z własną szansą i dniem wipe'u.
+     */
+    public List<ItemStack> roll(Random random, TierConfig.Tier tier) {
+        List<ItemStack> items = rollBase(random);
+        if (tier.amount() != 1.0) {
+            for (ItemStack item : items) {
+                item.setAmount(tier.scale(item.getAmount(), item.getMaxStackSize(), random));
+            }
+        }
+        for (LootEntry extra : tier.extras()) {
+            if (random.nextDouble() * 100.0 < extra.chance()) {
+                add(items, extra, random);
+            }
+        }
+        return items;
+    }
+
+    private List<ItemStack> rollBase(Random random) {
         List<ItemStack> items = new ArrayList<>();
         for (LootEntry entry : loot) {
             if (random.nextDouble() * 100.0 < entry.chance()) {
@@ -145,13 +168,18 @@ public record CrateClass(String id, String displayName, Kind kind, String decora
     }
 
     public void fill(Inventory inventory, Random random) {
+        fill(inventory, random, TierConfig.Tier.NONE);
+    }
+
+    /** Wkłada wylosowany loot (z tierem struktury) w losowe sloty. */
+    public void fill(Inventory inventory, Random random, TierConfig.Tier tier) {
         List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < inventory.getSize(); i++) {
             slots.add(i);
         }
         Collections.shuffle(slots, random);
         int slot = 0;
-        for (ItemStack item : roll(random)) {
+        for (ItemStack item : roll(random, tier)) {
             if (slot >= slots.size()) {
                 break;
             }

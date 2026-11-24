@@ -12,11 +12,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
-/** Klasy skrzyń i pule wczytane z sekcji {@code klasy} i {@code pule} w config.yml. */
+/** Klasy skrzyń, pule i tiery wczytane z sekcji {@code klasy}, {@code pule} i {@code tiery} w config.yml. */
 public final class LootConfig {
 
     private final Map<String, CrateClass> classes = new LinkedHashMap<>();
     private final Map<String, CratePool> pools = new LinkedHashMap<>();
+    private TierConfig tiers = TierConfig.DISABLED;
 
     /** Sekcja z pojemnikami-modelami; jej klasy i pule zastępują te o tym samym id z {@code klasy} i {@code pule}. */
     public static final String CONTAINERS = "pojemniki";
@@ -33,6 +34,8 @@ public final class LootConfig {
         config.loadClasses(root.getConfigurationSection(CONTAINERS + ".klasy"), logger);
         config.loadPools(root.getConfigurationSection("pule"), logger);
         config.loadPools(root.getConfigurationSection(CONTAINERS + ".pule"), logger);
+        // bez sekcji na serwerze (config sprzed tierów) Bukkit odda sekcję z configu w jarze
+        config.tiers = TierConfig.load(root.getConfigurationSection("tiery"), config.classes, logger);
         return config;
     }
 
@@ -118,59 +121,7 @@ public final class LootConfig {
         String decoration = section.getString("dekoracja", "");
         String model = section.getString("model", "");
         int minItems = section.getInt("min-przedmiotow", 1);
-        List<CrateClass.LootEntry> loot = new ArrayList<>();
-        for (Map<?, ?> raw : section.getMapList("loot")) {
-            Map<String, Object> entry = new HashMap<>();
-            raw.forEach((k, v) -> entry.put(String.valueOf(k), v));
-            Object itemName = entry.get("przedmiot");
-            String itemId = itemName == null ? "" : String.valueOf(itemName).trim();
-            String axonId = null;
-            Material material = null;
-            if (itemId.toLowerCase(Locale.ROOT).startsWith(CrateClass.LootEntry.CARD_PREFIX)) {
-                String color = itemId.substring(CrateClass.LootEntry.CARD_PREFIX.length()).trim()
-                        .toLowerCase(Locale.ROOT);
-                if (!AccessCardMath.known(color)) {
-                    logger.warning("Klasa '" + id + "': nieznana karta '" + itemName
-                            + "' (niebieska, czerwona, zielona), pomijam");
-                    continue;
-                }
-                double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
-                loot.add(CrateClass.LootEntry.card(color, chance));
-                continue;
-            }
-            if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.TABLE_PREFIX)) {
-                String table = itemId.substring(AxonItemsBridge.TABLE_PREFIX.length()).toLowerCase(Locale.ROOT);
-                if (table.isBlank()) {
-                    logger.warning("Klasa '" + id + "': pusta nazwa tabeli w '" + itemName + "', pomijam");
-                    continue;
-                }
-                double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
-                loot.add(CrateClass.LootEntry.table(table, chance));
-                continue;
-            }
-            if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.PREFIX)) {
-                // sprawdzane dopiero przy losowaniu: AxonItems włącza się po nas (load: STARTUP)
-                axonId = itemId.substring(AxonItemsBridge.PREFIX.length()).toLowerCase(Locale.ROOT);
-            } else {
-                material = Material.matchMaterial(itemId);
-            }
-            if (material == null && (axonId == null || axonId.isBlank())) {
-                logger.warning("Klasa '" + id + "': nieznany przedmiot '" + itemName + "', pomijam");
-                continue;
-            }
-            int[] amount = parseRange(String.valueOf(entry.getOrDefault("ilosc", "1")));
-            double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
-            String display = entry.containsKey("nazwa") ? color(String.valueOf(entry.get("nazwa"))) : null;
-            List<String> lore = new ArrayList<>();
-            if (entry.get("opis") instanceof List<?> lines) {
-                for (Object line : lines) {
-                    lore.add(color(String.valueOf(line)));
-                }
-            }
-            int fromDay = Math.max(0, Integer.parseInt(String.valueOf(entry.getOrDefault("od-dnia", 0)).trim()));
-            loot.add(new CrateClass.LootEntry(material, axonId, amount[0], amount[1], chance, display, lore, null,
-                    fromDay));
-        }
+        List<CrateClass.LootEntry> loot = parseEntries("Klasa '" + id + "'", section.getMapList("loot"), logger);
         CrateClass.ContainerSpec container = null;
         if (kind == CrateClass.Kind.MODEL) {
             if (model == null || model.isBlank()) {
@@ -191,6 +142,69 @@ public final class LootConfig {
         }
         return new CrateClass(id, name, kind, decoration == null ? "" : decoration,
                 model == null ? "" : model, minItems, loot, container);
+    }
+
+    /**
+     * Pozycje lootu w formacie klas ({@code przedmiot}, {@code ilosc}, {@code szansa}, {@code od-dnia}, {@code nazwa},
+     * {@code opis}, {@code tabela:<id>}, {@code karta:<kolor>}). Używane też przez dodatki tierów.
+     *
+     * @param owner skąd wpisy (do ostrzeżeń w logu)
+     */
+    static List<CrateClass.LootEntry> parseEntries(String owner, List<Map<?, ?>> entries, Logger logger) {
+        List<CrateClass.LootEntry> loot = new ArrayList<>();
+        for (Map<?, ?> raw : entries) {
+            Map<String, Object> entry = new HashMap<>();
+            raw.forEach((k, v) -> entry.put(String.valueOf(k), v));
+            Object itemName = entry.get("przedmiot");
+            String itemId = itemName == null ? "" : String.valueOf(itemName).trim();
+            String axonId = null;
+            Material material = null;
+            if (itemId.toLowerCase(Locale.ROOT).startsWith(CrateClass.LootEntry.CARD_PREFIX)) {
+                String color = itemId.substring(CrateClass.LootEntry.CARD_PREFIX.length()).trim()
+                        .toLowerCase(Locale.ROOT);
+                if (!AccessCardMath.known(color)) {
+                    logger.warning(owner + ": nieznana karta '" + itemName
+                            + "' (niebieska, czerwona, zielona), pomijam");
+                    continue;
+                }
+                double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
+                loot.add(CrateClass.LootEntry.card(color, chance));
+                continue;
+            }
+            if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.TABLE_PREFIX)) {
+                String table = itemId.substring(AxonItemsBridge.TABLE_PREFIX.length()).toLowerCase(Locale.ROOT);
+                if (table.isBlank()) {
+                    logger.warning(owner + ": pusta nazwa tabeli w '" + itemName + "', pomijam");
+                    continue;
+                }
+                double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
+                loot.add(CrateClass.LootEntry.table(table, chance));
+                continue;
+            }
+            if (itemId.toLowerCase(Locale.ROOT).startsWith(AxonItemsBridge.PREFIX)) {
+                // sprawdzane dopiero przy losowaniu: AxonItems włącza się po nas (load: STARTUP)
+                axonId = itemId.substring(AxonItemsBridge.PREFIX.length()).toLowerCase(Locale.ROOT);
+            } else {
+                material = Material.matchMaterial(itemId);
+            }
+            if (material == null && (axonId == null || axonId.isBlank())) {
+                logger.warning(owner + ": nieznany przedmiot '" + itemName + "', pomijam");
+                continue;
+            }
+            int[] amount = parseRange(String.valueOf(entry.getOrDefault("ilosc", "1")));
+            double chance = Double.parseDouble(String.valueOf(entry.getOrDefault("szansa", 100)));
+            String display = entry.containsKey("nazwa") ? color(String.valueOf(entry.get("nazwa"))) : null;
+            List<String> lore = new ArrayList<>();
+            if (entry.get("opis") instanceof List<?> lines) {
+                for (Object line : lines) {
+                    lore.add(color(String.valueOf(line)));
+                }
+            }
+            int fromDay = Math.max(0, Integer.parseInt(String.valueOf(entry.getOrDefault("od-dnia", 0)).trim()));
+            loot.add(new CrateClass.LootEntry(material, axonId, amount[0], amount[1], chance, display, lore, null,
+                    fromDay));
+        }
+        return loot;
     }
 
     private static int[] parseRange(String value) {
@@ -220,6 +234,11 @@ public final class LootConfig {
 
     public Map<String, CrateClass> classes() {
         return classes;
+    }
+
+    /** Tiery struktur z sekcji {@code tiery}. */
+    public TierConfig tiers() {
+        return tiers;
     }
 
     public Map<String, CratePool> pools() {

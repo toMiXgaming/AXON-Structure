@@ -578,6 +578,80 @@ loot:
   puste: true
 
 # ------------------------------------------------------------
+#  TIERY STRUKTUR – jak bogaty jest loot w danej strukturze. Tier dostaje cała struktura (id pliku .axs),
+#  osobno pojemniki przy drogach. Działa na skrzynie i beczki (bloki i pojemniki-modele), ramki z kartami
+#  i zabitych strażników (u nich tylko ilosc). Zrzuty zaopatrzenia mają własną tabelę i tieru nie mają.
+#
+#  Każdy poziom:
+#    nazwa:      jak tier wygląda w komunikatach (/struktury lista, najblizsza, tiery, ogłoszenie {tier})
+#    ilosc:      mnożnik sztuk w stosach (1.3 = +30%). Ułamek dolosowuje sztukę, więc średnio wychodzi dokładnie
+#                ×ilosc. Pojedyncze przedmioty (korpusy broni, karty, 1 HQM) się nie mnożą, a stos nie przekroczy
+#                swojego maksimum – tier daje więcej materiałów, nie podwaja rzadkości.
+#    ulepszenia: klasa wylosowana z puli -> {lepsza klasa: szansa %}. Jedno losowanie na pojemnik, najwyżej jedno
+#                ulepszenie; suma szans maks. 100. Ulepszona klasa ma swój loot, odnowienie, blokadę i kartę.
+#                Ramka zamienia się tylko w ramkę, pojemnik-model tylko w model, skrzynia/beczka-blok w cokolwiek
+#                poza ramką.
+#    dodatki:    pozycje lootu losowane dodatkowo w każdym pojemniku tej struktury, w formacie jak loot klas
+#                (przedmiot, ilosc, szansa, od-dnia, tabela:<id>, karta:<kolor>). od-dnia liczy dzień wipe'u
+#                z AxonItems (wipe.start w jego loot.yml).
+#  Tier 0 albo brak poziomu = loot dokładnie jak w klasach i pulach. Podgląd: /struktury tiery.
+#  Po zmianie: /struktury przeladuj (działa od następnego losowania pojemnika).
+# ------------------------------------------------------------
+tiery:
+  wlaczone: true
+  # Struktura bez wpisu w struktury:.
+  domyslny: 1
+  # Beczki i skrzynki przy drogach z AxonMapGenerator.
+  przy-drogach: 1
+  # id struktury (plik .axs bez rozszerzenia) -> poziom
+  struktury:
+    # I – cywilne, blisko spawnu i dróg: podstawowe materiały
+    gospodarstwo: 1
+    osiedle: 1
+    oilen: 1
+    zajezdnia: 1
+    # II – przemysł i usługi: więcej stali i części, szansa na lepszą skrzynię
+    kombinat: 2
+    szpital: 2
+    kopalnia: 2
+    elektrownia: 2
+    czarny-rynek: 2
+    # III – strefy PvP: skrzynie wojskowe, HQM i korpusy karabinu
+    galeria: 3
+    jednostka: 3
+    # 0 – strefa bezpieczna bez lootu z tieru
+    oaza: 0
+  poziomy:
+    1:
+      nazwa: "&aTier I"
+      ilosc: 1.0
+      ulepszenia: {}
+      dodatki: []
+    2:
+      nazwa: "&eTier II"
+      ilosc: 1.15
+      ulepszenia:
+        mala-skrzynka: {lepsza-skrzynia: 20}
+        lepsza-skrzynia: {rzadka-skrzynia: 8}
+        beczka: {beczka-rdza: 15}
+      dodatki:
+        - {przedmiot: "axon:gears", ilosc: "1", szansa: 6}
+        - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 4}
+    3:
+      nazwa: "&cTier III"
+      ilosc: 1.3
+      ulepszenia:
+        mala-skrzynka: {lepsza-skrzynia: 35}
+        lepsza-skrzynia: {rzadka-skrzynia: 15, skrzynia-wojskowa: 10}
+        rzadka-skrzynia: {skrzynia-wojskowa: 30}
+        skrzynia-broni: {skrzynia-wojskowa: 15}
+        beczka: {beczka-rdza: 25}
+      dodatki:
+        - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 10}
+        - {przedmiot: "axon:hqm", ilosc: "1", szansa: 3, od-dnia: 7}
+        - {przedmiot: "axon:body_rifle", ilosc: "1", szansa: 1, od-dnia: 10}
+
+# ------------------------------------------------------------
 #  POJEMNIKI – skrzynie i beczki bez prawdziwego bloku: model z paczki zasobów serwera (QualityArmory-texturepack,
 #  axon:<nazwa>, przód na południe) i niewidzialna encja, w którą się klika. Nie da się ich zabrać, rozbudować
 #  ani nic w nich schować. Stoją w miejscach skrzyń w strukturach (pule niżej i w pule:) i przy drogach
@@ -654,7 +728,7 @@ pojemniki:
   #   karta-poziom: karta dostępu zużywana przy pierwszym otwarciu (1 niebieska, 2 czerwona, 3 zielona); 0 = bez
   #   od-dnia: przy pozycji lootu – wypada dopiero od tego dnia wipe'u (jak w loot.yml AxonItems)
   #   loot "karta:<kolor>": prawdziwa karta dostępu (niebieska + czerwona w stole = zielona)
-  #   ogloszenie: komunikat na czacie przy odnowieniu ({nazwa}, {miejsce}); "" = bez komunikatu
+  #   ogloszenie: komunikat na czacie przy odnowieniu ({nazwa}, {miejsce}, {tier}); "" = bez komunikatu
   #   dlugosc: ile bloków zajmuje (skrzynia wojskowa: 2); szerokosc / wysokosc: klikalny obszar w blokach
   klasy:
     # --- beczki (rozbijane): drogi, place, stacje paliw ---

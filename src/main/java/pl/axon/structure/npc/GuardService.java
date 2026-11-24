@@ -319,7 +319,8 @@ public final class GuardService implements Listener {
         CrateClass loot = guard.kit.lootClass().isBlank() || crates.emptyLoot() ? null
                 : crates.loot().crateClass(guard.kit.lootClass());
         if (loot != null) {
-            event.getDrops().addAll(loot.roll(random));
+            // tier struktury: więcej sztuk w stosach; dodatki tieru są tylko w pojemnikach
+            event.getDrops().addAll(loot.roll(random, crates.tierOf(guard.instanceId).withoutExtras()));
         }
         guard.deadUntil = System.currentTimeMillis() + settings.respawnMinutes() * 60_000L;
         // NPC sprzątamy tickiem później, gdy Citizens skończy obsługę śmierci

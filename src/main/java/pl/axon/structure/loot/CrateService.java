@@ -30,6 +30,7 @@ import pl.axon.structure.world.InstanceStore;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -171,7 +172,7 @@ public final class CrateService {
             String key = containerKey(instance, i);
             boolean ok;
             if (point.kind() == Blueprint.SpawnKind.FRAME) {
-                ok = refreshFrame(world, w, facing, point.pool(), force);
+                ok = refreshFrame(world, w, facing, point.pool(), force, tierOf(instance));
             } else if (containers != null && containers.has(key)) {
                 // pojemnik-model odnawia się sam; tu tylko sprzątamy starą skrzynię-blok sprzed zmiany klasy
                 Block block = world.getBlockAt(w[0], w[1], w[2]);
@@ -263,7 +264,8 @@ public final class CrateService {
             List<Blueprint.SpawnPoint> points = bp.spawnPoints();
             for (int i = 0; i < points.size(); i++) {
                 Blueprint.SpawnPoint point = points.get(i);
-                if (point.kind() != Blueprint.SpawnKind.CRATE || isMarker(point.pool()) || !hasModels(point.pool())) {
+                if (point.kind() != Blueprint.SpawnKind.CRATE || isMarker(point.pool())
+                        || !hasModels(point.pool(), tierOf(instance))) {
                     continue;
                 }
                 int[] w = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
@@ -276,18 +278,31 @@ public final class CrateService {
         return n;
     }
 
-    private boolean hasModels(String poolId) {
+    /** Czy pula (razem z ulepszeniami tieru) może wylosować pojemnik-model. */
+    private boolean hasModels(String poolId, TierConfig.Tier tier) {
         CratePool pool = loot.pool(poolId);
         if (pool == null) {
             return false;
         }
         for (String classId : pool.weights().keySet()) {
-            CrateClass crate = loot.crateClass(classId);
-            if (crate != null && crate.kind() == CrateClass.Kind.MODEL) {
+            if (isModel(classId)) {
                 return true;
+            }
+            Map<String, Double> targets = tier.upgrades().get(classId);
+            if (targets != null) {
+                for (String target : targets.keySet()) {
+                    if (isModel(target)) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
+    }
+
+    private boolean isModel(String classId) {
+        CrateClass crate = loot.crateClass(classId);
+        return crate != null && crate.kind() == CrateClass.Kind.MODEL;
     }
 
     /** Przód pojemnika w stronę punktu; beczki skierowane w górę dostają stały, ale różny dla każdego miejsca obrót. */
@@ -303,10 +318,26 @@ public final class CrateService {
 
     /** Klasa wylosowana z puli albo null („brak”, nieznana pula). */
     public CrateClass pickClass(String poolId) {
-        return poolId == null ? null : pick(poolId);
+        return pickClass(poolId, TierConfig.Tier.NONE);
     }
 
-    private CrateClass pick(String poolId) {
+    /** Klasa wylosowana z puli i ulepszona według tieru struktury ({@code tiery.poziomy.N.ulepszenia}). */
+    public CrateClass pickClass(String poolId, TierConfig.Tier tier) {
+        return poolId == null ? null : pick(poolId, tier);
+    }
+
+    /** Tier struktury (z {@code tiery.struktury}); null albo nieznana = bez tieru. */
+    public TierConfig.Tier tierOf(StructureInstance instance) {
+        return instance == null || loot == null ? TierConfig.Tier.NONE
+                : loot.tiers().forStructure(instance.structureId());
+    }
+
+    /** Tier struktury o id instancji (pojemniki i strażnicy znają tylko id właściciela). */
+    public TierConfig.Tier tierOf(String instanceId) {
+        return instanceId == null ? TierConfig.Tier.NONE : tierOf(store.get(instanceId));
+    }
+
+    private CrateClass pick(String poolId, TierConfig.Tier tier) {
         CratePool pool = loot.pool(poolId);
         if (pool == null) {
             if (warnedPools.add(poolId)) {
@@ -314,7 +345,7 @@ public final class CrateService {
             }
             return null;
         }
-        String classId = pool.roll(random);
+        String classId = tier.upgrade(pool.roll(random), random);
         return classId == null ? null : loot.crateClass(classId);
     }
 
@@ -330,7 +361,8 @@ public final class CrateService {
         } else if (!type.isAir()) {
             return false; // gracz coś tu postawił – nie ruszamy
         }
-        CrateClass crate = pick(poolId);
+        TierConfig.Tier tier = tierOf(instance);
+        CrateClass crate = pick(poolId, tier);
         if (crate == null || crate.kind() == CrateClass.Kind.FRAME) {
             return false;
         }
@@ -354,7 +386,7 @@ public final class CrateService {
         if (block.getState() instanceof Container container) {
             container.getInventory().clear();
             if (!settings.emptyLoot()) {
-                crate.fill(container.getInventory(), random);
+                crate.fill(container.getInventory(), random, tier);
             }
         }
         if (!crate.decoration().isBlank()) {
@@ -419,7 +451,8 @@ public final class CrateService {
         }
     }
 
-    private boolean refreshFrame(World world, int[] w, String facing, String poolId, boolean force) {
+    private boolean refreshFrame(World world, int[] w, String facing, String poolId, boolean force,
+                                 TierConfig.Tier tier) {
         List<ItemFrame> frames = framesAt(world, w);
         if (!force && !settings.replaceFull()) {
             for (ItemFrame frame : frames) {
@@ -432,11 +465,11 @@ public final class CrateService {
         if (settings.emptyLoot()) {
             return false; // przedmiot w ramce (karta) to też loot
         }
-        CrateClass crate = pick(poolId);
+        CrateClass crate = pick(poolId, tier);
         if (crate == null || crate.kind() != CrateClass.Kind.FRAME) {
             return false;
         }
-        List<ItemStack> items = crate.roll(random);
+        List<ItemStack> items = crate.roll(random, tier);
         if (items.isEmpty()) {
             return false;
         }

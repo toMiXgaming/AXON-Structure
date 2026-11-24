@@ -15,6 +15,7 @@ import pl.axon.structure.core.Rotation;
 import pl.axon.structure.core.StructureInstance;
 import pl.axon.structure.loot.CrateClass;
 import pl.axon.structure.loot.CratePool;
+import pl.axon.structure.loot.TierConfig;
 import pl.axon.structure.vehicle.VehicleModel;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ import java.util.Map;
 public final class StrukturyCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "meble", "najblizsza", "usun", "klasy", "pojemniki", "pojemnik", "zrzut", "straznicy", "oaza", "zycie", "wrak", "przeladuj", "pomoc");
+            List.of("lista", "wklej", "generuj", "cofnij", "odswiez", "meble", "najblizsza", "usun", "klasy", "tiery", "pojemniki", "pojemnik", "zrzut", "straznicy", "oaza", "zycie", "wrak", "przeladuj", "pomoc");
     /** Odległość (w blokach) między graczem a frontem struktury przy {@code wklej}. */
     private static final int FRONT_DISTANCE = 3;
 
@@ -48,6 +49,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
             case "najblizsza" -> nearest(sender);
             case "usun" -> forget(sender, args);
             case "klasy" -> classes(sender);
+            case "tiery" -> tiers(sender);
             case "pojemniki" -> plugin.containers().status().forEach(sender::sendMessage);
             case "pojemnik" -> placeContainer(sender, label, args);
             case "straznicy" -> guards(sender, args);
@@ -88,6 +90,7 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " najblizsza §7– gdzie jest najbliższa postawiona struktura");
         sender.sendMessage("§e/" + label + " usun [id] §7– zapomina najbliższą strukturę: zdejmuje ochronę i skrzynie, bloki zostają");
         sender.sendMessage("§e/" + label + " klasy §7– klasy skrzyń i pule z configu");
+        sender.sendMessage("§e/" + label + " tiery §7– tiery struktur: mnożnik lootu, ulepszenia skrzyń i dodatki");
         sender.sendMessage("§e/" + label + " pojemniki §7– beczki przy drogach i pojemniki-modele w strukturach");
         sender.sendMessage("§e/" + label + " pojemnik <klasa> §7– stawia pojemnik-model przed tobą (test, znika po restarcie)");
         sender.sendMessage("§e/" + label + " zrzut [teraz] §7– o której następny zrzut (teraz: zrzuca skrzynię od razu)");
@@ -110,7 +113,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§6Struktury:");
         for (Blueprint bp : plugin.library().all()) {
             sender.sendMessage("§e" + bp.id() + " §f– " + bp.name() + " §7(" + bp.width() + "×" + bp.depth() + "×"
-                    + bp.height() + ", " + plugin.crates().crateSlots(bp) + " miejsc na skrzynie)");
+                    + bp.height() + ", " + plugin.crates().crateSlots(bp) + " miejsc na skrzynie, "
+                    + plugin.crates().loot().tiers().forStructure(bp.id()).label() + "§7)");
         }
     }
 
@@ -288,7 +292,8 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         int groundY = instance.placement().originY() + (shown == null ? 0 : shown.ground());
         sender.sendMessage("§aNajbliższa: §e" + instance.structureId() + " §7(id " + instance.id() + ")§a na §f" + instance.centerX() + " "
                 + groundY + " " + instance.centerZ() + "§a (" + distance + " bloków"
-                + (instance.automatic() ? ", wygenerowana automatycznie" : "") + ")");
+                + (instance.automatic() ? ", wygenerowana automatycznie" : "") + ", "
+                + plugin.crates().tierOf(instance).label() + "§a)");
     }
 
     private void forget(CommandSender sender, String[] args) {
@@ -416,6 +421,42 @@ public final class StrukturyCommand implements CommandExecutor, TabCompleter {
         plugin.containers().placeCommand(crate, at, yaw);
         sender.sendMessage("§aPostawiono §e" + crate.id() + "§a na §f" + at.getBlockX() + " " + at.getBlockY() + " "
                 + at.getBlockZ() + "§a. Znika po restarcie.");
+    }
+
+    private void tiers(CommandSender sender) {
+        TierConfig tiers = plugin.crates().loot().tiers();
+        if (!tiers.enabled()) {
+            sender.sendMessage("§eTiery są wyłączone (§ftiery.wlaczone: false§e) – loot wszędzie jak w klasach.");
+            return;
+        }
+        sender.sendMessage("§6Tiery struktur §7(bez wpisu: " + tiers.level(tiers.defaultLevel()).label()
+                + "§7, przy drogach: " + tiers.roadside().label() + "§7):");
+        for (TierConfig.Tier tier : tiers.levels().values()) {
+            StringBuilder upgrades = new StringBuilder();
+            tier.upgrades().forEach((from, to) -> to.forEach((target, chance) -> upgrades.append(from).append(" → ")
+                    .append(target).append(' ').append(String.format(Locale.ROOT, "%.0f", chance)).append("%, ")));
+            List<String> structures = new ArrayList<>();
+            for (Blueprint bp : plugin.library().all()) {
+                if (tiers.levelOf(bp.id()) == tier.level()) {
+                    structures.add(bp.id());
+                }
+            }
+            sender.sendMessage(tier.label() + " §7(" + tier.level() + "): ilość ×§f"
+                    + String.format(Locale.ROOT, "%.2f", tier.amount()) + "§7, dodatków §f" + tier.extras().size()
+                    + "§7, struktury: §f" + (structures.isEmpty() ? "–" : String.join(", ", structures)));
+            if (!upgrades.isEmpty()) {
+                sender.sendMessage("  §7ulepszenia: §f" + upgrades.substring(0, upgrades.length() - 2));
+            }
+        }
+        List<String> none = new ArrayList<>();
+        for (Blueprint bp : plugin.library().all()) {
+            if (tiers.levelOf(bp.id()) == 0) {
+                none.add(bp.id());
+            }
+        }
+        if (!none.isEmpty()) {
+            sender.sendMessage("§7Bez tieru (loot jak w klasach): §f" + String.join(", ", none));
+        }
     }
 
     private void classes(CommandSender sender) {
