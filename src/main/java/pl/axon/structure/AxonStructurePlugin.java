@@ -127,6 +127,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     /** Start usług, które dotykają światów albo soft-zależności. Wywoływane z pierwszego ticka serwera. */
     private void startServices() {
+        guards.loadSkin();
         protection.hookWorldGuard();
         protection.syncAll();
         crates.start();
@@ -229,6 +230,18 @@ public final class AxonStructurePlugin extends JavaPlugin {
     public void reload() {
         reloadConfig();
         FileConfiguration config = getConfig();
+        boolean removed = false;
+        for (String id : java.util.List.of("zolnierz", "bandyta", "herszt", "szabrownik", "cpun", "ochroniarz",
+                "handlarz", "paser", "spiacy", "ocalaly", "osadnik")) {
+            for (String section : java.util.List.of("straznicy.zestawy")) {
+                String path = section + "." + id;
+                if (getConfig().contains(path, true)) {
+                    getConfig().set(path, null);
+                    removed = true;
+                }
+            }
+        }
+        if (removed) saveConfig();
         addMissingDefaults(config);
         library.reload();
 

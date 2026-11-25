@@ -199,181 +199,30 @@ straznicy:
   #   0.5 – ~2/3 na 20 bloków, 1 – co czwarty na 20 bloków, 2 – prawie na ślepo.
   # Głowa strażnika co tick płynnie podąża za celem, więc lufa zawsze jest już wycelowana przed strzałem.
   zestawy:
-    zolnierz:
-      nazwa: "&2Żołnierz"
-      # Skin z mineskin.org: "Texture Value" i "Texture Signature". Albo skin-gracza: nick gracza z takim skinem.
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: "qa:ak47"
-      # hełm, napierśnik, spodnie, buty
-      zbroja: [iron_helmet, chainmail_chestplate, chainmail_leggings, iron_boots]
-      zycie: 30
-      # -1 = obrażenia broni
-      obrazenia: -1
-      # z jakiej odległości widzi i strzela
-      zasieg: 28
-      # rozrzut strzałów: 0 = idealnie celny, im więcej, tym częściej pudłuje
-      celnosc: 0.3
-      # klasa skrzyni (sekcja klasy:), z której losuje się loot po zabiciu; "" = nic
-      loot: lepsza-skrzynia
-      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
+    powsinoga:
+      nazwa: "&6Powsinoga"
+      bron: stick
+      zbroja: []
+      zycie: 12
+      obrazenia: 2
+      zasieg: 6
+      celnosc: 0
       cele: [players]
-      # czy chodzi po okolicy, gdy nie walczy (domyślnie tak, handlarz i paser stoją za ladą), i jak daleko
-      # od swojego miejsca w strukturze może odejść (w blokach)
       chodzi: true
-      promien-chodzenia: 8
-    szabrownik:
-      nazwa: "&6Szabrownik"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: "qa:remington"
-      zbroja: [leather_helmet, leather_chestplate, air, leather_boots]
-      zycie: 24
-      obrazenia: -1
-      zasieg: 20
-      celnosc: 0.5
-      loot: mala-skrzynka
-      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
-      cele: [players]
-    cpun:
-      # łatwy przeciwnik (apteka): bez pancerza, mało życia, bije pałką z bliska
-      nazwa: "&7Ćpun"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: "wooden_sword"
-      zbroja: [air, air, air, air]
+      promien-chodzenia: 6
+      loot: kieszen-powsinogi
+    zlomiarz:
+      nazwa: "&7Złomiarz"
+      bron: stick
+      zbroja: []
       zycie: 14
-      obrazenia: 3
+      obrazenia: 2
       zasieg: 4
       celnosc: 0
-      loot: mala-skrzynka
       cele: [players]
-    ochroniarz:
-      # strażnik oazy: broni przed potworami, do graczy nie strzela i nie da się go zranić
-      nazwa: "&aOchrona Oazy"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: "qa:m4a1s"
-      zbroja: [iron_helmet, iron_chestplate, leather_leggings, iron_boots]
-      zycie: 40
-      obrazenia: -1
-      zasieg: 24
-      celnosc: 0.4
-      loot: ""
-      cele: [monsters]
-    handlarz:
-      # handlarz w sklepie oazy (punkt-handlarz): stoi za ladą, prawy klik otwiera sklep
-      nazwa: "&6Handlarz Zdzich"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: ""
-      zbroja: [air, leather_chestplate, air, air]
-      zycie: 20
-      obrazenia: -1
-      zasieg: 0
-      celnosc: 0
-      loot: ""
-      cele: []
-    paser:
-      # paser w kryjówce czarnego rynku (punkt-czarny-rynek): stoi za ladą, nie walczy, nie da się go zranić
-      nazwa: "&8Paser"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: ""
-      zbroja: [leather_helmet, leather_chestplate, air, air]
-      zycie: 20
-      obrazenia: -1
-      zasieg: 0
-      celnosc: 0
-      loot: ""
-      cele: []
-    osadnik:
-      # osadnik w oazie (npc-osadnik): uprawia ogródki – podchodzi do dojrzałych roślin, zbiera je i sadzi od nowa
-      nazwa: "&aOsadnik"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: "iron_hoe"
-      zbroja: [leather_helmet, air, leather_leggings, leather_boots]
-      zycie: 20
-      obrazenia: -1
-      zasieg: 0
-      celnosc: 0
-      loot: ""
-      cele: []
       chodzi: true
       promien-chodzenia: 6
-      uprawia: true
-    ocalaly:
-      # ocalały w oazie (npc-ocalaly): chodzi po okolicy, przy kuchni, ognisku i po korytarzach noclegowni
-      nazwa: "&7Ocalały"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: ""
-      zbroja: [air, leather_chestplate, air, air]
-      zycie: 20
-      obrazenia: -1
-      zasieg: 0
-      celnosc: 0
-      loot: ""
-      cele: []
-      chodzi: true
-      promien-chodzenia: 6
-    spiacy:
-      # śpiący w noclegowni (npc-spiacy): leży w najbliższym łóżku, nie chodzi
-      nazwa: "&7Ocalały"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: ""
-      zbroja: [air, air, air, air]
-      zycie: 20
-      obrazenia: -1
-      zasieg: 0
-      celnosc: 0
-      loot: ""
-      cele: []
-      spi: true
-
-    bandyta:
-      # gang z galerii Kometa (npc-bandyta): twardsi od szabrowników, celniejsi, w kolczudze
-      nazwa: "&cBandyta z Komety"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: "qa:ak47"
-      zbroja: [chainmail_helmet, chainmail_chestplate, leather_leggings, iron_boots]
-      zycie: 34
-      obrazenia: -1
-      zasieg: 26
-      celnosc: 0.7
-      loot: lepsza-skrzynia
-      cele: [players]
-      chodzi: true
-      promien-chodzenia: 10
-    herszt:
-      # herszt gangu (npc-herszt): biuro administracji galerii i liczarnia w garażu
-      nazwa: "&4Herszt Komety"
-      skin-tekstura: ""
-      skin-podpis: ""
-      skin-gracza: ""
-      bron: "qa:m4a1s"
-      zbroja: [iron_helmet, iron_chestplate, iron_leggings, iron_boots]
-      zycie: 60
-      obrazenia: -1
-      zasieg: 32
-      celnosc: 0.4
-      loot: rzadka-skrzynia
-      cele: [players]
-      chodzi: true
-      promien-chodzenia: 5
+      loot: kieszen-zlomiarza
 
 oaza:
   # Oaza Świt (struktura "oaza"): strefa bez PvP, stawiana tylko komendą (/struktury generuj oaza), nigdy sama.
@@ -1376,6 +1225,21 @@ pule:
 #    nazwa / opis: opcjonalna nazwa i opis przedmiotu
 # ------------------------------------------------------------
 klasy:
+  kieszen-zlomiarza:
+    blok: skrzynia
+    min-przedmiotow: 0
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "1-3", szansa: 60}
+      - {przedmiot: stick, ilosc: "1", szansa: 25}
+  kieszen-powsinogi:
+    nazwa: "Kieszeń Powsinogi"
+    blok: beczka
+    loot:
+      - {przedmiot: iron_nugget, ilosc: "1-2", szansa: 70, nazwa: "&7Złom"}
+      - {przedmiot: string, szansa: 25, nazwa: "&7Drut"}
+      - {przedmiot: iron_nugget, szansa: 25, nazwa: "&7Śrubki"}
+      - {przedmiot: potato, szansa: 12}
+      - {przedmiot: bread, szansa: 8}
   # Skrzynie, beczki i szafki są w pojemniki.klasy (modele bez bloku). Tutaj zostają zrzut i karta w ramce.
   # Klasa o tym samym id w pojemniki.klasy zastępuje tę stąd.
 

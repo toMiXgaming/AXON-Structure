@@ -161,7 +161,6 @@ public final class BlackMarketStructure implements StructureDefinition {
             set(12, -2, 6, "chiseled_bookshelf[facing=south,slot_0_occupied=true,slot_1_occupied=false,slot_2_occupied=true,slot_3_occupied=false,slot_4_occupied=true,slot_5_occupied=false]");
             set(10, -2, 6, "red_wall_banner[facing=south]");
             set(14, -2, 6, "black_wall_banner[facing=south]");
-            marker(12, -4, 7, "south", "punkt-czarny-rynek");
             // kącik dla klientów: stół i skrzynki do siedzenia
             set(11, -4, 13, "spruce_fence");
             set(11, -3, 13, "spruce_pressure_plate");

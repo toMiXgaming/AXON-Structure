@@ -309,7 +309,7 @@ public final class HousingEstateStructure implements StructureDefinition {
             crate(36, 1, 19, "west", "paliwo");
             crate(24, 1, 28, "north", "plac");
             crate(3, 1, 12, "east", "plac");
-            crate(19, 1, 29, "north", "npc-szabrownik");
+            crate(19, 1, 29, "north", "npc-zlomiarz");
         }
 
         /** Osobówka 2 × 4 na parkingu (osłona), wzdłuż z albo x; czasem z otwartym bagażnikiem i beczką w środku. */
@@ -1041,7 +1041,6 @@ public final class HousingEstateStructure implements StructureDefinition {
             fill(x1 - 5, 9, z0, x1 - 4, 10, z0, "air");
             sign(x1 - 7, 1, z0 - 13, "oak_sign[rotation=8,waterlogged=false]", "NIE WCHODZIĆ", "STROP", "SIĘ SYPIE", "– ADM.");
             crate(x1 - 4, 9, z0 + 3, "north", "pietro");
-            crate(x1 - 2, 7, z0 - 3, "north", "npc-szabrownik");
         }
 
         // ------------------------------------------------------------------ podwórko
@@ -1107,18 +1106,16 @@ public final class HousingEstateStructure implements StructureDefinition {
             // łup i szabrownicy na podwórku
             crate(57, 1, 37, "south", "plac");
             crate(74, 1, 40, "west", "plac");
-            crate(66, 1, 44, "north", "npc-szabrownik");
             furniture.camp(80, 1, 33, "north");
             crate(81, 1, 35, "west", "mieszkanie");
             furniture.animalSomewhere(44, 18, 84, 55, 1, "cat");
             // dachy: wyłaz drabiną z ostatniego piętra
             crate(52, 17, 9, "south", "dach");
             crate(72, 17, 6, "west", "dach");
-            crate(64, 17, 11, "north", "npc-szabrownik");
             crate(12, 13, 45, "south", "dach");
             crate(52, 17, 63, "south", "dach");
             // uliczka przy garażach
-            crate(30, 1, 62, "east", "npc-szabrownik");
+            crate(30, 1, 62, "east", "npc-zlomiarz");
         }
 
         private void tree(int x, int z, boolean birch) {

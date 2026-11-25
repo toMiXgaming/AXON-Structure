@@ -1277,9 +1277,6 @@ public final class HospitalStructure implements StructureDefinition {
             // miejsce zrzutu zaopatrzenia na środku litery H
             crate(66, 26, 47, "north", "zrzut");
             // szabrownicy (NPC z pluginu Citizens/Sentinel, jeśli jest na serwerze)
-            crate(44, 26, 46, "west", "npc-szabrownik");
-            crate(56, B, 46, "west", "npc-szabrownik");
-            crate(55, 1, 47, "south", "npc-szabrownik");
             // pawilon: apteka (kanał wentylacyjny z dachu), przychodnia, blok operacyjny (łącznik)
             crate(86, 1, 35, "south", "apteka");
             crate(92, 1, 36, "south", "izba-chorych");
