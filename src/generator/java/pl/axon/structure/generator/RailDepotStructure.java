@@ -813,13 +813,9 @@ public final class RailDepotStructure implements StructureDefinition {
         // ------------------------------------------------------------------ strażnicy i zrzut
 
         private void guards() {
-            crate(10, 1, 30, "south", "npc-szabrownik");
-            crate(20, 1, 12, "north", "npc-szabrownik");
-            crate(35, 1, 19, "west", "npc-szabrownik");
-            crate(39, 2, 54, "west", "npc-szabrownik");
-            crate(16, 1, 55, "north", "npc-szabrownik");
-            crate(33, 6, 42, "south", "npc-zolnierz");
-            crate(32, 6, 17, "west", "npc-zolnierz");
+            crate(10, 1, 30, "south", "npc-zlomiarz");
+            crate(20, 1, 12, "north", "npc-zlomiarz");
+            crate(16, 1, 55, "north", "npc-zlomiarz");
             // zrzut spada na otwarty plac między nastawnią a zbiornikiem
             crate(44, 1, 41, "north", "zrzut");
         }

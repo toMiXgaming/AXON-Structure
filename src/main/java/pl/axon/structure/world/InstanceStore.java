@@ -50,6 +50,19 @@ public final class InstanceStore {
             if (area.size() == 4) {
                 instance.footprint(new Box(area.get(0), area.get(1), area.get(2), area.get(3)));
             }
+            if (s.isBoolean("cykl.obecni")) instance.residentsPresent = s.getBoolean("cykl.obecni");
+            else if (!s.getStringList("cykl.imiona").isEmpty()) instance.residentsPresent = true;
+            instance.farmNames = List.copyOf(s.getStringList("cykl.imiona"));
+            instance.previousFarmNames = List.copyOf(s.getStringList("cykl.poprzednie-imiona"));
+            instance.renewalDue = s.getLong("cykl.odnowienie");
+            instance.missingGuards.addAll(s.getStringList("cykl.zabici"));
+            ConfigurationSection chests = s.getConfigurationSection("cykl.pojemniki");
+            if (chests != null) {
+                for (String key : chests.getKeys(false)) {
+                    ConfigurationSection data = chests.getConfigurationSection(key);
+                    if (data != null) instance.farmContainers.put(key, data);
+                }
+            }
             instance.externalKey(s.getString("klucz"));
             instances.put(id, instance);
         }
@@ -70,6 +83,15 @@ public final class InstanceStore {
             yaml.set(path + "srodek-z", instance.centerZ());
             yaml.set(path + "auto", instance.automatic());
             yaml.set(path + "odswiezono", instance.lastRefresh());
+            if (instance.farmCycle()) {
+                yaml.set(path + "cykl.obecni", instance.residentsPresent);
+                yaml.set(path + "cykl.imiona", instance.farmNames);
+                yaml.set(path + "cykl.poprzednie-imiona", instance.previousFarmNames);
+                yaml.set(path + "cykl.odnowienie", instance.renewalDue);
+                yaml.set(path + "cykl.zabici", List.copyOf(instance.missingGuards));
+                instance.farmContainers.forEach((key, data) ->
+                        yaml.createSection(path + "cykl.pojemniki." + key, data.getValues(false)));
+            }
             Box box = instance.footprint();
             if (box != null) {
                 yaml.set(path + "obrys", List.of(box.minX(), box.minZ(), box.maxX(), box.maxZ()));

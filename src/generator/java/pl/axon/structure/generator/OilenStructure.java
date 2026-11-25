@@ -697,7 +697,6 @@ public final class OilenStructure implements StructureDefinition {
             for (int x = 28; x <= 30; x++) {
                 bp.set(x, ROOF_Y + 1, BZ1 + 1, Furniture.model(Furniture.WORKI, "south"));
             }
-            bp.crate(33, ROOF_Y + 1, 32, "south", "npc-szabrownik");
         }
 
         private void acUnit(int x, int z) {
@@ -762,7 +761,6 @@ public final class OilenStructure implements StructureDefinition {
             bp.set(WX2 + 2, 1, 36, "barrel[facing=up,open=false]");
             // na dachu myjni
             bp.crate(5, 7, 33, "north", "dach");
-            bp.crate(8, 7, 27, "north", "npc-szabrownik");
             bp.fill(4, 7, 24, 5, 7, 24, Furniture.model(Furniture.WORKI, "south"));
         }
 
@@ -821,7 +819,8 @@ public final class OilenStructure implements StructureDefinition {
             bp.fill(11, 1, 43, 12, 1, 44, "spruce_slab[type=bottom]");
             bp.fill(13, 1, 43, 13, 2, 43, "spruce_fence");
             bp.sign(13, 3, 43, "oak_sign[rotation=8]", "KTO UKRADŁ", "MOJE KANISTRY?!", "oddaj, nic", "nie powiem. H.");
-            bp.crate(20, 1, 41, "south", "npc-szabrownik");
+            bp.crate(20, 1, 41, "south", "npc-zlomiarz");
+            bp.crate(22, 1, 41, "south", "npc-zlomiarz");
         }
 
         /** Cysterna przy tylnym placu: zbiornik x 15-29, kabina x 31-33, drabinka z tyłu na górę zbiornika. */

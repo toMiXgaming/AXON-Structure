@@ -109,23 +109,58 @@ public final class CrateService {
         long now = System.currentTimeMillis();
         boolean changed = false;
         for (StructureInstance instance : store.all()) {
-            if (now - instance.lastRefresh() < settings.intervalMillis()) {
+            boolean farm = instance.farmCycle();
+            if (farm ? instance.renewalDue == 0 || now < instance.renewalDue
+                    : now - instance.lastRefresh() < settings.intervalMillis()) {
                 continue;
             }
             World world = Bukkit.getWorld(instance.world());
-            if (world == null || !world.isChunkLoaded(instance.centerX() >> 4, instance.centerZ() >> 4)) {
+            if (world == null || (!farm && !world.isChunkLoaded(instance.centerX() >> 4, instance.centerZ() >> 4))) {
                 continue;
             }
             if (playerNearby(world, instance)) {
                 continue;
             }
-            if (refresh(instance, false) >= 0) {
+            if (farm) {
+                Blueprint bp = library.get(instance.structureId());
+                if (bp == null) continue;
+                // A cycle is rare and shared by all slots, including those across a chunk border.
+                for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+                    if (isMarker(point.pool())) continue;
+                    int[] at = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
+                    world.getChunkAt(at[0] >> 4, at[2] >> 4);
+                }
+            }
+            if (refresh(instance, farm) >= 0) {
+                if (farm) {
+                    if (!instance.farmNames.isEmpty()) instance.previousFarmNames = instance.farmNames;
+                    instance.farmNames = List.of();
+                    instance.nameRequest = 0;
+                    instance.residentsPresent = null;
+                    instance.missingGuards.clear();
+                    instance.renewalDue = 0;
+                }
                 changed = true;
             }
         }
         if (changed) {
             store.save();
         }
+    }
+
+    StructureInstance farmContainerAt(Location at) {
+        if (at == null || at.getWorld() == null) return null;
+        for (StructureInstance owner : store.inWorld(at.getWorld().getName())) {
+            if (!owner.farmCycle()) continue;
+            Blueprint bp = library.get(owner.structureId());
+            if (bp == null || !pl.axon.structure.core.Box.of(bp, owner.placement()).contains(at.getBlockX(), at.getBlockZ())) continue;
+            for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
+                if (isMarker(point.pool()) || point.kind() != Blueprint.SpawnKind.CRATE) continue;
+                int[] xyz = owner.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
+                if (xyz[0] == at.getBlockX() && xyz[1] == at.getBlockY() && xyz[2] == at.getBlockZ()) return owner;
+            }
+        }
+        return null;
     }
 
     private boolean playerNearby(World world, StructureInstance instance) {
