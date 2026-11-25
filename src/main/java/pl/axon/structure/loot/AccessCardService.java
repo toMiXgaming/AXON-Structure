@@ -121,15 +121,15 @@ public final class AccessCardService implements Listener {
         String first = null;
         String second = null;
         int cards = 0;
+        boolean otherIngredient = false;
         for (ItemStack slot : matrix) {
             if (slot == null || slot.getType().isAir()) {
                 continue;
             }
             String card = cardOf(slot);
             if (card == null) {
-                // cokolwiek innego w siatce – to nie nasza receptura
-                event.getInventory().setResult(null);
-                return;
+                otherIngredient = true;
+                continue;
             }
             cards++;
             if (cards == 1) {
@@ -141,7 +141,8 @@ public final class AccessCardService implements Listener {
                 return;
             }
         }
-        if (cards != 2) {
+        if (cards == 0) return;
+        if (otherIngredient || cards != 2) {
             event.getInventory().setResult(null);
             return;
         }
