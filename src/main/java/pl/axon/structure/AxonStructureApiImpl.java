@@ -1,7 +1,9 @@
 package pl.axon.structure;
 
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import pl.axon.structure.api.AxonStructureApi;
+import pl.axon.structure.api.RoadsideSpot;
 import pl.axon.structure.api.RotationUtil;
 import pl.axon.structure.api.StructureInstanceInfo;
 import pl.axon.structure.api.StructureTemplate;
@@ -17,6 +19,8 @@ import java.util.Optional;
 
 /** Implementacja {@link AxonStructureApi} rejestrowana w ServicesManager. */
 public final class AxonStructureApiImpl implements AxonStructureApi {
+
+    private static final int WRECK_OFFSET = 8;
 
     private final AxonStructurePlugin plugin;
 
@@ -68,11 +72,32 @@ public final class AxonStructureApiImpl implements AxonStructureApi {
             plugin.protection().onRemoved(instance);
             plugin.store().remove(instance.id());
         }
+        plugin.containers().removeWorld(world);
+    }
+
+    @Override
+    public int setRoadsideContainers(String world, Collection<RoadsideSpot> spots) {
+        requireServerThread();
+        List<RoadsideSpot> copy = List.copyOf(spots);
+        int placed = plugin.containers().setRoadside(Objects.requireNonNull(world), copy);
+        World target = Bukkit.getWorld(world);
+        if (target != null) {
+            // Beczka stoi w każdym punkcie, więc wrak przesuwamy o kilka bloków wzdłuż drogi.
+            plugin.vehicles().placeAlongRoads(target, copy.stream().map(AxonStructureApiImpl::alongRoad).toList());
+        }
+        return placed;
     }
 
     @Override
     public void claimWorld(String world) {
         plugin.autoGenerator().claimWorld(Objects.requireNonNull(world));
+    }
+
+    private static RoadsideSpot alongRoad(RoadsideSpot spot) {
+        double rad = Math.toRadians(spot.yaw() + 90f);
+        int dx = (int) Math.round(-Math.sin(rad) * WRECK_OFFSET);
+        int dz = (int) Math.round(Math.cos(rad) * WRECK_OFFSET);
+        return new RoadsideSpot(spot.x() + dx, spot.z() + dz, spot.yaw());
     }
 
     private static StructureInstanceInfo info(String key, StructureInstance instance, int crates) {

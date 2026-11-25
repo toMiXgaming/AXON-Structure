@@ -9,7 +9,8 @@ import java.util.Map;
  * Struktura zapisana w lokalnych współrzędnych, zanim trafi do świata.
  * <p>
  * Układ lokalny: x rośnie w prawo (wschód), z rośnie w głąb struktury (południe),
- * y = 0 to warstwa gruntu. Front struktury jest po stronie z = 0 (północ).
+ * y = {@link #ground()} to warstwa gruntu (domyślnie 0), a warstwy poniżej to podziemie wklejane pod powierzchnię.
+ * Front struktury jest po stronie z = 0 (północ).
  * Każda pozycja w obrębie prostopadłościanu, która nie została ustawiona, zostanie wyczyszczona do powietrza.
  * <p>
  * Klasa nie zależy od API Bukkita, więc korzysta z niej też generator plików struktur.
@@ -35,16 +36,22 @@ public final class Blueprint {
     public record SignSpec(Pos pos, String[] lines) {
     }
 
+    /** Model z paczki zasobów: środek modelu w układzie struktury, skala wyświetlacza i obrót w stopniach. */
+    public record PropSpec(double x, double y, double z, String model, float scale, float yaw) {
+    }
+
     private String id = "struktura";
     private String name = "Struktura";
     private String description = "";
     private final int width;
     private final int height;
     private final int depth;
+    private int ground;
+    private Traits traits = Traits.defaults();
     private final Map<Pos, String> blocks = new HashMap<>();
     private final List<SpawnPoint> spawnPoints = new ArrayList<>();
     private final List<SignSpec> signs = new ArrayList<>();
-    private Traits traits = Traits.defaults();
+    private final List<PropSpec> props = new ArrayList<>();
 
     public Blueprint(int width, int height, int depth) {
         this.width = width;
@@ -71,16 +78,6 @@ public final class Blueprint {
         return this;
     }
 
-    /** Opcjonalne pola nagłówka (grunt, wjazdy, mapa, strefa, …). */
-    public Traits traits() {
-        return traits;
-    }
-
-    public Blueprint traits(Traits traits) {
-        this.traits = traits;
-        return this;
-    }
-
     public int width() {
         return width;
     }
@@ -91,6 +88,42 @@ public final class Blueprint {
 
     public int depth() {
         return depth;
+    }
+
+    /** Warstwa, która wypada na poziomie terenu. Warstwy 0 .. ground-1 lądują pod ziemią. */
+    public int ground() {
+        return ground;
+    }
+
+    public Blueprint ground(int ground) {
+        if (ground < 0 || ground >= height) {
+            throw new IllegalArgumentException("poziom gruntu " + ground + " poza wysokością struktury");
+        }
+        this.ground = ground;
+        return this;
+    }
+
+    /**
+     * Strefa bezpieczna (oaza): w obrysie nie ma PvP, struktura nie pojawia się sama (tylko z komendy),
+     * a strażnicy strzelają wyłącznie do potworów.
+     */
+    public boolean safeZone() {
+        return traits.safe();
+    }
+
+    public Blueprint safeZone(boolean safeZone) {
+        this.traits = traits.withSafe(safeZone);
+        return this;
+    }
+
+    /** Pozostałe pola nagłówka (wjazdy, mapa, strefy, klimat, tagi) dla AxonMapGenerator. */
+    public Traits traits() {
+        return traits;
+    }
+
+    public Blueprint traits(Traits traits) {
+        this.traits = traits;
+        return this;
     }
 
     public boolean inBounds(int x, int y, int z) {
@@ -138,9 +171,14 @@ public final class Blueprint {
         return get(x, y, z).equals(AIR);
     }
 
-    /** Miejsce na skrzynię. Sam blok zostaje pusty – stawia go odświeżanie skrzyń. */
+    /**
+     * Miejsce na skrzynię. Sam blok zostaje pusty – stawia go odświeżanie skrzyń. Wyjątek: punkty oazy
+     * ({@code punkt-*}, np. lada wymiany albo tarcza) to znaczniki na prawdziwych blokach, więc blok zostaje.
+     */
     public void crate(int x, int y, int z, String facing, String pool) {
-        set(x, y, z, AIR);
+        if (!pool.toLowerCase(java.util.Locale.ROOT).startsWith("punkt-")) {
+            set(x, y, z, AIR);
+        }
         spawnPoints.removeIf(p -> p.pos().equals(new Pos(x, y, z)));
         spawnPoints.add(new SpawnPoint(new Pos(x, y, z), SpawnKind.CRATE, facing, pool));
     }
@@ -165,6 +203,14 @@ public final class Blueprint {
 
     public List<SpawnPoint> spawnPoints() {
         return spawnPoints;
+    }
+
+    public void prop(PropSpec prop) {
+        props.add(prop);
+    }
+
+    public List<PropSpec> props() {
+        return props;
     }
 
     public List<SignSpec> signs() {

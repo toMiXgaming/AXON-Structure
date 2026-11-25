@@ -3,6 +3,7 @@ package pl.axon.structure.api;
 import org.bukkit.Bukkit;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -33,7 +34,7 @@ public interface AxonStructureApi {
      * @param templateId  id szablonu
      * @param world       nazwa świata
      * @param originX     punkt (0, 0, 0) szablonu, x
-     * @param originY     punkt (0, 0, 0) szablonu, y (warstwa gruntu)
+     * @param originY     y dna szablonu (warstwa 0); grunt wypada na {@code originY + groundLevel()}
      * @param originZ     punkt (0, 0, 0) szablonu, z
      * @param rotation    obrót 0–3 × 90°
      * @throws IllegalArgumentException gdy nie ma szablonu albo świata
@@ -45,9 +46,19 @@ public interface AxonStructureApi {
     /** Czy instancja o tym kluczu jest już zarejestrowana. */
     boolean isRegistered(String instanceKey);
 
-    /** Zapomina wszystkie instancje w świecie (zdejmuje ochronę i skrzynie, bloki zostają). Wątek serwera. */
+    /** Zapomina wszystkie instancje w świecie (zdejmuje ochronę, skrzynie i pojemniki przy drogach, bloki zostają). Wątek serwera. */
     void unregisterWorld(String world);
 
     /** Wyłącza automatyczne stawianie struktur AXON-Structure w tym świecie. */
     void claimWorld(String world);
+
+    /**
+     * Ustawia punkty pojemników przy drogach (beczek) w świecie i zastępuje poprzednie. Pojemniki są modelami bez
+     * bloku: stają przy wczytaniu chunka na wysokości terenu, losują się z puli {@code pojemniki.przy-drogach.pula}
+     * i odnawiają w tym samym miejscu. Punkty nie są zapisywane, więc trzeba je podać po każdym starcie serwera.
+     * Punkt nad wodą jest pomijany. Wątek serwera.
+     *
+     * @return ile punktów jest teraz w świecie
+     */
+    int setRoadsideContainers(String world, Collection<RoadsideSpot> spots);
 }

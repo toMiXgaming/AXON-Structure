@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Player;
@@ -14,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
@@ -42,8 +44,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Gracze nie mogą niszczyć ani rozbudowywać struktur. Wolno otwierać skrzynie, drzwi i przyciski oraz
- * zabierać przedmioty z ramek (karty dostępu). PvP nie jest tu w ogóle ruszane.
+ * Gracze nie mogą niszczyć ani rozbudowywać struktur. Wolno otwierać skrzynie, drzwi i przyciski, zabierać
+ * przedmioty z ramek (karty dostępu) i kopać rudy w żyłach kopalni ({@code punkt-ruda}). PvP nie jest tu w ogóle ruszane.
  * Priorytet LOWEST: zdarzenie jest anulowane, zanim zobaczą je inne pluginy (np. rdzeń działki AxonPlot,
  * który z ignoreCancelled nie założy wtedy działki).
  */
@@ -78,6 +80,9 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
+        if (protection.breakable(event.getBlock())) {
+            return; // ruda w żyle kopalni (punkt-ruda): kopanie, drop i odnawianie obsługuje OreVeinService
+        }
         if (denied(event.getPlayer(), event.getBlock())) {
             event.setCancelled(true);
             warn(event.getPlayer());
@@ -238,6 +243,19 @@ public final class ProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onIgnite(BlockIgniteEvent event) {
         if (denied(event.getPlayer(), event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** Dozowniki spoza struktury: woda, lawa, ogień, bloki i narzędzia wylewane albo stawiane w strukturze. */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onDispense(BlockDispenseEvent event) {
+        Block dispenser = event.getBlock();
+        if (!(dispenser.getBlockData() instanceof Directional directional)) {
+            return;
+        }
+        StructureInstance target = protection.protectedAt(dispenser.getRelative(directional.getFacing()));
+        if (target != null && protection.protectedAt(dispenser) != target) {
             event.setCancelled(true);
         }
     }

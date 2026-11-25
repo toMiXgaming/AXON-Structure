@@ -51,7 +51,7 @@ class StructureFileTest {
     @Test
     void nowePolaNaglowkaSaCzytane() throws IOException {
         Blueprint bp = read(file("""
-                grunt: 21
+                grunt: 1
                 wjazdy: 0 2 west; 5 0 north
                 rozmiar-klasa: duza
                 mapa: nie
@@ -61,7 +61,7 @@ class StructureFileTest {
                 autor: Tomek
                 """));
         Traits t = bp.traits();
-        assertEquals(21, t.groundLevel());
+        assertEquals(1, bp.ground());
         assertEquals(List.of(new Entrance(0, 2, "west"), new Entrance(5, 0, "north")), t.entrances());
         assertEquals(SizeClass.DUZA, t.sizeClass());
         assertFalse(t.mapAllowed());
@@ -93,7 +93,7 @@ class StructureFileTest {
     @Test
     void zapisIOdczytDajaTeSameNaglowkiIBloki() throws IOException {
         Blueprint bp = read(file("""
-                grunt: 21
+                grunt: 1
                 wjazdy: 0 2 west
                 mapa: nie
                 bezpieczna: tak
@@ -102,7 +102,7 @@ class StructureFileTest {
         StringWriter out = new StringWriter();
         StructureFile.write(bp, out);
         String written = out.toString();
-        assertTrue(written.contains("grunt: 21"));
+        assertTrue(written.contains("grunt: 1"));
         assertTrue(written.contains("mapa: nie"));
         assertTrue(written.contains("autor: Tomek"));
         assertFalse(written.contains("klimat:"), "domyślny klimat nie powinien trafić do pliku");

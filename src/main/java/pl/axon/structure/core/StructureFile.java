@@ -19,6 +19,9 @@ import java.util.Map;
  * nazwa: Opuszczona stacja benzynowa
  * opis: ...
  * rozmiar: 45 16 52          (szerokość wysokość głębokość)
+ * grunt: 12                  (opcjonalnie: która warstwa leży na poziomie terenu, niższe idą pod ziemię)
+ * bezpieczna: tak           (opcjonalnie: oaza bez PvP, stawiana tylko komendą; stara "strefa: bezpieczna" też działa)
+ * strefa: rownina,las       (opcjonalnie: preferencje AxonMapGenerator, patrz {@link Traits})
  * paleta:
  * 0 minecraft:air
  * 1 minecraft:stone
@@ -30,6 +33,8 @@ import java.util.Map;
  * 11 2 24 up karta
  * napisy:
  * 1 4 4|OXUM'S|GAS||
+ * modele:
+ * 62.5 5 76 axon:wrak_mi8 8 0   (x y z środka modelu, model z paczki, skala, obrót w stopniach)
  * </pre>
  */
 public final class StructureFile {
@@ -62,6 +67,9 @@ public final class StructureFile {
         out.write("nazwa: " + bp.name() + "\n");
         out.write("opis: " + bp.description() + "\n");
         out.write("rozmiar: " + bp.width() + " " + bp.height() + " " + bp.depth() + "\n");
+        if (bp.ground() > 0) {
+            out.write("grunt: " + bp.ground() + "\n");
+        }
         for (String line : bp.traits().toHeaderLines()) {
             out.write(line + "\n");
         }
@@ -114,6 +122,13 @@ public final class StructureFile {
         for (Blueprint.SignSpec sign : bp.signs()) {
             out.write(sign.pos().x() + " " + sign.pos().y() + " " + sign.pos().z()
                     + "|" + String.join("|", sign.lines()) + "\n");
+        }
+        if (!bp.props().isEmpty()) {
+            out.write("modele:\n");
+            for (Blueprint.PropSpec prop : bp.props()) {
+                out.write(prop.x() + " " + prop.y() + " " + prop.z() + " " + prop.model() + " " + prop.scale()
+                        + " " + prop.yaw() + "\n");
+            }
         }
     }
 
@@ -179,6 +194,14 @@ public final class StructureFile {
                         int z = Integer.parseInt(xyz[2]);
                         bp.sign(x, y, z, bp.get(x, y, z), lines);
                     }
+                    case "modele" -> {
+                        String[] p = line.trim().split("\\s+");
+                        if (p.length != 6) {
+                            throw new IOException("oczekiwano 'x y z model skala obrot'");
+                        }
+                        bp.prop(new Blueprint.PropSpec(Double.parseDouble(p[0]), Double.parseDouble(p[1]),
+                                Double.parseDouble(p[2]), p[3], Float.parseFloat(p[4]), Float.parseFloat(p[5])));
+                    }
                     default -> throw new IOException("nieznana sekcja '" + section + "'");
                 }
             } catch (IOException | RuntimeException e) {
@@ -199,6 +222,13 @@ public final class StructureFile {
         String[] s = size.trim().split("\\s+");
         Blueprint created = new Blueprint(Integer.parseInt(s[0]), Integer.parseInt(s[1]), Integer.parseInt(s[2]));
         created.meta(meta.get("id"), meta.getOrDefault("nazwa", meta.get("id")), meta.getOrDefault("opis", ""));
+        if (meta.containsKey("grunt")) {
+            try {
+                created.ground(Integer.parseInt(meta.get("grunt").trim()));
+            } catch (IllegalArgumentException e) {
+                throw new IOException("zły 'grunt': " + e.getMessage());
+            }
+        }
         created.traits(Traits.parse(meta, created.width(), created.depth()));
         return created;
     }

@@ -17,7 +17,9 @@ import java.util.Random;
  */
 public final class StructureExporter {
 
-    private static final List<StructureDefinition> STRUCTURES = List.of(new GasStationStructure());
+    private static final List<StructureDefinition> STRUCTURES = List.of(new OilenStructure(), new FarmStructure(), new CollectiveFarmStructure(),
+            new MineStructure(), new MilitaryBaseStructure(), new HospitalStructure(), new OasisStructure(),
+            new BlackMarketStructure(), new PowerPlantStructure(), new HousingEstateStructure(), new RailDepotStructure(), new MallStructure());
 
     private StructureExporter() {
     }
@@ -28,8 +30,13 @@ public final class StructureExporter {
         Files.createDirectories(out);
         for (StructureDefinition definition : STRUCTURES) {
             Blueprint bp = definition.build(new Random(seed))
-                    .meta(definition.id(), definition.displayName(), definition.description())
-                    .traits(definition.traits());
+                    .meta(definition.id(), definition.displayName(), definition.description());
+            Furnishing.apply(definition.id(), bp, new Random(seed * 17 + definition.id().hashCode()));
+            Weathering.apply(bp, new Random(seed * 31 + definition.id().hashCode()));
+            int orphans = Furnishing.removeOrphanBarriers(bp);
+            if (orphans > 0) {
+                System.out.println("  " + definition.id() + ": usunięto " + orphans + " barier bez mebla pod spodem");
+            }
             Path file = out.resolve(definition.id() + StructureFile.EXTENSION);
             try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
                 StructureFile.write(bp, writer);

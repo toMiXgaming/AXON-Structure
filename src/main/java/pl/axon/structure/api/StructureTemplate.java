@@ -40,7 +40,7 @@ public final class StructureTemplate {
         this.width = bp.width();
         this.height = bp.height();
         this.depth = bp.depth();
-        this.groundLevel = traits.groundLevel();
+        this.groundLevel = bp.ground();
 
         List<String> paletteList = new ArrayList<>();
         paletteList.add(null); // 0 = powietrze
@@ -67,7 +67,7 @@ public final class StructureTemplate {
         this.mapAllowed = traits.mapAllowed();
         this.zones = traits.zones();
         this.climates = traits.climates();
-        this.safe = traits.safe();
+        this.safe = bp.safeZone();
     }
 
     /**

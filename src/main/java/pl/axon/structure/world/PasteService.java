@@ -24,10 +24,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -57,7 +59,11 @@ public final class PasteService {
         final String structureName;
         final World world;
         final List<Snapshot> snapshots = new ArrayList<>();
+        final List<PropService.WorldProp> props = new ArrayList<>();
         String instanceId;
+        Box footprint;
+        int minY;
+        int maxY;
         int cratesPlaced;
 
         PasteRecord(String structureName, World world) {
@@ -72,12 +78,17 @@ public final class PasteService {
     private final InstanceStore store;
     private final CrateService crates;
     private final ProtectionService protection;
+    private final PropService props;
     private final Map<UUID, Deque<PasteRecord>> history = new HashMap<>();
     private final Map<String, BlockData> dataCache = new HashMap<>();
+    private final List<Map<String, BlockData>> rotatedCache = List.of(new HashMap<>(), new HashMap<>(),
+            new HashMap<>(), new HashMap<>());
     private Settings settings;
     private boolean busy;
 
-    public PasteService(JavaPlugin plugin, InstanceStore store, CrateService crates, ProtectionService protection) {
+    public PasteService(JavaPlugin plugin, InstanceStore store, CrateService crates, ProtectionService protection,
+                        PropService props) {
+        this.props = props;
         this.plugin = plugin;
         this.store = store;
         this.crates = crates;
@@ -123,41 +134,62 @@ public final class PasteService {
             return false;
         }
 
+        // Teren planujemy od razu (kolumny wokół obrysu), a bloki samej struktury dopiero w trakcie stawiania,
+        // warstwa po warstwie w ramach limitu na tick, żeby duża struktura nie dawała skoku na jednym ticku.
+        // Teren nie nachodzi na bryłę struktury (pas wygładzania jest poza obrysem, fundament pod, wycinka nad),
+        // więc kolejność nie zmienia wyniku.
         Map<Long, Op> ops = new LinkedHashMap<>();
         planTerrain(world, bp, placement, ops);
+        PasteRecord record = new PasteRecord(bp.name(), world);
+        boolean furniture = props.replacesFurniture(bp);
         int steps = placement.steps();
-        for (int y = 0; y < bp.height(); y++) {
-            for (int x = 0; x < bp.width(); x++) {
-                for (int z = 0; z < bp.depth(); z++) {
-                    int[] w = placement.toWorld(x, y, z);
-                    put(ops, w[0], w[1], w[2], resolve(Rotation.rotateState(bp.get(x, y, z), steps)));
-                }
-            }
-        }
+        props.fromBlueprint(world, bp, placement, record.props);
+        record.footprint = Box.of(bp, placement);
+        record.minY = placement.originY();
+        record.maxY = placement.originY() + bp.height();
         List<Op> list = new ArrayList<>(ops.values());
+        int volume = bp.width() * bp.depth() * bp.height();
+        int total = list.size() + volume;
 
         busy = true;
-        PasteRecord record = new PasteRecord(bp.name(), world);
-        send(feedback, "§7Stawiam §e" + bp.name() + "§7 (" + list.size() + " bloków)...");
+        send(feedback, "§7Stawiam §e" + bp.name() + "§7 (" + total + " bloków)...");
 
         new BukkitRunnable() {
             private int index;
+            private int cell;
+
+            private void set(int x, int y, int z, BlockData data) {
+                Block block = world.getBlockAt(x, y, z);
+                BlockData current = block.getBlockData();
+                if (current.equals(data)) {
+                    return;
+                }
+                record.snapshots.add(new Snapshot(x, y, z, current));
+                block.setBlockData(data, false);
+            }
 
             @Override
             public void run() {
                 try {
-                    int end = Math.min(index + settings.blocksPerTick(), list.size());
-                    for (; index < end; index++) {
+                    int budget = settings.blocksPerTick();
+                    for (; index < list.size() && budget > 0; index++, budget--) {
                         Op op = list.get(index);
-                        Block block = world.getBlockAt(op.x(), op.y(), op.z());
-                        BlockData current = block.getBlockData();
-                        if (current.equals(op.data())) {
-                            continue;
-                        }
-                        record.snapshots.add(new Snapshot(op.x(), op.y(), op.z(), current));
-                        block.setBlockData(op.data(), false);
+                        set(op.x(), op.y(), op.z(), op.data());
                     }
-                    if (index >= list.size()) {
+                    int plane = bp.width() * bp.depth();
+                    for (; cell < volume && budget > 0; cell++, budget--) {
+                        int y = cell / plane;
+                        int rest = cell % plane;
+                        int x = rest / bp.depth();
+                        int z = rest % bp.depth();
+                        int[] w = placement.toWorld(x, y, z);
+                        BlockData data = rotated(bp.get(x, y, z), steps);
+                        if (furniture) {
+                            data = props.furniture(world, w[0], w[1], w[2], data, record.props);
+                        }
+                        set(w[0], w[1], w[2], data);
+                    }
+                    if (index >= list.size() && cell >= volume) {
                         cancel();
                         StructureInstance instance = finish(bp, placement, record, automatic);
                         busy = false;
@@ -166,7 +198,7 @@ public final class PasteService {
                         }
                         int[] c = placement.center(bp);
                         send(feedback, "§aGotowe! §e" + bp.name() + "§a stoi na §f" + c[0] + " " + c[1] + " " + c[2]
-                                + "§a, skrzynie: §f" + record.cratesPlaced + "/" + bp.spawnPoints().size()
+                                + "§a, skrzynie: §f" + record.cratesPlaced + "/" + crates.crateSlots(bp)
                                 + (undoOwner != null ? "§a. Cofnięcie: §e/struktury cofnij" : "§a."));
                         if (onDone != null) {
                             onDone.accept(instance);
@@ -189,14 +221,20 @@ public final class PasteService {
         return true;
     }
 
+    /** Stan bloku po obrocie; obrócone stany są zapamiętywane, bo struktura powtarza te same bloki tysiące razy. */
+    private BlockData rotated(String state, int steps) {
+        int s = ((steps % 4) + 4) % 4;
+        return rotatedCache.get(s).computeIfAbsent(state, k -> resolve(Rotation.rotateState(k, s)));
+    }
+
     /** Wynik {@link #registerPlaced}: instancja i ile skrzyń wylosowano. */
     public record Registered(StructureInstance instance, int crates) {
     }
 
     /**
      * Rejestruje strukturę, której bloki już stoją w świecie (np. wygenerowane przez generator chunków).
-     * Nic nie stawia: łączy szyby i płoty z sąsiadami, pisze napisy, losuje skrzynie, zakłada ochronę.
-     * Wątek serwera.
+     * Nic nie stawia: łączy szyby i płoty z sąsiadami, pisze napisy, stawia modele, losuje skrzynie i zakłada
+     * ochronę. Wątek serwera.
      */
     public Registered registerPlaced(Blueprint bp, Placement placement, String key, boolean automatic) {
         World world = Bukkit.getWorld(placement.world());
@@ -214,6 +252,32 @@ public final class PasteService {
         for (Blueprint.SignSpec spec : bp.signs()) {
             writeSign(world, placement, spec);
         }
+        List<PropService.WorldProp> modelList = new ArrayList<>();
+        props.fromBlueprint(world, bp, placement, modelList);
+        if (props.replacesFurniture(bp)) {
+            // Generator chunków stawia meble jako zwykłe bloki (np. szkliwiona terakota, szulkery). Zamieniamy je
+            // tak jak przy wklejaniu: bariera w miejscu bloku i model nad nią. Drzwi zostają bez modelu.
+            int steps = placement.steps();
+            List<PropService.WorldProp> found = new ArrayList<>();
+            for (Map.Entry<Blueprint.Pos, String> entry : bp.blocks().entrySet()) {
+                Blueprint.Pos p = entry.getKey();
+                int[] w = placement.toWorld(p.x(), p.y(), p.z());
+                found.clear();
+                BlockData data = rotated(entry.getValue(), steps);
+                BlockData placed = props.furniture(world, w[0], w[1], w[2], data, found);
+                // Łóżko ma model tylko przy wezgłowiu, ale barierą staje się każda połowa. Gdyby nogi zostały
+                // zwykłym łóżkiem, w świecie stałaby ucięta połowa łóżka z Minecrafta obok modelu.
+                if (placed.getMaterial() != Material.BARRIER) {
+                    continue;
+                }
+                Block block = world.getBlockAt(w[0], w[1], w[2]);
+                if (block.getType() == data.getMaterial()) {
+                    block.setBlockData(placed, false);
+                    modelList.addAll(found);
+                }
+            }
+        }
+        props.spawn(modelList);
         int[] center = placement.center(bp);
         String id = UUID.randomUUID().toString().substring(0, 8);
         StructureInstance instance = new StructureInstance(id, bp.id(), placement, center[0], center[2],
@@ -227,12 +291,86 @@ public final class PasteService {
         return new Registered(instance, placed);
     }
 
+    /**
+     * Stawia od nowa modele mebli i rekwizytów w postawionej strukturze. Modele to encje (wyświetlacze
+     * przedmiotów), więc np. {@code /killall all} z Essentials usuwa je razem z potworami, a w strukturze
+     * zostają same bariery. Stare modele są najpierw zdejmowane, więc można to wołać wiele razy.
+     * Mebel wraca tam, gdzie w świecie stoi bariera. Meble, które nadal są zwykłymi blokami (np. połowa
+     * łóżka w nogach w strukturach z generatora chunków), zamieniają się teraz na barierę z modelem.
+     *
+     * <p>Działa tylko w chunkach wczytanych razem z encjami. Niewczytanych {@code /killall} i tak nie
+     * dotyka, a ich modele leżą zapisane na dysku, więc nie stawiamy ich drugi raz.
+     *
+     * @return liczba postawionych modeli albo -1, gdy żaden chunk struktury nie jest wczytany
+     */
+    public int restoreProps(StructureInstance instance, Blueprint bp) {
+        Placement placement = instance.placement();
+        World world = Bukkit.getWorld(placement.world());
+        if (world == null) {
+            return -1;
+        }
+        Box box = Box.of(bp, placement);
+        Set<Long> ready = new HashSet<>();
+        for (int cx = box.minX() >> 4; cx <= box.maxX() >> 4; cx++) {
+            for (int cz = box.minZ() >> 4; cz <= box.maxZ() >> 4; cz++) {
+                if (world.isChunkLoaded(cx, cz) && world.getChunkAt(cx, cz).isEntitiesLoaded()) {
+                    ready.add(chunkKey(cx, cz));
+                }
+            }
+        }
+        if (ready.isEmpty()) {
+            return -1;
+        }
+        List<PropService.WorldProp> list = new ArrayList<>();
+        props.fromBlueprint(world, bp, placement, list);
+        if (props.replacesFurniture(bp)) {
+            // struktury z generatora chunków mają drzwi bez modeli
+            boolean pasted = instance.externalKey() == null;
+            int steps = placement.steps();
+            List<PropService.WorldProp> found = new ArrayList<>();
+            for (Map.Entry<Blueprint.Pos, String> entry : bp.blocks().entrySet()) {
+                Blueprint.Pos p = entry.getKey();
+                int[] w = placement.toWorld(p.x(), p.y(), p.z());
+                if (!ready.contains(chunkKey(w[0] >> 4, w[2] >> 4))) {
+                    continue;
+                }
+                found.clear();
+                BlockData data = rotated(entry.getValue(), steps);
+                BlockData placed = props.furniture(world, w[0], w[1], w[2], data, found);
+                boolean door = placed == data;
+                if (door) {
+                    if (pasted) {
+                        list.addAll(found);
+                    }
+                    continue;
+                }
+                Block block = world.getBlockAt(w[0], w[1], w[2]);
+                if (block.getType() == data.getMaterial()) {
+                    block.setBlockData(placed, false); // mebel został zwykłym blokiem: bariera jak przy wklejaniu
+                } else if (block.getType() != Material.BARRIER) {
+                    continue; // ktoś go rozbił albo stoi tu coś innego
+                }
+                list.addAll(found);
+            }
+        }
+        list.removeIf(prop -> !ready.contains(chunkKey(prop.center().getBlockX() >> 4, prop.center().getBlockZ() >> 4)));
+        props.remove(world, box, placement.originY(), placement.originY() + bp.height(),
+                location -> ready.contains(chunkKey(location.getBlockX() >> 4, location.getBlockZ() >> 4)));
+        props.spawn(list);
+        return list.size();
+    }
+
+    private static long chunkKey(int cx, int cz) {
+        return ((long) cx << 32) ^ (cz & 0xffffffffL);
+    }
+
     private StructureInstance finish(Blueprint bp, Placement placement, PasteRecord record, boolean automatic) {
         World world = record.world;
         connectNeighbours(world, record);
         for (Blueprint.SignSpec spec : bp.signs()) {
             writeSign(world, placement, spec);
         }
+        props.spawn(record.props);
         int[] center = placement.center(bp);
         String id = UUID.randomUUID().toString().substring(0, 8);
         StructureInstance instance = new StructureInstance(id, bp.id(), placement, center[0], center[2],
@@ -260,6 +398,9 @@ public final class PasteService {
                 protection.onRemoved(instance);
                 store.remove(instance.id());
             }
+        }
+        if (!record.props.isEmpty()) {
+            props.remove(record.world, record.footprint, record.minY, record.maxY);
         }
         List<Snapshot> snapshots = record.snapshots;
         send(feedback, "§7Cofam §e" + record.structureName + "§7 (" + snapshots.size() + " bloków)...");
@@ -303,8 +444,9 @@ public final class PasteService {
      * </ul>
      */
     private void planTerrain(World world, Blueprint bp, Placement placement, Map<Long, Op> ops) {
-        int baseY = placement.originY();
-        int topY = baseY + bp.height();
+        int bottomY = placement.originY();
+        int baseY = bottomY + bp.ground();
+        int topY = bottomY + bp.height();
         int margin = Math.max(0, settings.smoothing());
         BlockData air = resolve("minecraft:air");
         BlockData stone = resolve("minecraft:stone");
@@ -328,14 +470,14 @@ public final class PasteService {
                             put(ops, x, y, z, air);
                         }
                     }
-                    // pod strukturą: fundament do litego gruntu
+                    // pod strukturą (albo pod jej podziemiem): fundament do litego gruntu
                     for (int depth = 1; depth <= settings.maxFoundation(); depth++) {
-                        int y = baseY - depth;
+                        int y = bottomY - depth;
                         Material type = world.getBlockAt(x, y, z).getType();
                         if (Terrain.isGround(type)) {
                             break;
                         }
-                        put(ops, x, y, z, depth <= 3 ? under : stone);
+                        put(ops, x, y, z, depth <= 3 && bp.ground() == 0 ? under : stone);
                     }
                     continue;
                 }

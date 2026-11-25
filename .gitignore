@@ -4,3 +4,5 @@ out/
 .idea/
 *.iml
 .DS_Store
+javac.*.args
+__pycache__/

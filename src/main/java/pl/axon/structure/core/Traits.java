@@ -18,23 +18,24 @@ import java.util.stream.Collectors;
 /**
  * Opcjonalne pola nagłówka {@code .axs} opisujące, jak struktura ma zachowywać się przy automatycznym
  * stawianiu (AxonMapGenerator). Brak pola = wartość domyślna, więc stare pliki działają bez zmian.
+ * Poziom gruntu ({@code grunt}) i strefa bezpieczna są w {@link Blueprint}, bo wpływają na wklejanie.
  *
- * @param groundLevel poziom terenu wewnątrz szablonu ({@code grunt: N})
- * @param entrances   wjazdy na krawędzi, w które wpinają się drogi ({@code wjazdy: x z kierunek; ...})
- * @param mapAllowed  czy generator może stawiać tę strukturę ({@code mapa: tak|nie})
- * @param sizeClass   klasa rozmiaru, null = liczona z wymiarów ({@code rozmiar-klasa: duza|srednia|mala})
- * @param zones       preferowane strefy ({@code strefa: ...}), {@code dowolna} = wszystkie
- * @param climates    preferowane klimaty ({@code klimat: snieg,umiarkowany,suchy})
- * @param safe        strefa bez PvP ({@code bezpieczna: tak})
- * @param tags        pozostałe pola nagłówka, których AS nie zna (przechodzą przez zapis bez zmian)
+ * @param entrances  wjazdy na krawędzi, w które wpinają się drogi ({@code wjazdy: x z kierunek; ...})
+ * @param mapAllowed czy generator może stawiać tę strukturę ({@code mapa: tak|nie})
+ * @param sizeClass  klasa rozmiaru, null = liczona z wymiarów ({@code rozmiar-klasa: duza|srednia|mala})
+ * @param zones      preferowane strefy ({@code strefa: ...}), {@code dowolna} = wszystkie
+ * @param climates   preferowane klimaty ({@code klimat: snieg,umiarkowany,suchy})
+ * @param safe       strefa bezpieczna, bez PvP ({@code bezpieczna: tak})
+ * @param tags       pozostałe pola nagłówka, których AS nie zna (przechodzą przez zapis bez zmian)
  */
-public record Traits(int groundLevel, List<Entrance> entrances, boolean mapAllowed, SizeClass sizeClass,
+public record Traits(List<Entrance> entrances, boolean mapAllowed, SizeClass sizeClass,
                      Set<String> zones, Set<String> climates, boolean safe, Map<String, String> tags) {
 
     private static final Set<String> ZONES = Set.of("rownina", "przy-gorach", "las", "ustronnie", "srodek", "plaza", "dowolna");
     private static final Set<String> CLIMATES = Set.of("snieg", "umiarkowany", "suchy");
     private static final Set<String> FACINGS = Set.of("north", "east", "south", "west");
     private static final Set<String> ANY_ZONE = Set.of("dowolna");
+    /** Klucze, które czyta AS (także te z {@link Blueprint}); reszta trafia do {@link #tags()}. */
     private static final Set<String> KNOWN_KEYS = Set.of("id", "nazwa", "opis", "rozmiar", "grunt", "wjazdy",
             "rozmiar-klasa", "mapa", "strefa", "klimat", "bezpieczna");
 
@@ -45,38 +46,35 @@ public record Traits(int groundLevel, List<Entrance> entrances, boolean mapAllow
         tags = Collections.unmodifiableMap(new LinkedHashMap<>(tags));
     }
 
-    /** Wartości domyślne: brak wjazdów, mapa dozwolona, dowolna strefa i klimat, bez PvP wyłączonego. */
+    /** Wartości domyślne: brak wjazdów, mapa dozwolona, dowolna strefa i klimat, bez strefy bezpiecznej. */
     public static Traits defaults() {
-        return new Traits(0, List.of(), true, null, ANY_ZONE, CLIMATES, false, Map.of());
+        return new Traits(List.of(), true, null, ANY_ZONE, CLIMATES, false, Map.of());
     }
 
     public Traits withMapAllowed(boolean value) {
-        return new Traits(groundLevel, entrances, value, sizeClass, zones, climates, safe, tags);
+        return new Traits(entrances, value, sizeClass, zones, climates, safe, tags);
+    }
+
+    public Traits withSafe(boolean value) {
+        return new Traits(entrances, mapAllowed, sizeClass, zones, climates, value, tags);
     }
 
     /**
      * Czyta pola nagłówka. Błędna wartość rzuca {@link IOException} z nazwą pola.
+     * <p>
+     * Stara forma {@code strefa: bezpieczna} (oaza) to {@code strefa: srodek} + {@code bezpieczna: tak}.
      *
-     * @param meta   wszystkie pary {@code klucz: wartość} z nagłówka
-     * @param width  szerokość szablonu (do sprawdzenia wjazdów)
-     * @param depth  głębokość szablonu (do sprawdzenia wjazdów)
+     * @param meta  wszystkie pary {@code klucz: wartość} z nagłówka
+     * @param width szerokość szablonu (do sprawdzenia wjazdów)
+     * @param depth głębokość szablonu (do sprawdzenia wjazdów)
      */
     public static Traits parse(Map<String, String> meta, int width, int depth) throws IOException {
-        int groundLevel = 0;
-        String grunt = meta.get("grunt");
-        if (grunt != null && !grunt.isBlank()) {
-            groundLevel = parseInt(grunt, "grunt");
-            if (groundLevel < 0) {
-                throw new IOException("'grunt' nie może być ujemne");
-            }
-        }
         List<Entrance> entrances = parseEntrances(meta.get("wjazdy"), width, depth);
         boolean mapAllowed = parseYesNo(meta.get("mapa"), "mapa", true);
         SizeClass sizeClass = parseSizeClass(meta.get("rozmiar-klasa"));
-        // Stare pliki pisały "strefa: bezpieczna" zamiast osobnego pola: to strefa srodek + bezpieczna: tak.
-        String zoneValue = meta.get("strefa");
         boolean legacySafe = false;
-        if (zoneValue != null) {
+        String zoneValue = meta.get("strefa");
+        if (zoneValue != null && !zoneValue.isBlank()) {
             String[] items = zoneValue.split(",");
             legacySafe = Arrays.stream(items).anyMatch(item -> item.trim().equalsIgnoreCase("bezpieczna"));
             zoneValue = Arrays.stream(items)
@@ -92,15 +90,12 @@ public record Traits(int groundLevel, List<Entrance> entrances, boolean mapAllow
                 tags.put(entry.getKey(), entry.getValue());
             }
         }
-        return new Traits(groundLevel, entrances, mapAllowed, sizeClass, zones, climates, safe, tags);
+        return new Traits(entrances, mapAllowed, sizeClass, zones, climates, safe, tags);
     }
 
     /** Linie nagłówka do zapisania; pola na wartościach domyślnych są pomijane. */
     public List<String> toHeaderLines() {
         List<String> lines = new ArrayList<>();
-        if (groundLevel != 0) {
-            lines.add("grunt: " + groundLevel);
-        }
         if (!entrances.isEmpty()) {
             lines.add("wjazdy: " + entrances.stream()
                     .map(e -> e.x() + " " + e.z() + " " + e.facing())
@@ -125,14 +120,6 @@ public record Traits(int groundLevel, List<Entrance> entrances, boolean mapAllow
             lines.add(entry.getKey() + ": " + entry.getValue());
         }
         return lines;
-    }
-
-    private static int parseInt(String value, String key) throws IOException {
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException e) {
-            throw new IOException("'" + key + "' musi być liczbą całkowitą, a jest '" + value + "'");
-        }
     }
 
     private static List<Entrance> parseEntrances(String value, int width, int depth) throws IOException {
@@ -160,6 +147,14 @@ public record Traits(int groundLevel, List<Entrance> entrances, boolean mapAllow
             result.add(new Entrance(x, z, facing));
         }
         return result;
+    }
+
+    private static int parseInt(String value, String key) throws IOException {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IOException("'" + key + "' musi być liczbą całkowitą, a jest '" + value + "'");
+        }
     }
 
     private static boolean parseYesNo(String value, String key, boolean fallback) throws IOException {

@@ -24,9 +24,13 @@ jobs:
             build/struktury/*.axs
       - name: Test na prawdziwym serwerze Paper
         run: .github/scripts/smoke-test.sh
+      - name: Test strażników NPC (Citizens + Sentinel)
+        run: .github/scripts/npc-test.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: smoke-server-log
-          path: smoke-server/server.log
+          path: |
+            smoke-server/server.log
+            smoke-npc/server.log
           if-no-files-found: ignore

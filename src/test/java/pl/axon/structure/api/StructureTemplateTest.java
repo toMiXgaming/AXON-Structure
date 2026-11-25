@@ -85,17 +85,17 @@ class StructureTemplateTest {
     @Test
     void jawnaKlasaRozmiaruMaPierwszenstwo() {
         Blueprint bp = new Blueprint(100, 5, 100).traits(Traits.defaults().withMapAllowed(true));
-        Traits explicit = new Traits(0, List.of(), true, SizeClass.MALA, Traits.defaults().zones(),
+        Traits explicit = new Traits(List.of(), true, SizeClass.MALA, Traits.defaults().zones(),
                 Traits.defaults().climates(), false, Map.of());
         assertEquals(SizeClass.MALA, StructureTemplate.snapshot(bp.traits(explicit)).sizeClass());
     }
 
     @Test
     void polaNaglowkaSaPrzekazywaneDalej() {
-        Blueprint bp = new Blueprint(20, 5, 20).traits(new Traits(21, List.of(new Entrance(0, 5, "west")),
+        Blueprint bp = new Blueprint(20, 5, 20).ground(2).traits(new Traits(List.of(new Entrance(0, 5, "west")),
                 false, null, Traits.defaults().zones(), Traits.defaults().climates(), true, Map.of("autor", "x")));
         StructureTemplate template = StructureTemplate.snapshot(bp);
-        assertEquals(21, template.groundLevel());
+        assertEquals(2, template.groundLevel());
         assertEquals(List.of(new Entrance(0, 5, "west")), template.entrances());
         assertFalse(template.mapAllowed());
         assertTrue(template.safe());

@@ -23,6 +23,81 @@ stawianie:
   # Ile bloków ponad strukturą wycinać (drzewa, pagórki).
   czyszczenie-nad: 24
 
+# Meble z paczki zasobów serwera (QualityArmory-texturepack). Przy stawianiu struktury te bloki zamieniają się
+# na niewidzialną barierę, a w ich miejscu staje model (obrócony jak blok). "" = zwykły blok z Minecrafta.
+meble:
+  lozko: "axon:lozko"
+  bloki:
+    bookshelf: "axon:regal"              # metalowy regał z segregatorami
+    chiseled_bookshelf: "axon:kartoteka" # szafa kartotekowa
+    cauldron: "axon:umywalka"            # umywalka z kranem
+    water_cauldron: "axon:umywalka"
+    crafting_table: "axon:warsztat"      # stół warsztatowy z imadłem
+    smoker: "axon:kuchenka"              # stara kuchenka gazowa
+    furnace: "axon:piecyk"               # żeliwna koza
+    observer: "axon:radiostacja"         # wojskowa radiostacja
+    lectern: "axon:biurko"               # biurko ze starym komputerem
+    brewing_stand: "axon:kroplowka"      # stojak z kroplówką
+    composter: "axon:kosz"               # blaszany kosz na śmieci
+    grindstone: "axon:szlifierka"        # szlifierka stołowa
+    # Do sklepów, stacji, fastfoodu, osiedla, zajezdni, elektrowni i galerii. Lodówka i dystrybutor mają
+    # dwie kratki wysokości: nad blokiem w strukturze stoi minecraft:barrier.
+    ender_chest: "axon:kasa"             # kasa fiskalna (stawiana na ladzie)
+    jack_o_lantern: "axon:lada"          # lada sklepowa z witryną
+    end_portal_frame: "axon:kibel"       # kompakt WC ze spłuczką
+    bee_nest: "axon:regal_sklepowy"      # regał z puszkami, słoikami i kartonami
+    calibrated_sculk_sensor: "axon:lodowka" # przeszklona lodówka na napoje
+    damaged_anvil: "axon:dystrybutor"    # dystrybutor paliwa
+    sticky_piston: "axon:rozdzielnia"    # szafa elektryczna
+    vault: "axon:frytkownica"            # frytkownica gastronomiczna
+    respawn_anchor: "axon:kanistry"      # sterta kanistrów
+    lodestone: "axon:wozek"              # porzucony wózek sklepowy
+    loom: "axon:telewizor"               # telewizor z kineskopem (blokowisko)
+    # Nowe meble (QualityArmory-texturepack, zrodla/gen_meble_struktury.py). Nośnikiem jest szkliwiona terakota,
+    # której struktury nie używają w innej roli. Szafa i automat do gier mają dwie kratki (bariera nad blokiem).
+    orange_glazed_terracotta: "axon:krzeslo"        # drewniane krzesło
+    yellow_glazed_terracotta: "axon:stol"           # stół
+    cyan_glazed_terracotta: "axon:szafa"            # dwudrzwiowa szafa
+    blue_glazed_terracotta: "axon:lawka"            # ławka z oparciem
+    brown_glazed_terracotta: "axon:kartony"         # sterta kartonów
+    white_glazed_terracotta: "axon:worki"           # worki (piasek, mąka, gotówka)
+    lime_glazed_terracotta: "axon:skrzynka_warzywa" # skrzynka z warzywami
+    pink_glazed_terracotta: "axon:zabawki"          # regał z zabawkami
+    purple_glazed_terracotta: "axon:automat_gier"   # automat do gier (galeria)
+    black_glazed_terracotta: "axon:sterta_opon"           # sterta opon
+    gray_glazed_terracotta: "axon:kaloryfer"        # żeliwny kaloryfer
+    light_gray_glazed_terracotta: "axon:pralka"     # pralka
+    red_glazed_terracotta: "axon:kanapa"            # segment kanapy / boks w barze
+    light_blue_glazed_terracotta: "axon:garnek"     # garnek na stojaku (obozowiska)
+    magenta_glazed_terracotta: "axon:maszyna"       # silnik / pompa przemysłowa
+    green_glazed_terracotta: "axon:gruz"            # kupka gruzu
+    # Czwarta partia (szpital, koszary, magazyn, warsztat, dom): nośnikami są szulkery.
+    white_shulker_box: "axon:stol_operacyjny"            # stół operacyjny
+    light_gray_shulker_box: "axon:lozko_szpitalne"       # łóżko szpitalne
+    gray_shulker_box: "axon:wozek_inwalidzki"            # wózek inwalidzki
+    black_shulker_box: "axon:spind"                      # metalowy spind (2 kratki)
+    brown_shulker_box: "axon:paleta_towaru"              # paleta z towarem
+    orange_shulker_box: "axon:regal_magazynowy"          # regał magazynowy (2 kratki)
+    red_shulker_box: "axon:butla_gazowa"                 # butle gazowe
+    yellow_shulker_box: "axon:tokarka"                   # tokarka
+    lime_shulker_box: "axon:stol_odpraw"                 # stół odpraw z mapą
+    green_shulker_box: "axon:krzeslo_biurowe"            # krzesło biurowe
+    cyan_shulker_box: "axon:lodowka_domowa"              # domowa lodówka (2 kratki)
+    light_blue_shulker_box: "axon:lampa_podlogowa"       # lampa podłogowa (2 kratki)
+    blue_shulker_box: "axon:lozko_pietrowe"              # prycza piętrowa (2 kratki)
+    purple_shulker_box: "axon:skrzynia_amunicji"         # skrzynie amunicyjne
+    magenta_shulker_box: "axon:beben_kabla"              # bęben z kablem
+    pink_shulker_box: "axon:komoda"                      # komoda
+    shulker_box: "axon:fotel"                        # fotel
+  # Drzwi zostają prawdziwymi drzwiami (otwierają się), model idzie za nimi przy otwieraniu.
+  drzwi:
+    spruce_door: "axon:drzwi_drewniane"
+    birch_door: "axon:drzwi_drewniane"
+    dark_oak_door: "axon:drzwi_drewniane"
+    iron_door: "axon:drzwi_stalowe"
+  # Struktury, w których meble zostają zwykłe (np. kolorowe łóżka w oazie).
+  bez-zamiany: [oaza]
+
 ochrona:
   # Gracze nie mogą niszczyć ani budować w obrębie struktury (cała wysokość świata, też pod ziemią).
   # Wolno: otwierać skrzynie, drzwi, przyciski i zabierać karty z ramek. PvP działa normalnie.
@@ -39,6 +114,8 @@ ochrona:
   komunikat: "&cTej struktury nie można niszczyć ani rozbudowywać."
   # Flagi regionu WorldGuard struktura_<id>. Niszczenie blokuje sam plugin, więc passthrough zostaje
   # na allow (inaczej WorldGuard zablokowałby też otwieranie skrzyń), a pvp na allow włącza walkę.
+  # Region kopalni (struktury z żyłami punkt-ruda) dostaje sam block-break: allow, żeby WorldGuard nie blokował
+  # kopania rud – chyba że wpiszesz tu block-break sam.
   flagi-worldguard:
     pvp: allow
     passthrough: allow
@@ -58,24 +135,908 @@ auto-generowanie:
   maks-roznica-wysokosci: 6
   # Maks. udział wody/lawy/lodu pod strukturą w %.
   maks-woda-procent: 3
+  # Pomija teren, na którym gracze spędzili już łącznie więcej ticków (20 = 1 s), żeby nie postawić struktury
+  # na czyjejś bazie, gdy nowy chunk pojawi się obok starego. 0 = bez sprawdzania.
+  maks-czas-graczy-w-chunku: 1200
   # Które struktury i jak często (wagi). Puste {} = wszystkie wczytane po równo.
   # Przykład:
   #   struktury:
-  #     stacja: 3
+  #     oilen: 3
   #     magazyn: 1
   struktury: {}
+
+zrzuty:
+  # Kilka razy dziennie, o losowej porze w podanych godzinach, nad jedną z postawionych struktur spada
+  # na spadochronie skrzynia z rzadkim lootem. Miejsca zrzutów są w plikach struktur (lądowisko jednostki,
+  # dach szpitala, dach galerii). Komenda: /struktury zrzut teraz (od razu), /struktury zrzut (o której następny).
+  wlaczone: true
+  # Ile zrzutów dziennie. Okno godzin dzielone jest na tyle równych części, w każdej jeden zrzut o losowej porze
+  # (przy 2 i 12-22: raz między 12 a 17, raz między 17 a 22).
+  dziennie: 2
+  godziny-od: 12
+  godziny-do: 22
+  strefa-czasowa: Europe/Warsaw
+  # Zrzut tylko, gdy online jest co najmniej tylu graczy (czeka do końca swojej części okna, potem przepada).
+  min-graczy: 2
+  # Pula lootu (sekcja pule:) i zarazem nazwa miejsc zrzutu w plikach .axs.
+  pula: zrzut
+  # Po ilu minutach nieopróżniona skrzynia znika.
+  znika-po-minutach: 15
+  # Skrzynia spada powoli na spadochronie z tej wysokości (bloki nad miejscem lądowania) przez tyle sekund.
+  wysokosc-spadania: 60
+  czas-spadania-sekund: 45
+  nazwa-skrzyni: "&4&lZrzut zaopatrzenia"
+  # {nazwa} = nazwa struktury, {x} {y} {z} = współrzędne, {minuty} = znika-po-minutach. "" = bez komunikatu.
+  # Domyślnie komunikat nie zdradza miejsca: wie to tylko radiostacja w oazie (za opłatą, sekcja oaza.radio).
+  # Miejsce w komunikacie: "&4&l[ZRZUT] &fNad strukturą &e{nazwa} &fspada skrzynia z zaopatrzeniem! &7({x}, {y}, {z})"
+  komunikat: "&4&l[ZRZUT] &fNad jedną ze struktur spada skrzynia z zaopatrzeniem! &7Gdzie? Radiostacja w oazie wie."
+  komunikat-wyladowal: "&4&l[ZRZUT] &fSkrzynia wylądowała. Zniknie za &e{minuty} min&f."
+  komunikat-zniknal: "&4&l[ZRZUT] &7Nikt nie zabrał zrzutu, skrzynia zniknęła."
+  # Zrzut widać z daleka (miejsca dalej nie ma na czacie): za spadającą skrzynią smuga czerwonego dymu, a nad
+  # wylądowaną wysoki czerwony słup dymu (widoczny do ~500 bloków), czerwony fajerwerk i huk przy lądowaniu
+  # (słychać w promieniu 300 bloków, z kierunku zrzutu).
+  dym-sygnalowy: true
+  # Co ile sekund nad skrzynią wybucha czerwona flara (0 = bez flar).
+  flara-co-sekund: 5
+  # Spadająca skrzynia i spadochron świecą na czerwono (obrys widać przez ściany).
+  swiecenie: true
+
+straznicy:
+  # Strażnicy NPC w strukturach (żołnierze w jednostce, szabrownicy w szpitalu). Stawia ich plugin AxonNPC
+  # (rozmowy przez AI, humory, zasadzki, pościgi – ustawienia w plugins/AxonNPC/config.yml); bez niego stare
+  # Citizens i Sentinel (darmowe: ci.citizensnpcs.co). Broń: "qa:<nazwa>" – z AxonNPC strzela bronią AxonGuns
+  # o tej nazwie, z Citizens bronią QualityArmory; gdy takiej broni nie ma, strażnik dostaje kuszę.
+  # Bez AxonNPC i bez Citizens z Sentinelem miejsca strażników zostają puste.
+  # Komenda: /struktury straznicy (ilu stoi), /struktury straznicy postaw (od razu, bez czekania na graczy).
+  wlaczeni: true
+  # Strażnicy pojawiają się, gdy gracz podejdzie bliżej niż tyle bloków do środka struktury,
+  # i znikają, gdy nikogo nie ma w 1,5 × tej odległości (nie obciążają serwera, gdy nikt nie gra w okolicy).
+  promien-aktywacji: 64
+  # Po ilu minutach zabity strażnik wraca na swoje miejsce.
+  odradzanie-minut: 10
+  # celnosc: rozrzut strzałów – 0 = trafia zawsze. Mniej więcej (cel stojący, strzał w głowę):
+  #   0.25 – trafia prawie zawsze do ~28 bloków, 0.4 – 9/10 na 20 bloków, ale tylko ~6/10 na 28,
+  #   0.5 – ~2/3 na 20 bloków, 1 – co czwarty na 20 bloków, 2 – prawie na ślepo.
+  # Głowa strażnika co tick płynnie podąża za celem, więc lufa zawsze jest już wycelowana przed strzałem.
+  zestawy:
+    zolnierz:
+      nazwa: "&2Żołnierz"
+      # Skin z mineskin.org: "Texture Value" i "Texture Signature". Albo skin-gracza: nick gracza z takim skinem.
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:ak47"
+      # hełm, napierśnik, spodnie, buty
+      zbroja: [iron_helmet, chainmail_chestplate, chainmail_leggings, iron_boots]
+      zycie: 30
+      # -1 = obrażenia broni
+      obrazenia: -1
+      # z jakiej odległości widzi i strzela
+      zasieg: 28
+      # rozrzut strzałów: 0 = idealnie celny, im więcej, tym częściej pudłuje
+      celnosc: 0.3
+      # klasa skrzyni (sekcja klasy:), z której losuje się loot po zabiciu; "" = nic
+      loot: lepsza-skrzynia
+      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
+      cele: [players]
+      # czy chodzi po okolicy, gdy nie walczy (domyślnie tak, handlarz i paser stoją za ladą), i jak daleko
+      # od swojego miejsca w strukturze może odejść (w blokach)
+      chodzi: true
+      promien-chodzenia: 8
+    szabrownik:
+      nazwa: "&6Szabrownik"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:remington"
+      zbroja: [leather_helmet, leather_chestplate, air, leather_boots]
+      zycie: 24
+      obrazenia: -1
+      zasieg: 20
+      celnosc: 0.5
+      loot: mala-skrzynka
+      # do kogo strzela: players (gracze), monsters (potwory); [] = nie walczy wcale
+      cele: [players]
+    cpun:
+      # łatwy przeciwnik (apteka): bez pancerza, mało życia, bije pałką z bliska
+      nazwa: "&7Ćpun"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "wooden_sword"
+      zbroja: [air, air, air, air]
+      zycie: 14
+      obrazenia: 3
+      zasieg: 4
+      celnosc: 0
+      loot: mala-skrzynka
+      cele: [players]
+    ochroniarz:
+      # strażnik oazy: broni przed potworami, do graczy nie strzela i nie da się go zranić
+      nazwa: "&aOchrona Oazy"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:m4a1s"
+      zbroja: [iron_helmet, iron_chestplate, leather_leggings, iron_boots]
+      zycie: 40
+      obrazenia: -1
+      zasieg: 24
+      celnosc: 0.4
+      loot: ""
+      cele: [monsters]
+    handlarz:
+      # handlarz w sklepie oazy (punkt-handlarz): stoi za ladą, prawy klik otwiera sklep
+      nazwa: "&6Handlarz Zdzich"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+    paser:
+      # paser w kryjówce czarnego rynku (punkt-czarny-rynek): stoi za ladą, nie walczy, nie da się go zranić
+      nazwa: "&8Paser"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [leather_helmet, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+    osadnik:
+      # osadnik w oazie (npc-osadnik): uprawia ogródki – podchodzi do dojrzałych roślin, zbiera je i sadzi od nowa
+      nazwa: "&aOsadnik"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "iron_hoe"
+      zbroja: [leather_helmet, air, leather_leggings, leather_boots]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      chodzi: true
+      promien-chodzenia: 6
+      uprawia: true
+    ocalaly:
+      # ocalały w oazie (npc-ocalaly): chodzi po okolicy, przy kuchni, ognisku i po korytarzach noclegowni
+      nazwa: "&7Ocalały"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, leather_chestplate, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      chodzi: true
+      promien-chodzenia: 6
+    spiacy:
+      # śpiący w noclegowni (npc-spiacy): leży w najbliższym łóżku, nie chodzi
+      nazwa: "&7Ocalały"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: ""
+      zbroja: [air, air, air, air]
+      zycie: 20
+      obrazenia: -1
+      zasieg: 0
+      celnosc: 0
+      loot: ""
+      cele: []
+      spi: true
+
+    bandyta:
+      # gang z galerii Kometa (npc-bandyta): twardsi od szabrowników, celniejsi, w kolczudze
+      nazwa: "&cBandyta z Komety"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:ak47"
+      zbroja: [chainmail_helmet, chainmail_chestplate, leather_leggings, iron_boots]
+      zycie: 34
+      obrazenia: -1
+      zasieg: 26
+      celnosc: 0.7
+      loot: lepsza-skrzynia
+      cele: [players]
+      chodzi: true
+      promien-chodzenia: 10
+    herszt:
+      # herszt gangu (npc-herszt): biuro administracji galerii i liczarnia w garażu
+      nazwa: "&4Herszt Komety"
+      skin-tekstura: ""
+      skin-podpis: ""
+      skin-gracza: ""
+      bron: "qa:m4a1s"
+      zbroja: [iron_helmet, iron_chestplate, iron_leggings, iron_boots]
+      zycie: 60
+      obrazenia: -1
+      zasieg: 32
+      celnosc: 0.4
+      loot: rzadka-skrzynia
+      cele: [players]
+      chodzi: true
+      promien-chodzenia: 5
+
+oaza:
+  # Oaza Świt (struktura "oaza"): strefa bez PvP, stawiana tylko komendą (/struktury generuj oaza), nigdy sama.
+  # W jej obrysie gracze nie zranią się nawzajem, a strażnicy (zestaw ochroniarz) strzelają tylko do potworów.
+  # Płatne rzeczy (sklep, zlecenia, automaty, radio) biorą pieniądze z pluginu ekonomii przez Vault.
+  # Dane graczy: plugins/AXON-Structure/oaza.yml. Komendy: /oaza (dla graczy), /struktury oaza (stan).
+  wlaczona: true
+  tytul-wejscie: "&a&lOaza Świt"
+  podtytul-wejscie: "&7Strefa bez przemocy. Broń w kaburze."
+  tytul-wyjscie: "&c&lOpuszczasz oazę"
+  podtytul-wyjscie: "&7Dalej już strzelają."
+  komunikat-pvp: "&cW oazie się nie strzela do ludzi."
+  sklep:
+    nazwa: "&6Sklep u Zdzicha"
+    # przedmiot: nazwa z Minecrafta albo qa:<broń z QualityArmory>; ilosc: ile w jednej paczce;
+    # kupno: cena dla gracza (0 = nie sprzedaje), skup: ile handlarz płaci (0 = nie skupuje). Do 45 towarów.
+    oferty:
+      - {przedmiot: bread, ilosc: 8, kupno: 40, skup: 10}
+      - {przedmiot: cooked_beef, ilosc: 8, kupno: 80, skup: 20}
+      - {przedmiot: golden_apple, ilosc: 1, kupno: 400, skup: 100}
+      - {przedmiot: torch, ilosc: 16, kupno: 30, skup: 0}
+      - {przedmiot: oak_planks, ilosc: 32, kupno: 60, skup: 10}
+      - {przedmiot: iron_ingot, ilosc: 8, kupno: 240, skup: 60}
+      - {przedmiot: gold_ingot, ilosc: 4, kupno: 300, skup: 80}
+      - {przedmiot: diamond, ilosc: 1, kupno: 600, skup: 150}
+      - {przedmiot: leather_chestplate, ilosc: 1, kupno: 120, skup: 20}
+      - {przedmiot: iron_chestplate, ilosc: 1, kupno: 900, skup: 150}
+      - {przedmiot: iron_helmet, ilosc: 1, kupno: 550, skup: 90}
+      - {przedmiot: shield, ilosc: 1, kupno: 200, skup: 30}
+      - {przedmiot: bow, ilosc: 1, kupno: 150, skup: 25}
+      - {przedmiot: arrow, ilosc: 32, kupno: 80, skup: 10}
+      - {przedmiot: crossbow, ilosc: 1, kupno: 250, skup: 40}
+      - {przedmiot: ender_pearl, ilosc: 2, kupno: 300, skup: 60}
+      - {przedmiot: experience_bottle, ilosc: 8, kupno: 200, skup: 0}
+      # Bronie z QualityArmory (nazwy jak w Twoim QA):
+      # - {przedmiot: "qa:ak47", ilosc: 1, kupno: 3000, skup: 700}
+  depozyt:
+    # ile rzędów po 9 miejsc ma prywatny schowek (1-6); opłata za każde otwarcie (0 = darmowy)
+    rzedy: 3
+    oplata: 0
+  zlecenia:
+    # ile zleceń wisi naraz i co ile godzin losują się nowe; każdy gracz wykonuje każde raz na okres
+    ile: 5
+    odswiezanie-godzin: 24
+    lista:
+      - {przedmiot: iron_ingot, ilosc: 16, nagroda: 300}
+      - {przedmiot: gold_ingot, ilosc: 8, nagroda: 350}
+      - {przedmiot: coal, ilosc: 64, nagroda: 150}
+      - {przedmiot: leather, ilosc: 24, nagroda: 200}
+      - {przedmiot: wheat, ilosc: 64, nagroda: 120}
+      - {przedmiot: oak_log, ilosc: 64, nagroda: 150}
+      - {przedmiot: string, ilosc: 32, nagroda: 180}
+      - {przedmiot: gunpowder, ilosc: 16, nagroda: 250}
+      - {przedmiot: redstone, ilosc: 32, nagroda: 200}
+      - {przedmiot: diamond, ilosc: 2, nagroda: 500}
+      - {przedmiot: rotten_flesh, ilosc: 48, nagroda: 100}
+      - {przedmiot: bone, ilosc: 32, nagroda: 120}
+  automaty:
+    # stawka za jedną grę; 3 takie same symbole = stawka × mnoznik, 2 takie same = stawka × para-mnoznik
+    # symbol z mnoznik: 0 to pudło (nie płaci nawet w parze). Przy tych wagach wygrywa ok. 31% gier,
+    # a automat oddaje średnio ok. 59% stawek (reszta znika z ekonomii).
+    stawka: 50
+    para-mnoznik: 1.5
+    symbole:
+      - {przedmiot: dead_bush, waga: 10, mnoznik: 0}
+      - {przedmiot: coal, waga: 8, mnoznik: 4}
+      - {przedmiot: iron_ingot, waga: 5, mnoznik: 8}
+      - {przedmiot: gold_ingot, waga: 3, mnoznik: 20}
+      - {przedmiot: emerald, waga: 2, mnoznik: 40}
+      - {przedmiot: diamond, waga: 1, mnoznik: 150}
+  radio:
+    # ile kosztuje namiar na najbliższy zrzut (nad czym i o której spadnie)
+    cena: 500
+  strzelnica:
+    # seria trwa tyle sekund od pierwszego trafienia; dalsza tarcza = więcej punktów (1 + co 10 bloków)
+    czas-serii-sekund: 60
+    # najlepszy wynik tygodnia dostaje tyle pieniędzy (wypłata w poniedziałek)
+    nagroda-tygodnia: 1000
+
+czarny-rynek:
+  # Kryjówki czarnego rynku (struktura "czarny-rynek") stawiają się same jak inne struktury i PvP w nich działa.
+  # W piwnicy stoi paser (zestaw paser): klik w niego albo w beczkę-ladę przed nim otwiera towar.
+  # Co odswiezanie-godzin paser losuje "ile" ofert z listy; ten sam towar jest we wszystkich kryjówkach.
+  # przedmiot: nazwa z Minecrafta albo qa:<broń z QualityArmory>; ilosc: ile w paczce; cena: z Vaulta;
+  # sztuk: ile paczek można kupić w jednym okresie na cały serwer (0 albo brak = bez limitu).
+  wlaczony: true
+  nazwa: "&8Paser &7– towar spod lady"
+  ile: 4
+  odswiezanie-godzin: 3
+  lista:
+    - {przedmiot: "qa:ak47", ilosc: 1, cena: 4500, sztuk: 2}
+    - {przedmiot: "qa:m4a1s", ilosc: 1, cena: 5500, sztuk: 2}
+    - {przedmiot: "qa:remington", ilosc: 1, cena: 3000, sztuk: 3}
+    - {przedmiot: diamond_chestplate, ilosc: 1, cena: 4000, sztuk: 2}
+    - {przedmiot: diamond_helmet, ilosc: 1, cena: 2500, sztuk: 2}
+    - {przedmiot: totem_of_undying, ilosc: 1, cena: 6000, sztuk: 1}
+    - {przedmiot: enchanted_golden_apple, ilosc: 1, cena: 5000, sztuk: 1}
+    - {przedmiot: golden_apple, ilosc: 4, cena: 1200, sztuk: 5}
+    - {przedmiot: ender_pearl, ilosc: 8, cena: 900, sztuk: 5}
+    - {przedmiot: tnt, ilosc: 8, cena: 1500, sztuk: 3}
+    - {przedmiot: netherite_scrap, ilosc: 2, cena: 3500, sztuk: 2}
+    - {przedmiot: experience_bottle, ilosc: 32, cena: 1000, sztuk: 4}
+
+stanowiska:
+  # Sklepy, automaty i radia w zwykłych strukturach (poza oazą, więc PvP działa, a obrażenia zamykają ekran).
+  # Otwierają się w tym samym pełnoekranowym GUI co oaza (sekcja gui:), a bez niego jako skrzynia.
+  # Punkty w pliku struktury: punkt-sklep-<nazwa> (sklep z listy niżej), punkt-automat (jednoręki bandyta
+  # z oaza.automaty) i punkt-radio (namiar na zrzut za oaza.radio.cena). Klika się blok punktu albo zaraz obok.
+  # Format sklepu jak oaza.sklep: nazwa, oferty z przedmiotem, ilością, kupnem (0 = nie sprzedaje) i skupem
+  # (0 = nie skupuje). Pieniądze z Vaulta.
+  wlaczone: true
+  sklepy:
+    # stacja Oilen: kasa w sklepiku
+    stacja:
+      nazwa: "&eOilen &7– kasa"
+      oferty:
+        - {przedmiot: bread, ilosc: 4, kupno: 25, skup: 0}
+        - {przedmiot: cookie, ilosc: 8, kupno: 20, skup: 0}
+        - {przedmiot: torch, ilosc: 16, kupno: 35, skup: 0}
+        - {przedmiot: lantern, ilosc: 1, kupno: 40, skup: 0}
+        - {przedmiot: flint_and_steel, ilosc: 1, kupno: 60, skup: 0}
+        - {przedmiot: coal, ilosc: 16, kupno: 60, skup: 15}
+        - {przedmiot: lava_bucket, ilosc: 1, kupno: 250, skup: 0}
+        - {przedmiot: map, ilosc: 1, kupno: 50, skup: 0}
+    # automat z napojami (stacja, galeria, zajezdnia, osiedle)
+    automat-napoje:
+      nazwa: "&bAutomat z napojami"
+      oferty:
+        - {przedmiot: honey_bottle, ilosc: 1, kupno: 30, skup: 0}
+        - {przedmiot: milk_bucket, ilosc: 1, kupno: 45, skup: 0}
+        - {przedmiot: sweet_berries, ilosc: 8, kupno: 20, skup: 0}
+        - {przedmiot: glow_berries, ilosc: 8, kupno: 30, skup: 0}
+    # kiosk Ruchu przy drodze
+    kiosk:
+      nazwa: "&6Kiosk &7– prasa i drobiazgi"
+      oferty:
+        - {przedmiot: paper, ilosc: 16, kupno: 20, skup: 5}
+        - {przedmiot: map, ilosc: 1, kupno: 40, skup: 0}
+        - {przedmiot: book, ilosc: 1, kupno: 30, skup: 8}
+        - {przedmiot: candle, ilosc: 4, kupno: 25, skup: 0}
+        - {przedmiot: string, ilosc: 8, kupno: 25, skup: 6}
+        - {przedmiot: cookie, ilosc: 8, kupno: 20, skup: 0}
+        - {przedmiot: compass, ilosc: 1, kupno: 120, skup: 0}
+    # opuszczony fastfood: frytkownica jeszcze działa
+    fastfood:
+      nazwa: "&cFastfood &7– okienko"
+      oferty:
+        - {przedmiot: cooked_beef, ilosc: 4, kupno: 45, skup: 0}
+        - {przedmiot: cooked_chicken, ilosc: 4, kupno: 35, skup: 0}
+        - {przedmiot: baked_potato, ilosc: 8, kupno: 30, skup: 0}
+        - {przedmiot: mushroom_stew, ilosc: 1, kupno: 25, skup: 0}
+        - {przedmiot: pumpkin_pie, ilosc: 2, kupno: 30, skup: 0}
+        - {przedmiot: beef, ilosc: 8, kupno: 0, skup: 20}
+        - {przedmiot: potato, ilosc: 16, kupno: 0, skup: 12}
+    # galeria handlowa: sklep sportowo-turystyczny
+    galeria:
+      nazwa: "&dGaleria &7– sport i turystyka"
+      oferty:
+        - {przedmiot: leather_helmet, ilosc: 1, kupno: 90, skup: 15}
+        - {przedmiot: leather_chestplate, ilosc: 1, kupno: 140, skup: 20}
+        - {przedmiot: leather_boots, ilosc: 1, kupno: 80, skup: 12}
+        - {przedmiot: bow, ilosc: 1, kupno: 170, skup: 25}
+        - {przedmiot: arrow, ilosc: 16, kupno: 50, skup: 6}
+        - {przedmiot: fishing_rod, ilosc: 1, kupno: 70, skup: 10}
+        - {przedmiot: shield, ilosc: 1, kupno: 220, skup: 30}
+        - {przedmiot: spyglass, ilosc: 1, kupno: 180, skup: 0}
+        - {przedmiot: bundle, ilosc: 1, kupno: 120, skup: 0}
+    # zajezdnia: kolejarz skupuje złom i części (tylko skup)
+    zajezdnia:
+      nazwa: "&7Skup złomu &8– zajezdnia"
+      oferty:
+        - {przedmiot: iron_ingot, ilosc: 8, kupno: 0, skup: 55}
+        - {przedmiot: iron_nugget, ilosc: 32, kupno: 0, skup: 20}
+        - {przedmiot: copper_ingot, ilosc: 16, kupno: 0, skup: 40}
+        - {przedmiot: rail, ilosc: 16, kupno: 0, skup: 30}
+        - {przedmiot: chain, ilosc: 8, kupno: 0, skup: 25}
+        - {przedmiot: redstone, ilosc: 16, kupno: 0, skup: 35}
+        - {przedmiot: minecart, ilosc: 1, kupno: 150, skup: 40}
+
+gui:
+  # Okna oazy (sklep, automaty, wymiana, paser, tablica zleceń) jako pełnoekranowy ekran w stylu Rusta: obraz z map
+  # w niewidzialnych ramkach, który shader z paczki zasobów serwera (ten sam co w AxonMap) rozciąga na cały ekran.
+  # Kursor to mysz, LPM/PPM klikają, scroll przewija listy, Shift zamyka. Wymaga pluginu PacketEvents.
+  # Tryb awaryjny: zwykłe okno skrzyni, gdy nie ma PacketEvents, shader: false, gracz nie wczytał paczki,
+  # wybrał skrzynię (/oaza gui albo przycisk "Tryb skrzyni" na ekranie) albo nie da się go posadzić (pojazd, skok).
+  # Depozyt zawsze jest skrzynią (przekłada się w nim przedmioty). Wybór graczy i numery map: gui.yml.
+  shader: true
+  # true = ekran tylko dla graczy, od których klient zgłosił wczytaną paczkę zasobów; false, gdy paczkę wysyła
+  # proxy albo inny plugin i serwer tego nie widzi (wtedy gracz bez paczki zobaczy ramki z mapami zamiast ekranu)
+  wymagaj-paczki: true
+
+loot:
+  # Loot jeszcze nieustalony: true = skrzynie i beczki stoją w strukturach, ale są puste, skrzynia zrzutu spada pusta
+  # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z kartami nie ma. Tabele (pule:, klasy:, loot
+  # w zestawach strażników) zostają niżej na później – gdy będą gotowe, ustaw false i /struktury przeladuj.
+  puste: true
+
+# ------------------------------------------------------------
+#  POJEMNIKI – skrzynie i beczki bez prawdziwego bloku: model z paczki zasobów serwera (QualityArmory-texturepack,
+#  axon:<nazwa>, przód na południe) i niewidzialna encja, w którą się klika. Nie da się ich zabrać, rozbudować
+#  ani nic w nich schować. Stoją w miejscach skrzyń w strukturach (pule niżej i w pule:) i przy drogach
+#  (punkty podaje AxonMapGenerator). Stan jest tylko w pamięci: po restarcie wszystko losuje się od nowa.
+#
+#  Beczki (model-rozbity ustawiony): beczka ma HP, każde LPM zabiera tyle, ile daje przedmiot w ręce (niszczenie:
+#  niżej). Przy zerze model zmienia się na rozbity, PPM otwiera loot (losowany
+#  w chwili rozbicia). Rozbita znika, gdy jest pusta albo po rozbita-znika-po-minutach, i wraca w tym samym miejscu
+#  po odnowienie-minut od rozbicia. Skrzynie (bez model-rozbity): PPM otwiera od razu, loot losuje się przy
+#  pierwszym otwarciu, a po opróżnieniu wraca po odnowienie-minut.
+#  Przedmioty "axon:<id>" tworzy plugin AxonItems (id z jego items.yml) albo AxonArmor (pancerze, np. axon:cien_helm,
+#  axon:legion_kamizelka; lista: /axonarmor list); bez nich te pozycje są pomijane. W sklepach (oasis) też działa axon:<id>.
+#  Gdy loot.puste: true, pojemniki stoją i dają się rozbić, ale są puste.
+# ------------------------------------------------------------
+pojemniki:
+  # Po ilu minutach pojemnik wraca (beczka: od rozbicia, skrzynia: od opróżnienia). Klasa może mieć własne odnowienie-minut.
+  odnowienie-minut: 10
+  # Po ilu minutach od rozbicia znika rozbita beczka, nawet z lootem w środku.
+  rozbita-znika-po-minutach: 5
+  # Nie odnawiaj, gdy gracz jest bliżej niż tyle bloków (0 = wyłączone).
+  blokada-gdy-gracz-blizej-niz: 24
+  # Rozbijanie beczek jak ścinanie drzew: beczka ma HP (klasa: hp), uderzenie zabiera obrażenia przedmiotu w ręce.
+  # Obrażenia narzędzia = rodzaj (końcówka nazwy: iron_AXE -> axe) × materiał (początek: IRON_axe -> iron).
+  # Niedoładowany zamach (spam LPM) zadaje mniej, jak w walce: 20% + 80% × naładowanie².
+  # Przykład dla beczki 24 HP: ręka 8 uderzeń, drewniana siekiera 3, żelazna i lepsze 2.
+  niszczenie:
+    # HP klasy bez własnego hp.
+    hp-domyslne: 30
+    # Goła ręka.
+    reka: 3
+    # Wszystko inne w ręce (bloki, jedzenie, broń palna itd.).
+    inne: 4
+    # Obrażenia rodzaju narzędzia.
+    rodzaje:
+      axe: 8
+      sword: 7
+      pickaxe: 6
+      shovel: 5
+      hoe: 4
+      mace: 12
+      trident: 8
+    # Mnożnik materiału narzędzia.
+    materialy:
+      wooden: 1.0
+      stone: 1.25
+      iron: 1.5
+      golden: 1.1
+      diamond: 1.75
+      netherite: 2.0
+    # Dokładne obrażenia konkretnego przedmiotu (nazwa materiału); nadpisują rodzaj i materiał. Np. stick: 5
+    przedmioty: {}
+    # Ile dodaje każdy poziom Ostrości albo Wydajności (0.15 = +15%).
+    zaczarowanie-za-poziom: 0.15
+    # Ile sekund pasek HP wisi nad beczką po ostatnim uderzeniu (0 = tylko pasek akcji u gracza).
+    pasek-hp-sekund: 4
+  przy-drogach:
+    # Pula dla punktów przy drogach z AxonMapGenerator (drogi.beczki w jego configu).
+    pula: droga
+
+  pule:
+    droga:
+      beczka: 55
+      beczka-rdza: 25
+      beczka-paliwa: 15
+      skrzynia-przydrozna: 5
+
+  # Pola klasy jak w klasy: niżej, plus:
+  #   blok: model
+  #   model: model z paczki (axon:beczka)
+  #   model-rozbity: model po rozbiciu; brak = skrzynia, którą otwiera się od razu
+  #   hp: punkty życia beczki (domyślnie niszczenie.hp-domyslne); obrażenia przedmiotów w niszczenie:
+  #   odnowienie-minut: własny czas odnowienia klasy
+  #   blokada-minut: ile minut po odnowieniu nie da się otworzyć (odliczanie nad modelem); 0 = bez blokady
+  #   karta-poziom: karta dostępu zużywana przy pierwszym otwarciu (1 niebieska, 2 czerwona, 3 zielona); 0 = bez
+  #   od-dnia: przy pozycji lootu – wypada dopiero od tego dnia wipe'u (jak w loot.yml AxonItems)
+  #   loot "karta:<kolor>": prawdziwa karta dostępu (niebieska + czerwona w stole = zielona)
+  #   ogloszenie: komunikat na czacie przy odnowieniu ({nazwa}, {miejsce}); "" = bez komunikatu
+  #   dlugosc: ile bloków zajmuje (skrzynia wojskowa: 2); szerokosc / wysokosc: klikalny obszar w blokach
+  klasy:
+    # --- beczki (rozbijane): drogi, place, stacje paliw ---
+    beczka:
+      nazwa: "&9Beczka"
+      blok: model
+      model: "axon:beczka"
+      model-rozbity: "axon:beczka_rozbita"
+      hp: 24
+      min-przedmiotow: 1
+      loot:
+        # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
+        - {przedmiot: "tabela:beczka_przydrozna", szansa: 100}
+
+    beczka-rdza:
+      nazwa: "&6Zardzewiała beczka"
+      blok: model
+      model: "axon:beczka_rdza"
+      model-rozbity: "axon:beczka_rdza_rozbita"
+      hp: 30
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "1-5", szansa: 100}
+        - {przedmiot: "axon:metal_fragments", ilosc: "3-8", szansa: 40}
+        - {przedmiot: "axon:rusty_tools", ilosc: "1-2", szansa: 35}
+        - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 30}
+        - {przedmiot: "axon:screw", ilosc: "1-3", szansa: 25}
+        - {przedmiot: "axon:rivet", ilosc: "2-4", szansa: 20}
+        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:spring", ilosc: "1", szansa: 8}
+
+    beczka-paliwa:
+      nazwa: "&cBeczka z olejem"
+      blok: model
+      model: "axon:beczka_paliwa"
+      model-rozbity: "axon:beczka_paliwa_rozbita"
+      hp: 36
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: coal, ilosc: "4-12", szansa: 100}
+        - {przedmiot: "axon:scrap", ilosc: "1-4", szansa: 40}
+        - {przedmiot: "axon:metal_fragments", ilosc: "2-5", szansa: 20}
+
+    # --- skrzynie (otwierane od razu) ---
+    skrzynia-przydrozna:
+      nazwa: "&7Skrzynka przydrożna"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "3-8", szansa: 100}
+        - {przedmiot: "axon:cloth", ilosc: "2-5", szansa: 35}
+        - {przedmiot: "axon:screw", ilosc: "1-3", szansa: 30}
+        - {przedmiot: "axon:rivet", ilosc: "2-4", szansa: 25}
+        - {przedmiot: bread, ilosc: "1-2", szansa: 25}
+        - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 4}
+
+    brazowa:
+      nazwa: "&6Skrzynia drewniana"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "5-12", szansa: 100}
+        - {przedmiot: "axon:screw", ilosc: "2-4", szansa: 30}
+        - {przedmiot: "axon:rivet", ilosc: "2-5", szansa: 30}
+        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 12}
+        - {przedmiot: "axon:spring", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:stock", ilosc: "1", szansa: 10}
+        - {przedmiot: "axon:steel", ilosc: "2-4", szansa: 25}
+        - {przedmiot: "axon:cloth", ilosc: "2-6", szansa: 25}
+        - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 4, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 4, od-dnia: 3}
+
+    mala-skrzynka:
+      nazwa: "&7Mała drewniana skrzynka"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "3-8", szansa: 100}
+        - {przedmiot: "axon:cloth", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:screw", ilosc: "1-3", szansa: 25}
+        - {przedmiot: "axon:rivet", ilosc: "2-4", szansa: 20}
+        - {przedmiot: "axon:rusty_tools", ilosc: "1", szansa: 20}
+        - {przedmiot: wheat, ilosc: "2-6", szansa: 30}
+        - {przedmiot: bread, ilosc: "1-2", szansa: 30}
+        - {przedmiot: torch, ilosc: "2-6", szansa: 20}
+        - {przedmiot: coal, ilosc: "1-4", szansa: 20}
+
+    lepsza-skrzynia:
+      nazwa: "&9Lepsza skrzynia"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "8-16", szansa: 100}
+        - {przedmiot: "axon:steel", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:screw", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:rivet", ilosc: "3-6", szansa: 35}
+        - {przedmiot: "axon:pipe", ilosc: "1", szansa: 20}
+        - {przedmiot: "axon:spring", ilosc: "1", szansa: 18}
+        - {przedmiot: "axon:stock", ilosc: "1", szansa: 15}
+        - {przedmiot: "axon:gunpowder", ilosc: "2-4", szansa: 20}
+        - {przedmiot: "axon:tech_notes", ilosc: "1", szansa: 12}
+        - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 8}
+        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 6, od-dnia: 3}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 5, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 5, od-dnia: 3}
+        - {przedmiot: golden_apple, ilosc: "1", szansa: 8, nazwa: "&fApteczka"}
+
+    rzadka-skrzynia:
+      nazwa: "&5Rzadka skrzynia"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 3
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "12-24", szansa: 100}
+        - {przedmiot: "axon:steel", ilosc: "3-6", szansa: 60}
+        - {przedmiot: "axon:gunpowder", ilosc: "3-6", szansa: 35}
+        - {przedmiot: "axon:tech_notes", ilosc: "1-2", szansa: 25}
+        - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 8, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 8, od-dnia: 3}
+        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 8, od-dnia: 3}
+        - {przedmiot: golden_apple, ilosc: "1-2", szansa: 25, nazwa: "&fApteczka"}
+        - {przedmiot: ender_pearl, ilosc: "1", szansa: 10}
+
+    # czarny rynek: części do broni, ale nigdy korpusy T3
+    skrzynia-broni:
+      nazwa: "&2Skrzynia z częściami broni"
+      blok: model
+      model: "axon:skrzynia_drewniana"
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:pipe", ilosc: "1-2", szansa: 40}
+        - {przedmiot: "axon:spring", ilosc: "1-2", szansa: 35}
+        - {przedmiot: "axon:stock", ilosc: "1", szansa: 30}
+        - {przedmiot: "axon:screw", ilosc: "2-5", szansa: 40}
+        - {przedmiot: "axon:gunpowder", ilosc: "2-6", szansa: 35}
+        - {przedmiot: "axon:body_pistol", ilosc: "1", szansa: 12, od-dnia: 3}
+        - {przedmiot: "axon:pump_mechanism", ilosc: "1", szansa: 10, od-dnia: 3}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 6, od-dnia: 3}
+        - {przedmiot: shield, ilosc: "1", szansa: 15}
+        - {przedmiot: spyglass, ilosc: "1", szansa: 8, nazwa: "&fLornetka"}
+
+    narzedziowa:
+      nazwa: "&eSkrzynka narzędziowa"
+      blok: model
+      model: "axon:skrzynka_narzedziowa"
+      szerokosc: 0.8
+      wysokosc: 0.7
+      min-przedmiotow: 2
+      loot:
+        - {przedmiot: "axon:scrap", ilosc: "4-10", szansa: 100}
+        - {przedmiot: "axon:screw", ilosc: "3-6", szansa: 60}
+        - {przedmiot: "axon:rivet", ilosc: "3-6", szansa: 50}
+        - {przedmiot: "axon:spring", ilosc: "1-2", szansa: 30}
+        - {przedmiot: "axon:gears", ilosc: "1-2", szansa: 30}
+        - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
+        - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 3, od-dnia: 3}
+        - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 3, od-dnia: 3}
+        # Niebieska karta dostępu (poziom 1). Z czerwoną łączy się w stole w zieloną.
+        - {przedmiot: "karta:niebieska", szansa: 6}
+
+    skrzynka-jedzenie:
+      nazwa: "&aSkrzynka z jedzeniem"
+      blok: model
+      model: "axon:skrzynka_jedzenie"
+      wysokosc: 0.8
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: bread, ilosc: "1-3", szansa: 60}
+        - {przedmiot: apple, ilosc: "1-4", szansa: 50}
+        - {przedmiot: baked_potato, ilosc: "1-3", szansa: 40}
+        - {przedmiot: carrot, ilosc: "1-4", szansa: 40}
+        - {przedmiot: dried_kelp, ilosc: "3-8", szansa: 30, nazwa: "&fSuszone wodorosty"}
+        - {przedmiot: cookie, ilosc: "2-6", szansa: 30}
+        - {przedmiot: mushroom_stew, ilosc: "1", szansa: 15, nazwa: "&fPuszka gulaszu"}
+        - {przedmiot: honey_bottle, ilosc: "1", szansa: 10}
+        - {przedmiot: golden_carrot, ilosc: "1-2", szansa: 8}
+
+    skrzynka-medyczna:
+      nazwa: "&bSzafka medyczna"
+      blok: model
+      model: "axon:szafka_medyczna"
+      min-przedmiotow: 1
+      loot:
+        - {przedmiot: paper, ilosc: "1-4", szansa: 60, nazwa: "&fBandaż"}
+        - {przedmiot: "axon:cloth", ilosc: "1-3", szansa: 30}
+        - {przedmiot: honey_bottle, ilosc: "1-2", szansa: 40, nazwa: "&fSyrop"}
+        - {przedmiot: milk_bucket, ilosc: "1", szansa: 25}
+        - {przedmiot: glistering_melon_slice, ilosc: "1-2", szansa: 25, nazwa: "&fStrzykawka medyczna"}
+        - {przedmiot: suspicious_stew, ilosc: "1", szansa: 15}
+        - {przedmiot: golden_apple, ilosc: "1", szansa: 12, nazwa: "&fApteczka"}
+
+    # --- strefy PvP (do pul w nowych strukturach) ---
+    skrzynia-wojskowa:
+      nazwa: "&2Skrzynia wojskowa"
+      blok: model
+      model: "axon:skrzynia_wojskowa"
+      dlugosc: 2
+      wysokosc: 0.8
+      odnowienie-minut: 30
+      ogloszenie: "&2{nazwa} &7odnowiła się: &f{miejsce}"
+      min-przedmiotow: 2
+      loot:
+        # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
+        - {przedmiot: "tabela:skrzynia_wojskowa", szansa: 100}
+        # Czerwona karta dostępu (poziom 2). Z niebieską łączy się w stole w zieloną.
+        - {przedmiot: "karta:czerwona", szansa: 12}
+
+    skrzynia-elitarna:
+      nazwa: "&4Skrzynia elitarna"
+      blok: model
+      model: "axon:skrzynia_elitarna"
+      wysokosc: 0.8
+      odnowienie-minut: 30
+      ogloszenie: "&4{nazwa} &7odnowiła się: &f{miejsce}"
+      # Po odnowieniu 15 minut kłódki (odliczanie nad modelem, ogłoszenie po odblokowaniu).
+      blokada-minut: 15
+      # Pierwsze otwarcie zużywa zieloną kartę dostępu (poziom 3).
+      karta-poziom: 3
+      min-przedmiotow: 3
+      loot:
+        # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
+        - {przedmiot: "tabela:skrzynia_elitarna", szansa: 100}
+
+kopalnia:
+  # Żyły rudy: punkty punkt-ruda w pliku struktury (kopalnia) leżą na blokach rudy. Te bloki – i tylko one – gracze
+  # mogą kopać mimo ochrony struktury (region WorldGuard kopalni dostaje sam block-break: allow, resztę dalej chroni
+  # plugin). Z rudy miedzi wypada Surowa Siarka taka jak z głazów AxonOre (AxonPlot przyjmie ją do rdzenia),
+  # z innych rud zwykły drop (fortuna i jedwabny dotyk działają) i doświadczenie – także w świecie AxonOre
+  # z mining.block-natural-ores: true. Wykopane miejsce zamienia się w kamień i po odnawianie-minut odrasta w nim
+  # losowa ruda (głęboka, jeśli w pliku była głęboka). Kolejka przeżywa restart (plik kopalnia.yml).
+  wlaczone: true
+  odnawianie-minut: 15
+  # Co zostaje po wykopaniu, zanim ruda odrośnie: kamien (kamień / łupek), bruk albo powietrze.
+  po-wykopaniu: kamien
+  # Ruda nie odrasta, gdy gracz stoi bliżej niż tyle bloków (nie pojawi się nikomu w twarz ani w nogach).
+  blokada-gdy-gracz-blizej-niz: 3
+  # Doświadczenie z rud jak w zwykłym Minecrafcie.
+  doswiadczenie: true
+  # Co odrasta (wagi jak w AxonOre, liczą się proporcjonalnie). copper = ruda miedzi, z której wypada siarka.
+  # Żeby ruda w ogóle nie odrastała, daj jej 0 (usunięta pozycja wróci przy następnym starcie).
+  rudy:
+    coal: 35
+    iron: 25
+    copper: 15
+    gold: 10
+    redstone: 8
+    lapis: 4
+    diamond: 2
+    emerald: 1
+  siarka:
+    # false = z rudy miedzi zwykła surowa miedź
+    wlaczona: true
+    # Musi być taka sama jak sulfur.name w configu AxonOre, inaczej siarka z kopalni nie złączy się w stos z tą
+    # z głazów. AxonPlot rozpoznaje siarkę po custom-model-data 10001 – nie zmieniaj go.
+    nazwa: "<#FDE047>&lSurowa Siarka"
+    opis: []
+    custom-model-data: 10001
+    min: 1
+    max: 2
+
+zwierzeta:
+  # Zwierzęta w strukturach: punkty punkt-zwierze-<typ> w pliku struktury (np. punkt-zwierze-chicken, -cow, -sheep,
+  # -pig, -cat, -wolf, -fox, -horse). Gdy gracz podejdzie do struktury, na każdym punkcie stoi jedno zwierzę.
+  # Nie zapisują się ze światem, więc nie mnożą się po restartach. Oswojone albo wzięte na smycz zostają u gracza
+  # (a na punkcie po czasie pojawia się nowe). W oazie gracze nie mogą ich ranić.
+  wlaczone: true
+  # Zwierzęta pojawiają się, gdy gracz jest bliżej niż tyle bloków od środka struktury.
+  promien-aktywacji: 64
+  # Po ilu minutach zabite (oswojone, zabrane) zwierzę wraca na swój punkt.
+  odradzanie-minut: 10
+  # Zwierzę, które odejdzie dalej niż tyle bloków od punktu, wraca na miejsce (0 = może chodzić, gdzie chce).
+  maks-odejscie: 24
+
+potwory:
+  # Ograniczenie naturalnego spawnu potworów (zombie, szkielety, pająki…) w obrysie wybranych struktur, np. w ciemnej
+  # galerii. Dotyczy tylko spawnu naturalnego: strażnicy, spawnery, jajka i komendy działają jak zwykle.
+  wlaczone: true
+  # Ograniczenie dla każdej struktury, która nie ma własnego wpisu w "ograniczenia" niżej.
+  # szansa 0.2 = przechodzi co piąty spawn; szansa 1 i maks 0 = bez ograniczenia.
+  domyslnie:
+    szansa: 0.2
+    maks: 0
+  # Własne ograniczenia struktur (zastępują domyślne).
+  # Wpis: id struktury (oilen, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek, galeria…).
+  # szansa: jaka część spawnów się udaje (0 = żadne potwory, 0.25 = co czwarty, 1 = normalnie);
+  # maks: najwięcej potworów naraz w obrysie struktury (0 = bez limitu).
+  ograniczenia:
+    galeria:
+      szansa: 0.25
+      maks: 6
+
+zycie:
+  # Odgłosy w strukturach: gracz w obrysie struktury co jakiś czas słyszy (tylko on) dźwięk z listy dla tej
+  # struktury, gdzieś obok siebie. Jeden zegar na cały serwer, liczą się tylko gracze w strukturach.
+  wlaczone: true
+  # Co ile sekund losować odgłos dla każdego gracza w strukturze i z jaką szansą (%) coś zabrzmi.
+  co-ile-sekund: 12
+  szansa-procent: 35
+  # Głośność wszystkich odgłosów (mnożona przez głośność z listy).
+  glosnosc: 0.7
+  # Lista dla id struktury (oilen, gospodarstwo, kombinat, kopalnia, jednostka, szpital, oaza, czarny-rynek, galeria);
+  # struktury bez listy biorą "domyslne", pusta lista [] = cisza. Wpis: "nazwa dźwięku [wysokość] [głośność]",
+  # nazwy z Minecrafta (https://minecraft.wiki/w/Sounds.json) albo z paczki zasobów.
+  odglosy:
+    # ruiny: wiatr, skrzypienie, coś się sypie
+    domyslne:
+      - "minecraft:item.elytra.flying 0.6 0.3"
+      - "minecraft:block.wooden_door.open 0.5"
+      - "minecraft:block.wooden_trapdoor.close 0.6"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:block.iron_trapdoor.close 0.5 0.6"
+      - "minecraft:block.gravel.fall 0.8"
+      - "minecraft:ambient.cave 1.0 0.5"
+    # kopalnia: kapanie wody, osypujący się kamień, łańcuchy w szybie
+    kopalnia:
+      - "minecraft:ambient.cave 1.0 0.6"
+      - "minecraft:block.pointed_dripstone.drip_water 1.0"
+      - "minecraft:block.pointed_dripstone.drip_water 0.8"
+      - "minecraft:block.gravel.fall 0.7"
+      - "minecraft:block.stone.break 0.6 0.5"
+      - "minecraft:block.chain.step 0.6"
+      - "minecraft:block.anvil.land 0.5 0.15"
+    # jednostka: trzaski radia, buczenie, daleka strzelanina
+    jednostka:
+      - "minecraft:block.fire.extinguish 1.8 0.3"
+      - "minecraft:block.note_block.bit 0.6 0.5"
+      - "minecraft:block.note_block.bit 0.9 0.4"
+      - "minecraft:block.redstone_torch.burnout 1.4 0.4"
+      - "minecraft:block.beacon.ambient 0.7"
+      - "minecraft:entity.firework_rocket.blast_far 0.6 0.8"
+      - "minecraft:block.iron_door.close 0.7 0.6"
+      - "minecraft:item.elytra.flying 0.6 0.3"
+    # szpital: trzaśnięcia drzwi, szkło, ktoś (coś) jęczy w oddali
+    szpital:
+      - "minecraft:ambient.cave 1.0 0.5"
+      - "minecraft:block.iron_door.close 0.6 0.6"
+      - "minecraft:block.wooden_door.open 0.5"
+      - "minecraft:block.glass.break 0.8 0.3"
+      - "minecraft:entity.zombie.ambient 0.7 0.3"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:item.elytra.flying 0.6 0.3"
+    # oaza: szum agregatu, gwar ludzi, ognisko, warsztat, kury
+    oaza:
+      - "minecraft:block.beacon.ambient 0.6 0.8"
+      - "minecraft:block.beacon.ambient 0.5 0.8"
+      - "minecraft:entity.villager.ambient 1.0 0.6"
+      - "minecraft:entity.villager.trade 1.0 0.6"
+      - "minecraft:entity.villager.yes 1.0 0.5"
+      - "minecraft:block.campfire.crackle 1.0"
+      - "minecraft:block.anvil.use 1.0 0.3"
+      - "minecraft:block.smithing_table.use 1.0 0.4"
+      - "minecraft:entity.chicken.ambient 1.0 0.6"
+      - "minecraft:block.note_block.bit 0.7 0.3"
+    # galeria: gong z głośników, skrzypiące ruchome schody, szkło, ptaki pod świetlikiem
+    galeria:
+      - "minecraft:block.note_block.chime 1.2 0.4"
+      - "minecraft:block.note_block.chime 0.9 0.4"
+      - "minecraft:block.glass.break 0.8 0.3"
+      - "minecraft:block.chain.step 0.7"
+      - "minecraft:block.iron_door.close 0.6 0.5"
+      - "minecraft:entity.parrot.ambient 1.2 0.3"
+      - "minecraft:block.pointed_dripstone.drip_water 1.0"
+      - "minecraft:item.elytra.flying 0.6 0.3"
 
 # ------------------------------------------------------------
 #  PULE – w pliku struktury każde miejsce na skrzynię ma nazwę puli.
 #  Pula losuje klasę skrzyni według wag. "brak" = w tym miejscu nic się nie pojawi.
 # ------------------------------------------------------------
 pule:
+  # kryjówka czarnego rynku: składzik w piwnicy i skrzynia za ladą pasera
+  czarny-rynek:
+    lepsza-skrzynia: 40
+    skrzynia-broni: 25
+    mala-skrzynka: 20
+    brak: 15
   paliwo:
     beczka-paliwa: 65
     beczka: 20
     brak: 15
   plac:
-    beczka: 65
+    beczka: 45
+    beczka-rdza: 20
     beczka-paliwa: 10
     brak: 25
   lada:
@@ -107,18 +1068,306 @@ pule:
     narzedziowa: 15
     brak: 15
   magazyn:
-    beczka: 60
+    beczka: 40
+    beczka-rdza: 20
     brazowa: 15
     brak: 25
   dach:
     brazowa: 45
     narzedziowa: 35
+    zrzut: 5
     brak: 20
+  # --- gospodarstwo Agro-Pol (beczki na podwórzu i przy bece paliwowej: pule plac i paliwo) ---
+  # parter domu
+  parter:
+    mala-skrzynka: 50
+    skrzynka-jedzenie: 25
+    skrzynka-medyczna: 10
+    brak: 15
+  # klepisko stodoły
+  klepisko:
+    mala-skrzynka: 55
+    narzedziowa: 15
+    brak: 30
+  # strych stodoły (parkour po kombajnie)
+  strych:
+    lepsza-skrzynia: 70
+    brazowa: 15
+    brak: 15
+  # piętro domu (przez szopę i balkon)
+  pietro:
+    lepsza-skrzynia: 70
+    skrzynka-medyczna: 15
+    brak: 15
+  # szczyt silosu – pojedyncza rzadka skrzynia
+  silos:
+    rzadka-skrzynia: 90
+    lepsza-skrzynia: 10
+  # --- kombinat Przyszłość (beczki: plac, paliwo; małe skrzynki: parter, klepisko; piętro paszarni: strych) ---
+  # magazyn nawozów – jedyne pewne skrzynki medyczne
+  magazyn-nawozow:
+    skrzynka-medyczna: 60
+    narzedziowa: 25
+    brak: 15
+  # pomost suwnicy w bazie maszynowej
+  suwnica:
+    lepsza-skrzynia: 65
+    narzedziowa: 20
+    brak: 15
+  # pomost wieży ciśnień
+  wieza:
+    lepsza-skrzynia: 75
+    brazowa: 10
+    brak: 15
+  # maszynownia na szczycie wieży elewatora – dwie rzadkie skrzynie
+  elewator:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
+  # --- kopalnia Jedność (beczki: plac, paliwo; cechownia i portiernia: parter; najwyższe piętro sortowni: strych) ---
+  # sztolnia w hałdzie – skrzynki narzędziowe w komorze na końcu chodnika
+  sztolnia:
+    narzedziowa: 60
+    mala-skrzynka: 15
+    brak: 25
+  # podszybie i komora pomp pod ziemią (jedyne wyjście to drabina w szybie)
+  podszybie:
+    narzedziowa: 55
+    mala-skrzynka: 15
+    lepsza-skrzynia: 10
+    brak: 20
+  # skład materiałów wybuchowych za kratą w podszybiu
+  podszybie-sklad:
+    lepsza-skrzynia: 75
+    narzedziowa: 10
+    brak: 15
+  # pulpit maszynisty w maszynowni wyciągowej
+  maszynownia:
+    lepsza-skrzynia: 70
+    narzedziowa: 15
+    brak: 15
+  # budka na szczycie wieży szybowej
+  wieza-szybowa:
+    rzadka-skrzynia: 90
+    lepsza-skrzynia: 10
+  # --- jednostka wojskowa (beczki: plac, paliwo; koszary, kantyna, magazyny: parter, lada, klepisko;
+  #     strych garaży i regały magazynu sprzętu: strych; wieża desantowa na torze przeszkód: wieza) ---
+  # izba chorych – szafki z lekami
+  izba-chorych:
+    skrzynka-medyczna: 70
+    mala-skrzynka: 10
+    brak: 20
+  # gabinet dowódcy i kancelaria tajna w sztabie
+  sztab:
+    lepsza-skrzynia: 55
+    skrzynia-broni: 15
+    brazowa: 15
+    brak: 15
+  # cztery wieże wartownicze w rogach ogrodzenia
+  wieze-wartownicze:
+    skrzynia-broni: 45
+    lepsza-skrzynia: 35
+    brak: 20
+  # wrak Mi-8 na lądowisku
+  wrak:
+    skrzynia-broni: 40
+    skrzynka-medyczna: 30
+    narzedziowa: 15
+    brak: 15
+  # kosz dźwigu nad placem
+  dzwig:
+    lepsza-skrzynia: 70
+    narzedziowa: 15
+    brak: 15
+  # schron, poziom 1 – sala dowodzenia i pokój szyfranta
+  schron-1:
+    lepsza-skrzynia: 50
+    skrzynia-broni: 25
+    skrzynka-medyczna: 10
+    brak: 15
+  # bunkry magazynu uzbrojenia za siatką
+  magazyn-broni:
+    skrzynia-broni: 60
+    brazowa: 20
+    brak: 20
+  # zbrojownia za kratą na poziomie 2 schronu
+  zbrojownia:
+    skrzynia-broni: 80
+    lepsza-skrzynia: 10
+    brak: 10
+  # pomost na szczycie komina kotłowni
+  komin:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
+  # kabina wieży kontroli lotów
+  wieza-lotow:
+    rzadka-skrzynia: 85
+    skrzynia-broni: 15
+  # skarbiec na dnie schronu (tylko przez szyb wentylacyjny)
+  skarbiec:
+    rzadka-skrzynia: 100
+  # --- szpital Pod Lipami (beczki: plac; sale i gabinety: parter, izba-chorych; kuchnia: lada) ---
+  # apteka szpitalna (tylko kanałem wentylacyjnym z dachu pawilonu)
+  apteka:
+    lepsza-skrzynia: 45
+    skrzynka-medyczna: 45
+    brak: 10
+  # blok operacyjny (tylko łącznikiem z 1 piętra)
+  blok-operacyjny:
+    lepsza-skrzynia: 55
+    skrzynka-medyczna: 30
+    brak: 15
+  # gabinet dyrektora na 4 piętrze (szyb windy albo właz z dachu)
+  dyrekcja:
+    lepsza-skrzynia: 75
+    brazowa: 10
+    brak: 15
+  # kostnica w piwnicy
+  kostnica:
+    lepsza-skrzynia: 60
+    skrzynka-medyczna: 20
+    brak: 20
+  # lądowisko na dachu
+  ladowisko:
+    rzadka-skrzynia: 85
+    lepsza-skrzynia: 15
+  # --- zajezdnia kolejowa (beczki przy zbiorniku i dystrybutorze: pula paliwo, socjalny: lodowki, zaplecze, toalety) ---
+  # hala lokomotywowni: warsztat pod ścianą, wózki między torami
+  lokomotywownia:
+    narzedziowa: 35
+    mala-skrzynka: 30
+    beczka: 10
+    brak: 25
+  # kabiny trzech lokomotyw (wejście bokiem po stopniu)
+  kabina:
+    lepsza-skrzynia: 40
+    mala-skrzynka: 25
+    skrzynka-jedzenie: 15
+    brak: 20
+  # warsztat w przybudówce
+  warsztat-kolejowy:
+    narzedziowa: 50
+    mala-skrzynka: 20
+    brazowa: 10
+    brak: 20
+  # dyspozytornia na piętrze przybudówki
+  dyspozytornia:
+    lepsza-skrzynia: 50
+    brazowa: 15
+    skrzynka-medyczna: 10
+    brak: 25
+  # nastawnia: parter i kabina z dźwigniami
+  nastawnia:
+    lepsza-skrzynia: 45
+    skrzynia-broni: 15
+    mala-skrzynka: 15
+    brak: 25
+  # odstawiony wagon, w którym ktoś mieszka
+  wagon:
+    mala-skrzynka: 35
+    skrzynka-jedzenie: 30
+    lepsza-skrzynia: 10
+    brak: 25
+  # --- osiedle Słoneczne (beczki na parkingu: plac i paliwo; sklep: lada, sklep, zaplecze, lodowki;
+  #     górne piętra odciętej klatki: pietro; dachy: dach) ---
+  # mieszkania w blokach
+  mieszkanie:
+    mala-skrzynka: 45
+    skrzynka-jedzenie: 25
+    skrzynka-medyczna: 10
+    brak: 20
+  # blaszane garaże przy uliczce
+  garaz:
+    narzedziowa: 35
+    beczka-paliwa: 25
+    brazowa: 20
+    brak: 20
+  # komórki lokatorskie w piwnicy
+  piwnica:
+    skrzynka-jedzenie: 45
+    mala-skrzynka: 25
+    brak: 30
+  # altana śmietnikowa
+  smietnik:
+    beczka: 40
+    mala-skrzynka: 20
+    brak: 40
+  # --- galeria Kometa (beczki na parkingu i przy rampach: plac, paliwo; lodówki Maximarketu: lodowki) ---
+  # zwykłe sklepy: odzież, buty, prasa, zabawki, salon gier
+  galeria-sklep:
+    brazowa: 30
+    mala-skrzynka: 25
+    skrzynka-jedzenie: 10
+    lepsza-skrzynia: 15
+    brak: 20
+  # strefa restauracji, piekarnia, kawiarnia, bar kina i kręgielni
+  galeria-jedzenie:
+    skrzynka-jedzenie: 65
+    mala-skrzynka: 10
+    brak: 25
+  # regały Maximarketu
+  galeria-hipermarket:
+    skrzynka-jedzenie: 50
+    mala-skrzynka: 15
+    skrzynka-medyczna: 10
+    brazowa: 10
+    brak: 15
+  # apteka na parterze
+  galeria-apteka:
+    skrzynka-medyczna: 70
+    lepsza-skrzynia: 20
+    brak: 10
+  # jubiler (roleta zamknięta, wejście z zaplecza) i kantor
+  galeria-jubiler:
+    rzadka-skrzynia: 35
+    lepsza-skrzynia: 50
+    brak: 15
+  # foto, telefony, komputery, Elektro-Max
+  galeria-elektronika:
+    lepsza-skrzynia: 45
+    narzedziowa: 30
+    brazowa: 10
+    brak: 15
+  # Sport-Myśliwy: klatka z bronią i zaplecze
+  galeria-militaria:
+    skrzynia-broni: 70
+    lepsza-skrzynia: 20
+    brak: 10
+  # zaplecza sklepów, korytarze techniczne, magazyny, naczepa
+  galeria-zaplecze:
+    brazowa: 40
+    narzedziowa: 25
+    lepsza-skrzynia: 15
+    brak: 20
+  # administracja i ochrona (herszt), biuro kierownika Maximarketu, sejfy
+  galeria-biuro:
+    lepsza-skrzynia: 45
+    skrzynia-broni: 25
+    rzadka-skrzynia: 15
+    brak: 15
+  # liczarnia w garażu (tylko włazem z biura Maximarketu)
+  galeria-skarbiec:
+    rzadka-skrzynia: 100
+  # dach: maszynownia windy, pomost billboardu
+  galeria-dach:
+    rzadka-skrzynia: 50
+    lepsza-skrzynia: 40
+    brak: 10
+  # garaż podziemny: samochody, furgonetka konwoju
+  galeria-parking:
+    brazowa: 30
+    lepsza-skrzynia: 20
+    beczka: 25
+    brak: 25
+  # zrzut zaopatrzenia (sekcja zrzuty: wskazuje tę pulę)
+  zrzut:
+    rzadka-skrzynia: 75
+    skrzynia-broni: 25
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
 #  blok: skrzynia | beczka | ramka (ramka = przedmiot w ramce, np. karta dostępu)
 #  dekoracja: blok stawiany na wieku (np. czerwona świeczka na beczce paliwa), "" = brak
+#  model: model przedmiotu z paczki zasobów rysowany zamiast bloku (np. "axon:zrzut"), "" = zwykły blok
 #  min-przedmiotow: gdy nic nie wylosuje się z szans, dobierz tyle losowych pozycji
 #  loot: każda pozycja losowana osobno
 #    przedmiot: nazwa z Minecrafta (np. iron_ingot)
@@ -127,103 +1376,72 @@ pule:
 #    nazwa / opis: opcjonalna nazwa i opis przedmiotu
 # ------------------------------------------------------------
 klasy:
-  beczka:
-    nazwa: "&6Beczka"
+  # Skrzynie, beczki i szafki są w pojemniki.klasy (modele bez bloku). Tutaj zostają zrzut i karta w ramce.
+  # Klasa o tym samym id w pojemniki.klasy zastępuje tę stąd.
+
+  # Model z paczki QualityArmory-texturepack (axon:zrzut); beczka w środku jest niewidoczna.
+  zrzut:
+    nazwa: "&4Zrzut"
     blok: beczka
-    min-przedmiotow: 1
+    model: "axon:zrzut"
+    min-przedmiotow: 4
     loot:
-      - {przedmiot: iron_nugget, ilosc: "4-14", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: copper_ingot, ilosc: "1-4", szansa: 50}
-      - {przedmiot: iron_ingot, ilosc: "1-2", szansa: 30}
-      - {przedmiot: chain, ilosc: "1-2", szansa: 20, nazwa: "&fRura metalowa"}
-      - {przedmiot: redstone, ilosc: "1-4", szansa: 25}
-      - {przedmiot: gunpowder, ilosc: "1-2", szansa: 15}
-      - {przedmiot: string, ilosc: "1-3", szansa: 20, nazwa: "&fLina"}
-
-  beczka-paliwa:
-    nazwa: "&cBeczka paliwa"
-    blok: beczka
-    dekoracja: "red_candle[candles=1,lit=false]"
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: coal, ilosc: "4-12", szansa: 100, nazwa: "&fPaliwo niskiej jakości"}
-      - {przedmiot: charcoal, ilosc: "2-6", szansa: 50}
-      - {przedmiot: iron_nugget, ilosc: "2-6", szansa: 40, nazwa: "&fZłom"}
-      - {przedmiot: lava_bucket, ilosc: "1", szansa: 8, nazwa: "&fRopa naftowa"}
-      - {przedmiot: blaze_powder, ilosc: "1", szansa: 5}
-
-  brazowa:
-    nazwa: "&6Brązowa skrzynia"
-    blok: skrzynia
-    min-przedmiotow: 2
-    loot:
-      - {przedmiot: iron_nugget, ilosc: "6-20", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: iron_ingot, ilosc: "1-4", szansa: 50}
-      - {przedmiot: gold_nugget, ilosc: "2-8", szansa: 30}
-      - {przedmiot: redstone, ilosc: "2-8", szansa: 30}
-      - {przedmiot: torch, ilosc: "2-8", szansa: 30}
-      - {przedmiot: arrow, ilosc: "4-12", szansa: 30}
-      - {przedmiot: chain, ilosc: "1-3", szansa: 20, nazwa: "&fRura metalowa"}
-      - {przedmiot: bow, ilosc: "1", szansa: 10}
-      - {przedmiot: stone_axe, ilosc: "1", szansa: 12}
-      - {przedmiot: iron_pickaxe, ilosc: "1", szansa: 8}
-      - {przedmiot: leather_chestplate, ilosc: "1", szansa: 10}
-      - {przedmiot: iron_sword, ilosc: "1", szansa: 6}
-      - {przedmiot: crossbow, ilosc: "1", szansa: 5}
-
-  skrzynka-jedzenie:
-    nazwa: "&aSkrzynka z jedzeniem"
-    blok: beczka
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: bread, ilosc: "1-3", szansa: 60}
-      - {przedmiot: apple, ilosc: "1-4", szansa: 50}
-      - {przedmiot: baked_potato, ilosc: "1-3", szansa: 40}
-      - {przedmiot: carrot, ilosc: "1-4", szansa: 40}
-      - {przedmiot: dried_kelp, ilosc: "3-8", szansa: 30, nazwa: "&fSuszone wodorosty"}
-      - {przedmiot: cookie, ilosc: "2-6", szansa: 30}
-      - {przedmiot: mushroom_stew, ilosc: "1", szansa: 15, nazwa: "&fPuszka gulaszu"}
-      - {przedmiot: honey_bottle, ilosc: "1", szansa: 10}
-      - {przedmiot: golden_carrot, ilosc: "1-2", szansa: 8}
-
-  skrzynka-medyczna:
-    nazwa: "&bSkrzynka medyczna"
-    blok: beczka
-    min-przedmiotow: 1
-    loot:
-      - {przedmiot: paper, ilosc: "1-4", szansa: 60, nazwa: "&fBandaż"}
-      - {przedmiot: honey_bottle, ilosc: "1-2", szansa: 40, nazwa: "&fSyrop"}
-      - {przedmiot: string, ilosc: "1-3", szansa: 30, nazwa: "&fSzmata"}
-      - {przedmiot: milk_bucket, ilosc: "1", szansa: 25}
-      - {przedmiot: glistering_melon_slice, ilosc: "1-2", szansa: 25, nazwa: "&fStrzykawka medyczna"}
-      - {przedmiot: suspicious_stew, ilosc: "1", szansa: 15}
-      - {przedmiot: golden_apple, ilosc: "1", szansa: 12, nazwa: "&fApteczka"}
-
-  narzedziowa:
-    nazwa: "&eSkrzynka narzędziowa"
-    blok: skrzynia
-    min-przedmiotow: 2
-    loot:
-      - {przedmiot: iron_nugget, ilosc: "8-24", szansa: 100, nazwa: "&fZłom"}
-      - {przedmiot: iron_ingot, ilosc: "2-5", szansa: 70}
-      - {przedmiot: redstone, ilosc: "2-6", szansa: 40}
-      - {przedmiot: chain, ilosc: "2-4", szansa: 30, nazwa: "&fRura metalowa"}
-      - {przedmiot: iron_pickaxe, ilosc: "1", szansa: 25}
-      - {przedmiot: iron_axe, ilosc: "1", szansa: 25}
-      - {przedmiot: iron_shovel, ilosc: "1", szansa: 20}
-      - {przedmiot: shears, ilosc: "1", szansa: 20}
-      - {przedmiot: flint_and_steel, ilosc: "1", szansa: 20}
-      - {przedmiot: compass, ilosc: "1", szansa: 10}
-      - {przedmiot: spyglass, ilosc: "1", szansa: 10}
-      - {przedmiot: crossbow, ilosc: "1", szansa: 8}
+      - {przedmiot: iron_ingot, ilosc: "6-16", szansa: 100}
+      - {przedmiot: gold_ingot, ilosc: "2-6", szansa: 60}
+      - {przedmiot: diamond, ilosc: "1-3", szansa: 35}
+      - {przedmiot: golden_apple, ilosc: "1-2", szansa: 40}
+      - {przedmiot: iron_chestplate, ilosc: "1", szansa: 30}
+      - {przedmiot: iron_helmet, ilosc: "1", szansa: 30}
+      - {przedmiot: crossbow, ilosc: "1", szansa: 25}
+      - {przedmiot: gunpowder, ilosc: "4-10", szansa: 50}
+      - {przedmiot: cooked_beef, ilosc: "6-12", szansa: 70, nazwa: "&fRacja żywnościowa"}
 
   zielona-karta:
     nazwa: "&aZielona karta dostępu"
     blok: ramka
     loot:
-      - przedmiot: paper
-        ilosc: "1"
-        szansa: 100
-        nazwa: "&aZielona karta dostępu"
-        opis:
-          - "&7Poziom dostępu: 1"
+      # Prawdziwa karta (znacznik w przedmiocie, zwykły papier jej nie podrobi). Otwiera skrzynię elitarną.
+      - {przedmiot: "karta:zielona", szansa: 100}
+
+# ---------------------------------------------------------------------------
+# Wraki pojazdów PRL przy drogach
+# ---------------------------------------------------------------------------
+# AxonMapGenerator po wygenerowaniu mapy zgłasza AXON-Structure listę punktów
+# poboczy dróg (API: setRoadsideContainers). Tutaj decydujesz, co na nich stoi.
+#
+# Modele wraków są w paczce AxonCore (vehicles.py): Fiat 126p, Polonez, Żuk,
+# Nysa, Star 266, Autosan, Ursus, WSK. Każdy wrak to jeden model w prawdziwej
+# wielkości (Fiat ~3 m, Autosan ~10 m), stojący kołami na gruncie.
+#
+# W obrysie wraku stawiamy bariery do wysokości dachu (nie da się przez niego
+# przejść, na niskie auta można wskoczyć). Klik w wrak otwiera bagażnik z lootem z tabeli AxonItems
+# (wrak_auto / wrak_wojskowy). Loot losuje się raz na wrak.
+wraki:
+  wlaczone: true
+  swiaty:
+    - world
+  # Szansa, że na danym punkcie pobocza w ogóle stanie wrak (0–100).
+  szansa-procent: 35.0
+  # Minimalny odstęp między wrakami wzdłuż drogi (bloki).
+  min-odstep: 24
+  # Bariery pod wrakiem — gracz nie przechodzi przez model.
+  bariery: true
+  # Bagażnik z lootem (klik w wrak). Gdy false — wrak jest tylko dekoracją.
+  loot: true
+  # Jak beczki przy drogach: po ilu minutach od opróżnienia bagażnik dostaje nowy loot.
+  odnowienie-minut: 10
+  # Nie odnawiaj bagażnika, gdy gracz jest bliżej niż tyle bloków (0 = wyłączone).
+  blokada-gdy-gracz-blizej-niz: 24
+  # Pula lootu z AxonItems/loot.yml dla wraków cywilnych.
+  pula-lootu: wrak
+  # Wagi modeli. "brak" = puste pobocze. Większa waga = częstszy wrak.
+  modele:
+    wrak_fiat_126p: 22
+    wrak_polonez: 18
+    wrak_zuk: 14
+    wrak_nysa: 12
+    wrak_ursus: 12
+    wrak_wsk: 10
+    wrak_star_266: 7
+    wrak_autosan: 5
+    brak: 25

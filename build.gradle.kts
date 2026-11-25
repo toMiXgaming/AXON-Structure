@@ -18,6 +18,13 @@ repositories {
         }
         filter { includeGroupByRegex("com\\.sk89q\\..*") }
     }
+    // PacketEvents (pełnoekranowe GUI oazy) tylko z repo CodeMC.
+    exclusiveContent {
+        forRepository {
+            maven("https://repo.codemc.io/repository/maven-releases/")
+        }
+        filter { includeGroupByRegex("(com|io)\\.github\\.retrooper(\\..*)?") }
+    }
 }
 
 dependencies {
@@ -30,9 +37,13 @@ dependencies {
         "com.sk89q.worldedit:worldedit-core:7.3.0",
         "com.sk89q.worldedit:worldedit-bukkit:7.3.0",
     ).forEach { compileOnly(it) { isTransitive = false } }
+    // Opcjonalnie: okna oazy jako ekran z shaderem (bez PacketEvents zostają skrzynie).
+    compileOnly("com.github.retrooper:packetevents-spigot:2.7.0")
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    // VehicleConfigTest parsuje YAML przez YamlConfiguration z paper-api.
+    testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
