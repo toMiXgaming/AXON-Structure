@@ -30,7 +30,7 @@ import java.util.Map;
  * skrzynie:
  * 16 1 8 north paliwo        (x y z kierunek pula)
  * ramki:
- * 11 2 24 up karta
+ * 11 2 24 up dekoracje
  * napisy:
  * 1 4 4|OXUM'S|GAS||
  * modele:

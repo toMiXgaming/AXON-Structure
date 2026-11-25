@@ -40,7 +40,7 @@ Dla graczy: `/oaza` (co jest w oazie), `/oaza ranking` (strzelnica) i `/oaza gui
 - **Model z paczki** (`model: "axon:zrzut"`) – nad skrzynią staje niewidoczny wyświetlacz z modelem z paczki serwera (QualityArmory-texturepack), odrobinę większym od bloku, więc samego bloku nie widać, a kliknięcie dalej go otwiera. Klasa `zrzut` (pula `zrzut`, rzadko też na dachu stacji) to skrzynia zrzutu ze spadochronem. Bez paczki gracz widzi fioletowo-czarny sześcian.
 - **Pula** (`pule:`) – dla danego miejsca losuje klasę według wag. Waga `brak` oznacza, że w tym miejscu nic się nie pojawi.
 - **Odświeżanie** – co `odswiezanie.co-ile-minut` minut. Pełne skrzynie zostają (chyba że `zastepuj-pelne: true`), puste i zniszczone losowane są od nowa. Nie odświeża, gdy gracz stoi bliżej niż `blokada-gdy-gracz-blizej-niz`.
-- **Pusty loot na razie** – `loot.puste: true` (domyślnie, dopisywane też do starego `config.yml`): skrzynie i beczki stoją, ale są puste, skrzynia zrzutu spada pusta i znika po czasie, zabici strażnicy nic nie dają, a ramek z kartami nie ma. Pule i klasy zostają w configu – gdy loot będzie ustalony, wystarczy `false` i `/struktury przeladuj`.
+- **Pusty loot na razie** – `loot.puste: true` (domyślnie, dopisywane też do starego `config.yml`): skrzynie i beczki stoją, ale są puste, skrzynia zrzutu spada pusta i znika po czasie, zabici strażnicy nic nie dają, a ramek z łupem nie ma. Pule i klasy zostają w configu – gdy loot będzie ustalony, wystarczy `false` i `/struktury przeladuj`.
 
 ## Pojemniki bez bloku (beczki i skrzynie-modele)
 
@@ -65,7 +65,7 @@ Auto-generowanie stawia strukturę tylko tam, gdzie pod nią jest mało wody (`m
 
 ## Ochrona i działki AxonPlot
 
-- Gracze nie mogą niszczyć ani budować w obrębie struktury (obrys + `ochrona.margines`, cała wysokość świata). Nie działają też wybuchy, ogień, tłoki ani wylewanie wody i lawy. Wolno otwierać skrzynie, drzwi i przyciski oraz zabierać karty z ramek. Uprawnienie `axonstructure.bypass` (domyślnie OP) pomija ochronę.
+- Gracze nie mogą niszczyć ani budować w obrębie struktury (obrys + `ochrona.margines`, cała wysokość świata). Nie działają też wybuchy, ogień, tłoki ani wylewanie wody i lawy. Wolno otwierać skrzynie, drzwi i przyciski oraz zabierać łup z ramek. Uprawnienie `axonstructure.bypass` (domyślnie OP) pomija ochronę.
 - PvP działa: region WorldGuard `struktura_<id>` ma flagę `pvp: allow` (flagi ustawisz w `ochrona.flagi-worldguard`).
 - Struktura nie stanie bliżej niż `ochrona.odstep-od-dzialek` kratek od działki (regiony `dzialka_*`), licząc działkę w jej największym rozmiarze (`ochrona.promien-dzialki`). Dotyczy auto-generowania i komend.
 - W drugą stronę pilnuje AxonPlot: nie da się założyć działki bliżej niż `placement.structure-buffer-blocks` od regionu `struktura_*`.
@@ -119,7 +119,7 @@ Struktury opisane w kodzie (`src/generator`):
 
 | Plik | Struktura | Pule skrzyń |
 | --- | --- | --- |
-| `oilen.axs` | Opuszczona stacja paliw Oilen, 48 × 48 (wiata, pawilon, myjnia, cysterna, zbiornik gazu) | `paliwo`, `plac`, `lada`, `karta`, `sklep`, `lodowki`, `toalety`, `zaplecze`, `parter`, `magazyn-regal`, `magazyn`, `dach` |
+| `oilen.axs` | Opuszczona stacja paliw Oilen, 48 × 48 (wiata, pawilon, myjnia, cysterna, zbiornik gazu) | `paliwo`, `plac`, `lada`, `sklep`, `lodowki`, `toalety`, `zaplecze`, `parter`, `magazyn-regal`, `magazyn`, `dach` |
 | `gospodarstwo.axs` | Opuszczone gospodarstwo Agro-Pol (PGR) | `plac`, `paliwo`, `parter`, `klepisko`, `strych`, `pietro`, `silos` |
 | `kombinat.axs` | Kombinat rolny Przyszłość (spółdzielnia) | `plac`, `paliwo`, `parter`, `klepisko`, `strych`, `magazyn-nawozow`, `suwnica`, `wieza`, `elewator` |
 | `kopalnia.axs` | Zamknięta kopalnia węgla Jedność (z podziemiem, `grunt: 12`) | `plac`, `paliwo`, `parter`, `strych`, `sztolnia`, `podszybie`, `podszybie-sklad`, `maszynownia`, `wieza-szybowa` |

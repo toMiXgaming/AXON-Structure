@@ -456,16 +456,23 @@ public final class CrateService {
 
     private boolean refreshFrame(World world, int[] w, String facing, String poolId, boolean force) {
         List<ItemFrame> frames = framesAt(world, w);
+        // Usuń pozostałości po lootcie kart w już wklejonych strukturach.
+        NamespacedKey oldCardKey = new NamespacedKey(plugin, "axon_access_card");
+        for (ItemFrame frame : frames) {
+            if (frame.getItem().getPersistentDataContainer().has(oldCardKey)) {
+                frame.remove();
+            }
+        }
         if (!force && !settings.replaceFull()) {
             for (ItemFrame frame : frames) {
-                if (frame.getItem() != null && !frame.getItem().getType().isAir()) {
+                if (frame.isValid() && !frame.getItem().getType().isAir()) {
                     return false; // przedmiot wciąż leży
                 }
             }
         }
         removeFrames(world, w);
         if (settings.emptyLoot()) {
-            return false; // przedmiot w ramce (karta) to też loot
+            return false; // przedmiot w ramce to też loot
         }
         CrateClass crate = pick(poolId);
         if (crate == null || crate.kind() != CrateClass.Kind.FRAME) {

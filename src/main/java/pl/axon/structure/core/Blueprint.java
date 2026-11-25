@@ -25,7 +25,7 @@ public final class Blueprint {
     public enum SpawnKind {
         /** Skrzynia albo beczka – blok zależy od wylosowanej klasy. */
         CRATE,
-        /** Ramka z przedmiotem, np. karta dostępu. */
+        /** Ramka z przedmiotem. */
         FRAME
     }
 
