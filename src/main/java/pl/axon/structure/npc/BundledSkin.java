@@ -30,7 +30,10 @@ final class BundledSkin {
                 if (!hash.equals(data.getProperty("hash")) || data.getProperty("signature", "").isBlank()
                         || data.getProperty("value", "").isBlank()) {
                     data.clear();
-                    if (signer == null) throw new IllegalStateException("Potrzebny SkinsRestorer lub podpis w zestawie");
+                    if (signer == null) {
+                        plugin.getLogger().warning("Skin złomiarza nie ma podpisu. Do jego uzyskania potrzebny jest SkinsRestorer.");
+                        return;
+                    }
                     ClassLoader loader = signer.getClass().getClassLoader();
                     Class<?> provider = loader.loadClass("net.skinsrestorer.api.SkinsRestorerProvider");
                     Object api = provider.getMethod("get").invoke(null);
