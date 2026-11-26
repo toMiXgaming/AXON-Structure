@@ -303,7 +303,6 @@ public final class PowerPlantStructure implements StructureDefinition {
             set(13, 2, 9, "lantern[hanging=false,waterlogged=false]");
             crate(16, 1, 6, "west", "parter");
             sign(14, 2, 11, "south", "PORTIER", "WYSZEDŁ", "WRÓCI", "");
-            bp.crate(16, 1, 9, "west", "npc-szabrownik");
         }
 
         // ------------------------------------------------------------------ budynek socjalny
@@ -369,7 +368,6 @@ public final class PowerPlantStructure implements StructureDefinition {
             f.dining(31, 1, 9, false, "spruce");
             set(34, 1, 7, "respawn_anchor[charges=0]");
             sign(25, 3, 8, "east", "KAWA SIĘ", "SKOŃCZYŁA", "RAZEM", "Z PRĄDEM");
-            bp.crate(30, 1, 8, "south", "npc-szabrownik");
             // toalety
             set(37, 1, 7, "end_portal_frame[eye=false,facing=south]");
             set(39, 1, 7, "end_portal_frame[eye=false,facing=south]");
@@ -464,7 +462,6 @@ public final class PowerPlantStructure implements StructureDefinition {
             }
             crate(59, 1, 14, "east", "magazyn-regal");
             sign(61, 3, 12, "north", "KTO UKRADŁ", "MIEDŹ Z", "TRAFA NR 3", "ZNAJDĘ CIĘ");
-            bp.crate(66, 1, 14, "north", "npc-szabrownik");
         }
 
         /** Transformator 3 × 3 z żebrami chłodnicy i izolatorami; obdarty z miedzi stoi otwarty. */
@@ -570,7 +567,6 @@ public final class PowerPlantStructure implements StructureDefinition {
             set(45, 1, 24, "sticky_piston[extended=false,facing=south]");
             set(46, 1, 24, "sticky_piston[extended=false,facing=south]");
             f.skeleton(43, 1, 29, "east");
-            bp.crate(34, 1, 30, "east", "npc-szabrownik");
         }
 
         private String brokenGlassBlock() {
@@ -715,7 +711,6 @@ public final class PowerPlantStructure implements StructureDefinition {
             set(51, 10, 19, "respawn_anchor[charges=0]");
             sign(61, 11, 44, "north", "KTO UKRADŁ", "MOJE", "KANISTRY?", "– STASIEK");
             sign(54, 20, 28, "south", "KOCIOŁ OP-230", "CIŚNIENIE:", "NIE MA", "");
-            bp.crate(57, 19, 31, "east", "npc-szabrownik");
             // hałda węgla przy palenisku
             mound(56, 31, 2, 2, coal);
         }
@@ -882,7 +877,6 @@ public final class PowerPlantStructure implements StructureDefinition {
             set(TX, 0, TZ, "water");
             set(TX, 1, TZ, "lily_pad");
             fill(TX - 8, 1, TZ + 3, TX - 8, 2, TZ + 3, "stone_bricks");
-            bp.crate(TX - 2, 1, TZ + 2, "east", "npc-szabrownik");
             sign(TX - 7, 2, TZ + 3, "east", "ECHO TU", "ODPOWIADA", "SZYBCIEJ", "NIŻ ŻONA");
         }
 
@@ -914,7 +908,6 @@ public final class PowerPlantStructure implements StructureDefinition {
             crate(62, 1, 58, "west", "plac");
             crate(77, 1, 52, "west", "plac");
             sign(55, 2, 77, "north", "WĘGIEL", "LICZONY!", "KAŻDĄ BRYŁĘ", "– KIEROWNIK");
-            bp.crate(61, 1, 63, "north", "npc-szabrownik");
         }
 
         /** Kryta galeria taśmociągu od leja (z 73) do kotłowni (z 45, pomost y 18), da się nią wejść. */

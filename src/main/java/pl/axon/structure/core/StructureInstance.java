@@ -10,6 +10,35 @@ public final class StructureInstance {
     private final int centerZ;
     private final boolean automatic;
     private long lastRefresh;
+    // A farm is reset on the next 90-minute boundary after player activity.
+    public java.util.List<String> farmNames = java.util.List.of();
+    public java.util.List<String> previousFarmNames = java.util.List.of();
+    public long nameRequest;
+    public Boolean residentsPresent;
+    public long renewalDue;
+    public final java.util.Set<String> missingGuards = new java.util.HashSet<>();
+    public final java.util.Map<String, org.bukkit.configuration.ConfigurationSection> farmContainers =
+            new java.util.HashMap<>();
+
+    public boolean farmCycle() {
+        return scrapSite() || structureId.equals("gospodarstwo") || structureId.equals("kombinat");
+    }
+
+    public boolean scrapSite() {
+        return structureId.equals("oilen") || structureId.equals("osiedle") || structureId.equals("zajezdnia");
+    }
+
+    public int groupSize() {
+        return structureId.equals("zajezdnia") ? 3 : 2;
+    }
+
+    public void disturbed(long now) {
+        if (farmCycle() && renewalDue == 0) {
+            long interval = 90L * 60_000L;
+            renewalDue = (Math.floorDiv(now, interval) + 1) * interval;
+        }
+    }
+
     private Box footprint;
     private String externalKey;
 

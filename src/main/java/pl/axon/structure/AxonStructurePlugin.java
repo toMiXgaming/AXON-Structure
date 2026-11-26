@@ -10,7 +10,6 @@ import pl.axon.structure.api.AxonStructureApi;
 import pl.axon.structure.command.EntityWipeListener;
 import pl.axon.structure.command.StrukturyCommand;
 import pl.axon.structure.gui.ShaderGui;
-import pl.axon.structure.loot.AccessCardService;
 import pl.axon.structure.loot.AirdropService;
 import pl.axon.structure.loot.ContainerService;
 import pl.axon.structure.loot.CrateService;
@@ -49,7 +48,6 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private InstanceStore store;
     private CrateService crates;
     private ContainerService containers;
-    private AccessCardService cards;
     private AirdropService airdrops;
     private GuardService guards;
     private LootStats lootStats;
@@ -73,8 +71,6 @@ public final class AxonStructurePlugin extends JavaPlugin {
         crates = new CrateService(this, library, store);
         containers = new ContainerService(this, crates, library, store);
         crates.containers(containers);
-        cards = new AccessCardService(this);
-        containers.cards(cards);
         airdrops = new AirdropService(this, library, store, crates);
         guards = new GuardService(this, library, store, crates);
         lootStats = new LootStats(this);
@@ -113,7 +109,6 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ProtectionListener(protection), this);
         getServer().getPluginManager().registerEvents(props, this);
         getServer().getPluginManager().registerEvents(containers, this);
-        getServer().getPluginManager().registerEvents(cards, this);
         getServer().getPluginManager().registerEvents(vehicles, this);
         getServer().getPluginManager().registerEvents(new EntityWipeListener(this), this);
 
@@ -135,6 +130,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
 
     /** Start usług, które dotykają światów albo soft-zależności. Wywoływane z pierwszego ticka serwera. */
     private void startServices() {
+        guards.loadSkin();
         protection.hookWorldGuard();
         protection.syncAll();
         crates.start();
@@ -234,10 +230,66 @@ public final class AxonStructurePlugin extends JavaPlugin {
         getLogger().info("Uzupełniono config.yml o nowe ustawienia (" + added.size() + "): " + String.join(", ", added));
     }
 
+    private static boolean removeLegacyCardConfig(FileConfiguration config) {
+        boolean changed = false;
+        for (String prefix : List.of("", "pojemniki.")) {
+            ConfigurationSection classes = config.getConfigurationSection(prefix + "klasy");
+            if (classes != null) {
+                if (classes.contains("zielona-karta", true)) {
+                    classes.set("zielona-karta", null);
+                    changed = true;
+                }
+                for (String id : classes.getKeys(false)) {
+                    ConfigurationSection crate = classes.getConfigurationSection(id);
+                    if (crate == null) continue;
+                    if (crate.contains("karta-poziom", true)) {
+                        crate.set("karta-poziom", null);
+                        changed = true;
+                    }
+                    List<Map<?, ?>> loot = crate.getMapList("loot");
+                    List<Map<?, ?>> retained = loot.stream()
+                            .filter(entry -> !String.valueOf(entry.get("przedmiot")).trim()
+                                    .toLowerCase(Locale.ROOT).startsWith("karta:"))
+                            .toList();
+                    if (retained.size() != loot.size()) {
+                        crate.set("loot", retained);
+                        changed = true;
+                    }
+                }
+            }
+            ConfigurationSection pools = config.getConfigurationSection(prefix + "pule");
+            if (pools == null) continue;
+            if (pools.contains("karta", true)) {
+                pools.set("karta", null);
+                changed = true;
+            }
+            for (String id : pools.getKeys(false)) {
+                ConfigurationSection pool = pools.getConfigurationSection(id);
+                if (pool != null && pool.contains("zielona-karta", true)) {
+                    pool.set("zielona-karta", null);
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
+
     /** Wczytuje config.yml i pliki struktur od nowa. */
     public void reload() {
         reloadConfig();
         FileConfiguration config = getConfig();
+        boolean removed = removeLegacyCardConfig(config);
+        for (String id : java.util.List.of("zolnierz", "bandyta", "herszt", "szabrownik", "cpun", "ochroniarz",
+                "handlarz", "paser", "spiacy", "ocalaly", "osadnik")) {
+            for (String section : java.util.List.of("straznicy.zestawy")) {
+                String path = section + "." + id;
+                if (getConfig().contains(path, true)) {
+                    getConfig().set(path, null);
+                    removed = true;
+                }
+            }
+        }
+        if (removed) saveConfig();
         addMissingDefaults(config);
         library.reload();
 

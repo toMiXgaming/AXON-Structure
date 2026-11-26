@@ -95,13 +95,32 @@ public final class ContainerService implements Listener {
     private LootStats stats;
     private final Map<String, Map<Long, List<ContainerSpot>>> byChunk = new HashMap<>();
     private final Map<UUID, ContainerSpot> byEntity = new HashMap<>();
+    private record WarnedContainer(Object key, UUID speaker) {}
+    private final Map<UUID, WarnedContainer> warnedContainers = new HashMap<>();
+
+    // Finish a player's transaction before another viewer can change this same chest.
+    private final Map<Object, Runnable> pendingLoot = new HashMap<>();
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void warnAtContainer(org.bukkit.event.inventory.InventoryOpenEvent event) {
+        if (!(event.getPlayer() instanceof Player player)) return;
+        warnedContainers.remove(player.getUniqueId());
+        Inventory top = event.getInventory();
+        if (!(top.getHolder() instanceof ContainerSpot || top.getHolder() instanceof org.bukkit.block.Container
+                || top.getHolder() instanceof org.bukkit.block.DoubleChest)) return;
+        StructureInstance owner = top.getHolder() instanceof ContainerSpot spot ? farm(spot) : crates.farmContainerAt(top.getLocation());
+        if (owner == null || !owner.scrapSite()) return;
+        UUID speaker = pl.axon.structure.npc.GuardService.scrapChest(owner.id(), player, null, true);
+        Object key = top.getHolder() instanceof ContainerSpot model ? model : top.getLocation();
+        if (speaker != null && key != null) warnedContainers.put(player.getUniqueId(), new WarnedContainer(key, speaker));
+    }
+
     private final Map<UUID, Long> lastOpen = new HashMap<>();
     private final Map<UUID, Long> lastHit = new HashMap<>();
     private Settings settings = new Settings(10 * 60_000L, 5 * 60_000L, 24, "droga", BarrelMath.Damage.DEFAULT,
             4000L);
     private BukkitTask task;
     private int commandCounter;
-    private AccessCardService cards;
 
     public ContainerService(JavaPlugin plugin, CrateService crates, StructureLibrary library, InstanceStore store) {
         this.plugin = plugin;
@@ -110,7 +129,6 @@ public final class ContainerService implements Listener {
         this.store = store;
     }
 
-    /** Karty dostępu zużywane przy pojemnikach z {@code karta-poziom}. */
     /** Statystyki lootu ({@code statystyki.yml}); null = nie liczymy. */
     public void stats(LootStats stats) {
         this.stats = stats;
@@ -121,10 +139,6 @@ public final class ContainerService implements Listener {
             stats.record(player, LootStats.source("pojemnik", tierOf(spot), spot.roadside),
                     java.util.Arrays.asList(spot.inventory.getContents()));
         }
-    }
-
-    public void cards(AccessCardService cards) {
-        this.cards = cards;
     }
 
     public void configure(Settings settings) {
@@ -151,6 +165,7 @@ public final class ContainerService implements Listener {
     }
 
     public void stop() {
+        warnedContainers.clear();
         if (task != null) {
             task.cancel();
             task = null;
@@ -158,6 +173,62 @@ public final class ContainerService implements Listener {
         for (ContainerSpot spot : spots.values()) {
             closeViewers(spot);
             despawnEntities(spot);
+        }
+    }
+
+    private boolean saveQueued;
+    private void saveSoon() {
+        if (saveQueued || !plugin.isEnabled()) return;
+        saveQueued = true;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            saveQueued = false;
+            store.save();
+        });
+    }
+
+    private StructureInstance farm(ContainerSpot spot) {
+        StructureInstance owner = spot.owner == null ? null : store.get(spot.owner);
+        return owner != null && owner.farmCycle() ? owner : null;
+    }
+
+    private void snapshot(ContainerSpot spot) {
+        StructureInstance owner = farm(spot);
+        if (owner == null) return;
+        var data = new org.bukkit.configuration.MemoryConfiguration();
+        data.set("stan", spot.state.name());
+        data.set("klasa", spot.crate == null ? null : spot.crate.id());
+        data.set("hp", spot.hp);
+        data.set("rozbito", spot.brokenAt);
+        data.set("blokada", spot.lockedUntil);
+        if (spot.inventory != null) {
+            data.set("sloty", java.util.Arrays.asList(spot.inventory.getContents()));
+        }
+        owner.farmContainers.put(spot.key, data);
+        saveSoon();
+    }
+
+    private void restore(ContainerSpot spot) {
+        StructureInstance owner = farm(spot);
+        if (owner == null) return;
+        var data = owner.farmContainers.get(spot.key);
+        if (data == null) return;
+        spot.state = ContainerSpot.State.valueOf(data.getString("stan", "WAITING"));
+        spot.respawnAt = Long.MAX_VALUE;
+        if (spot.state == ContainerSpot.State.WAITING) return;
+        spot.crate = crates.loot().crateClass(data.getString("klasa", ""));
+        if (spot.crate == null || spot.crate.container() == null) {
+            spot.state = ContainerSpot.State.WAITING;
+            return;
+        }
+        spot.hp = data.getDouble("hp");
+        spot.brokenAt = data.getLong("rozbito");
+        spot.lockedUntil = data.getLong("blokada");
+        if (data.isList("sloty")) {
+            spot.inventory = newInventory(spot);
+            var items = data.getList("sloty");
+            for (int i = 0; i < Math.min(items.size(), spot.inventory.getSize()); i++) {
+                if (items.get(i) instanceof ItemStack item) spot.inventory.setItem(i, item);
+            }
         }
     }
 
@@ -189,7 +260,9 @@ public final class ContainerService implements Listener {
         if (spots.containsKey(key)) {
             return;
         }
-        add(new ContainerSpot(key, world, x, y, z, yaw, pool, null, owner, false));
+        ContainerSpot spot = new ContainerSpot(key, world, x, y, z, yaw, pool, null, owner, false);
+        restore(spot);
+        add(spot);
     }
 
     /** Losuje pojemnik od nowa (komenda {@code /struktury odswiez}). Zwraca, czy coś stoi. */
@@ -351,6 +424,7 @@ public final class ContainerService implements Listener {
         spot.emptiedAt = 0;
         spot.lockedUntil = CrateLockMath.unlockAt(System.currentTimeMillis(), crate.container().lockMinutes());
         spot.state = crate.container().breakable() ? ContainerSpot.State.INTACT : ContainerSpot.State.CLOSED;
+        snapshot(spot);
     }
 
     private long respawnOf(CrateClass crate) {
@@ -367,7 +441,8 @@ public final class ContainerService implements Listener {
         if (crate == null) {
             spot.state = ContainerSpot.State.WAITING;
             spot.crate = null;
-            spot.respawnAt = now + settings.respawnMillis(); // wypadło „brak”: spróbujemy przy następnym odnowieniu
+            spot.respawnAt = farm(spot) == null ? now + settings.respawnMillis() : Long.MAX_VALUE;
+            snapshot(spot); // wypadło „brak”: spróbujemy przy następnym odnowieniu
             return;
         }
         activate(spot, crate);
@@ -413,7 +488,7 @@ public final class ContainerService implements Listener {
                     }
                 }
                 case CLOSED -> {
-                    if (spot.emptiedAt > 0 && now - spot.emptiedAt >= respawnOf(spot.crate) && !playerNearby(spot)) {
+                    if (farm(spot) == null && spot.emptiedAt > 0 && now - spot.emptiedAt >= respawnOf(spot.crate) && !playerNearby(spot)) {
                         despawnEntities(spot);
                         spot.state = ContainerSpot.State.WAITING;
                         respawn(spot, now, true, true);
@@ -518,10 +593,11 @@ public final class ContainerService implements Listener {
     private void vanish(ContainerSpot spot) {
         closeViewers(spot);
         despawnEntities(spot);
-        spot.respawnAt = spot.brokenAt + respawnOf(spot.crate);
+        spot.respawnAt = farm(spot) == null ? spot.brokenAt + respawnOf(spot.crate) : Long.MAX_VALUE;
         spot.state = ContainerSpot.State.WAITING;
         spot.inventory = null;
         spot.crate = null;
+        snapshot(spot);
     }
 
     private boolean playerNearby(ContainerSpot spot) {
@@ -812,8 +888,11 @@ public final class ContainerService implements Listener {
             actionBar(player, "§7Tym nie rozbijesz: " + spot.crate.displayName());
             return;
         }
+        StructureInstance owner = farm(spot);
+        if (owner != null) owner.disturbed(now);
         spot.hp -= damage;
         if (spot.hp > 1e-6) {
+            snapshot(spot);
             at.getWorld().playSound(at, Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 0.5f, charge < 0.9f ? 1.7f : 1.4f);
             at.getWorld().spawnParticle(Particle.BLOCK, at, charge < 0.9f ? 4 : 8, 0.25, 0.3, 0.25,
                     Material.IRON_BLOCK.createBlockData());
@@ -837,6 +916,7 @@ public final class ContainerService implements Listener {
             spot.crate.fill(spot.inventory, random, tierOf(spot)); // loot losuje się w chwili rozbicia
             record(player, spot);
         }
+        snapshot(spot);
         Entity display = spot.display == null ? null : Bukkit.getEntity(spot.display);
         if (display instanceof ItemDisplay itemDisplay) {
             itemDisplay.setItemStack(modelItem(spec.brokenModel()));
@@ -955,15 +1035,13 @@ public final class ContainerService implements Listener {
             case INTACT -> actionBar(player, "§7Najpierw rozbij: §fLPM§7.");
             case CLOSED -> {
                 if (spot.inventory == null) {
-                    if (!useCard(player, spot)) {
-                        return;
-                    }
                     spot.inventory = newInventory(spot);
                     if (!crates.emptyLoot()) {
                         spot.crate.fill(spot.inventory, random, tierOf(spot)); // przy pierwszym otwarciu, nie da się podejrzeć z daleka
                         record(player, spot);
                     }
                 }
+                snapshot(spot);
                 player.openInventory(spot.inventory);
                 player.playSound(player.getLocation(), Sound.BLOCK_BARREL_OPEN, 0.6f, 1.1f);
             }
@@ -983,21 +1061,6 @@ public final class ContainerService implements Listener {
         }
         actionBar(player, "§c§lZABLOKOWANA §7jeszcze §f"
                 + CrateLockMath.countdown(CrateLockMath.remainingMillis(spot.lockedUntil, now)));
-        return true;
-    }
-
-    /** Pierwsze otwarcie pojemnika z {@code karta-poziom} zużywa jedną kartę; potem otwiera się już bez niej. */
-    private boolean useCard(Player player, ContainerSpot spot) {
-        int level = spot.crate.container().cardLevel();
-        if (level <= 0 || cards == null) {
-            return true;
-        }
-        if (!cards.consume(player, level)) {
-            actionBar(player, "§c§lBRAK KARTY §7potrzebna: " + LootConfig.color(AccessCardMath.displayName(AccessCardMath.idOf(level)))
-                    + " §7(masz poziom §f" + cards.bestLevel(player) + "§7)");
-            return false;
-        }
-        actionBar(player, "§a§lKARTA ZUŻYTA §7otwieram " + spot.crate.displayName());
         return true;
     }
 
@@ -1026,6 +1089,55 @@ public final class ContainerService implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void trackLoot(InventoryClickEvent event) {
+        Inventory inventory = event.getView().getTopInventory();
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        ContainerSpot spot = inventory.getHolder() instanceof ContainerSpot model ? model : null;
+        if (spot == null && !(inventory.getHolder() instanceof org.bukkit.block.Container)
+                && !(inventory.getHolder() instanceof org.bukkit.block.DoubleChest)) return;
+        StructureInstance owner = spot != null ? farm(spot) : crates.farmContainerAt(inventory.getLocation());
+        if (owner == null) return;
+        Object containerKey = spot == null ? inventory.getLocation() : spot;
+        if (containerKey == null) return;
+        Runnable previous = pendingLoot.remove(containerKey);
+        if (previous != null) previous.run();
+        boolean collect = event.getAction() == org.bukkit.event.inventory.InventoryAction.COLLECT_TO_CURSOR;
+        if (!collect && event.getClickedInventory() != inventory) return;
+        boolean canTake = switch (event.getAction()) {
+            case PICKUP_ALL, PICKUP_SOME, PICKUP_HALF, PICKUP_ONE, MOVE_TO_OTHER_INVENTORY,
+                 DROP_ALL_SLOT, DROP_ONE_SLOT, SWAP_WITH_CURSOR, HOTBAR_SWAP, HOTBAR_MOVE_AND_READD,
+                 COLLECT_TO_CURSOR -> true;
+            default -> false;
+        };
+        ItemStack clicked = collect ? event.getCursor() : event.getCurrentItem();
+        if (!canTake || clicked == null || clicked.getType().isAir()) return;
+        ItemStack type = clicked.clone();
+        type.setAmount(1);
+        WarnedContainer warning = warnedContainers.get(player.getUniqueId());
+        UUID witness = warning != null && containerKey.equals(warning.key()) ? warning.speaker() : null;
+        int before = countSimilar(inventory, type);
+        Runnable finish = () -> {
+            if (store.get(owner.id()) != owner || countSimilar(inventory, type) >= before) return;
+            if (witness != null) pl.axon.structure.npc.GuardService.scrapChest(owner.id(), player, witness, false);
+            owner.disturbed(System.currentTimeMillis());
+            if (spot != null && spot.inventory == inventory) snapshot(spot);
+            saveSoon();
+        };
+        pendingLoot.put(containerKey, finish);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (pendingLoot.remove(containerKey, finish)) finish.run();
+        });
+    }
+
+    private static int countSimilar(Inventory inventory, ItemStack type) {
+        int count = 0;
+        for (ItemStack item : inventory.getContents()) {
+            if (type.isSimilar(item)) count += item.getAmount();
+        }
+        return count;
+    }
+
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onDrag(InventoryDragEvent event) {
         if (!(event.getView().getTopInventory().getHolder() instanceof ContainerSpot)) {
@@ -1042,6 +1154,7 @@ public final class ContainerService implements Listener {
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
+        warnedContainers.remove(event.getPlayer().getUniqueId());
         if (!(event.getInventory().getHolder() instanceof ContainerSpot spot) || spots.get(spot.key) != spot
                 || spot.inventory != event.getInventory() || !spot.inventory.isEmpty()) {
             return;

@@ -78,6 +78,13 @@ public final class GuardService implements Listener {
         final String instanceId;
         final Kit kit;
         final Location location;
+        pl.axon.structure.core.Box area;
+        String personalName;
+        String displayName() { return personalName == null ? kit.name() : personalName; }
+        String slot;
+        boolean trader() {
+            return kit.id().equals("handlarz") || kit.id().equals("paser");
+        }
         Object npc;
         /** SentinelTrait tego NPC (do śledzenia celu głową co tick). */
         Object sentinel;
@@ -89,6 +96,17 @@ public final class GuardService implements Listener {
             this.kit = kit;
             this.location = location;
         }
+    }
+
+    private final BundledSkin scrapperSkin = new BundledSkin();
+
+    public void loadSkin() {
+        Kit kit = settings.kits().get("zlomiarz");
+        if (kit != null && kit.skinTexture().isBlank() && kit.skinName().isBlank()) scrapperSkin.start(plugin);
+    }
+
+    private boolean bundled(Kit kit) {
+        return kit.id().equals("zlomiarz") && kit.skinTexture().isBlank() && kit.skinName().isBlank();
     }
 
     private final JavaPlugin plugin;
@@ -256,12 +274,25 @@ public final class GuardService implements Listener {
             return;
         }
         int index = 0;
+        if (instance.farmCycle() && !instance.scrapSite()) {
+            if (instance.residentsPresent == null) {
+                instance.residentsPresent = java.util.concurrent.ThreadLocalRandom.current().nextBoolean();
+                store.save();
+            }
+            if (!instance.residentsPresent) {
+                despawnGuards(instance.id());
+                return;
+            }
+        }
+        int farmerIndex = 0;
         for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
             String kitId = kitId(point.pool());
             if (kitId == null) {
                 continue;
             }
             String key = instance.id() + "#" + index++;
+            int farmer = instance.farmCycle() && (kitId.equals("powsinoga") || kitId.equals("zlomiarz")) ? farmerIndex++ : -1;
+            if (instance.missingGuards.contains(key)) continue;
             Kit kit = settings.kits().get(kitId);
             if (kit == null) {
                 if (missingKits.add(kitId)) {
@@ -276,10 +307,76 @@ public final class GuardService implements Listener {
             }
             Guard guard = guards.computeIfAbsent(key, k -> new Guard(instance.id(), kit,
                     new Location(world, w[0] + 0.5, w[1], w[2] + 0.5)));
+            if (farmer >= 0 && farmer < instance.groupSize()) {
+                if (!ensureFarmNames(instance, now)) continue;
+                String name = instance.farmNames.get(farmer);
+                if (!name.equals(guard.personalName)) {
+                    if (guard.npc != null && !renameGuard(guard, name)) continue;
+                    guard.personalName = name;
+                }
+            }
+            guard.slot = key;
+            if (guard.area == null) guard.area = pl.axon.structure.core.Box.of(bp, instance.placement());
             if (guard.npc != null || now < guard.deadUntil) {
                 continue;
             }
             spawn(guard);
+        }
+    }
+
+    static boolean validPair(List<String> names, List<String> previous, int count) {
+        if (names.size() != count || names.stream().distinct().count() != count) return false;
+        for (String name : names) {
+            if (!name.matches("[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]{1,15}") || name.equals("Powsinoga")
+                    || previous.stream().anyMatch(name::equalsIgnoreCase)) return false;
+        }
+        return true;
+    }
+
+    private boolean ensureFarmNames(StructureInstance owner, long now) {
+        if (owner.farmNames.size() == owner.groupSize()) return true;
+        if (owner.nameRequest != 0 && now - owner.nameRequest < 60_000L) return false;
+        if (!axonNpc()) return false;
+        owner.nameRequest = now;
+        java.util.function.Consumer<List<String>> done = names -> {
+            if (!plugin.isEnabled() || store.get(owner.id()) != owner || owner.nameRequest != now) return;
+            // Leave the request timestamp in place on failure to throttle retries.
+            if (names == null || !validPair(names, owner.previousFarmNames, owner.groupSize())) return;
+            if (!owner.previousFarmNames.isEmpty()) {
+                try {
+                    if (!Boolean.TRUE.equals(axonNpcApi().getMethod("resetResidents", String.class)
+                            .invoke(null, owner.id()))) return;
+                } catch (ReflectiveOperationException e) {
+                    plugin.getLogger().warning("Nie udało się odnowić pamięci obsady " + owner.id() + ": " + e);
+                    return;
+                }
+                forget(owner.id());
+            }
+            owner.farmNames = List.copyOf(names);
+            owner.nameRequest = 0;
+            store.save();
+        };
+        try {
+            axonNpcApi().getMethod("groupNames", int.class, String.class, List.class, java.util.function.Consumer.class)
+                    .invoke(null, owner.groupSize(), owner.scrapSite() ? "złomiarzy" : "robotników rolnych", owner.previousFarmNames, done);
+        } catch (ReflectiveOperationException ignored) {
+            // Retry after the naming API becomes available.
+        }
+        return owner.farmNames.size() == owner.groupSize();
+    }
+
+    private boolean renameGuard(Guard guard, String name) {
+        try {
+            if (guard.npc instanceof Entity entity) {
+                axonNpcApi().getMethod("renameLocal", Entity.class, String.class).invoke(null, entity, name);
+            } else {
+                call(guard.npc, "setName", new Class<?>[]{String.class}, name);
+            }
+            return true;
+        } catch (ReflectiveOperationException error) {
+            // Keep a living NPC in place when running with a mismatched backend.
+            guard.personalName = name;
+            return false;
         }
     }
 
@@ -335,21 +432,50 @@ public final class GuardService implements Listener {
                 stats.record(event.getEntity().getKiller(), LootStats.source("npc", tier, false), drops);
             }
         }
-        guard.deadUntil = System.currentTimeMillis() + settings.respawnMinutes() * 60_000L;
+        StructureInstance owner = store.get(guard.instanceId);
+        if (owner != null && owner.farmCycle() && event.getEntity().getKiller() != null) {
+            owner.missingGuards.add(guard.slot);
+            owner.disturbed(System.currentTimeMillis());
+            store.save();
+        } else {
+            guard.deadUntil = System.currentTimeMillis() + settings.respawnMinutes() * 60_000L;
+        }
         // NPC sprzątamy tickiem później, gdy Citizens skończy obsługę śmierci
         Bukkit.getScheduler().runTask(plugin, () -> destroy(guard));
     }
 
     // ------------------------------------------------------------------ Citizens i Sentinel przez refleksję
 
+    private boolean allowedMove(Guard guard, Location from, Location to) {
+        if (guard == null || guard.area == null || to == null) return true;
+        if (guard.trader()) {
+            return to.getBlockX() == guard.location.getBlockX() && to.getBlockZ() == guard.location.getBlockZ();
+        }
+        return guard.area.contains(to.getBlockX(), to.getBlockZ())
+                || !guard.area.contains(from.getBlockX(), from.getBlockZ());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onMobMove(io.papermc.paper.event.entity.EntityMoveEvent event) {
+        if (!allowedMove(byEntity.get(event.getEntity().getUniqueId()), event.getFrom(), event.getTo()))
+            event.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerMove(org.bukkit.event.player.PlayerMoveEvent event) {
+        if (!allowedMove(byEntity.get(event.getPlayer().getUniqueId()), event.getFrom(), event.getTo()))
+            event.setCancelled(true);
+    }
+
     private void spawn(Guard guard) {
+        if (bundled(guard.kit) && scrapperSkin.loading) return;
         if (axonNpc()) {
             spawnAxonNpc(guard);
             return;
         }
         try {
             Object npc = call(registry(), "createNPC", new Class<?>[]{EntityType.class, String.class},
-                    EntityType.PLAYER, LootConfig.color(guard.kit.name()));
+                    EntityType.PLAYER, LootConfig.color(guard.displayName()));
             skin(npc, guard.kit);
             equip(npc, guard.kit);
             if (guard.kit.fights()) {
@@ -368,9 +494,7 @@ public final class GuardService implements Listener {
                 guard.entityId = entity.getUniqueId();
                 byEntity.put(entity.getUniqueId(), guard);
             }
-            if (guard.kit.sleeps()) {
-                sleep(npc, guard);
-            } else if (guard.kit.walks()) {
+            if (!guard.trader()) {
                 wander(npc, guard);
             }
         } catch (ReflectiveOperationException | RuntimeException e) {
@@ -427,10 +551,13 @@ public final class GuardService implements Listener {
                 return;
             }
             Object provider = call(waypoints, "getCurrentProvider", new Class<?>[0]);
-            int radius = Math.max(1, guard.kit.walkRadius());
+            int radius = (Math.max(guard.area.maxX() - guard.area.minX(), guard.area.maxZ() - guard.area.minZ()) + 1) / 2;
+            Location center = guard.location.clone();
+            center.setX(guard.area.centerX() + 0.5);
+            center.setZ(guard.area.centerZ() + 0.5);
             // najpierw zasięg, potem środek obszaru: obszar liczy się z bieżącego zasięgu
             call(provider, "setXYRange", new Class<?>[]{int.class, int.class}, radius, 2);
-            call(provider, "addRegionCentre", new Class<?>[]{Location.class}, guard.location.clone());
+            call(provider, "addRegionCentre", new Class<?>[]{Location.class}, center);
             trySet(provider, "setDelay", int.class, 60 + random.nextInt(80));
         } catch (ReflectiveOperationException | RuntimeException e) {
             if (!warnedWander) {
@@ -438,44 +565,6 @@ public final class GuardService implements Listener {
                 plugin.getLogger().warning("NPC nie mogą chodzić (inna wersja Citizens?): " + e);
             }
         }
-    }
-
-    /** Śpiący: kładzie się w najbliższym łóżku (do 2 bloków od swojego miejsca). */
-    private void sleep(Object npc, Guard guard) {
-        org.bukkit.block.Block bed = nearestBed(guard.location);
-        if (bed == null) {
-            return;
-        }
-        try {
-            Object trait = trait(npc, "net.citizensnpcs.trait.SleepTrait");
-            call(trait, "setSleeping", new Class<?>[]{Location.class}, bed.getLocation());
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            if (!warnedWander) {
-                warnedWander = true;
-                plugin.getLogger().warning("NPC nie mogą spać (inna wersja Citizens?): " + e);
-            }
-        }
-    }
-
-    private static org.bukkit.block.Block nearestBed(Location at) {
-        org.bukkit.block.Block best = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (int dx = -2; dx <= 2; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dz = -2; dz <= 2; dz++) {
-                    org.bukkit.block.Block b = at.getBlock().getRelative(dx, dy, dz);
-                    if (b.getBlockData() instanceof org.bukkit.block.data.type.Bed bed) {
-                        // głowa łóżka bliżej niż nogi, żeby zawsze wybrać to samo łóżko
-                        double d = dx * dx + dy * dy + dz * dz + (bed.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD ? 0 : 0.5);
-                        if (d < bestDistance) {
-                            bestDistance = d;
-                            best = b;
-                        }
-                    }
-                }
-            }
-        }
-        return best;
     }
 
     /**
@@ -536,6 +625,20 @@ public final class GuardService implements Listener {
 
     // ------------------------------------------------------------------ AxonNPC przez refleksję
 
+    public static UUID scrapChest(String group, org.bukkit.entity.Player player, UUID witness) {
+        return scrapChest(group, player, witness, witness == null);
+    }
+
+    public static UUID scrapChest(String group, org.bukkit.entity.Player player, UUID witness, boolean opening) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("AxonNPC")) return null;
+        try {
+            return (UUID) axonNpcApi().getMethod("scrapChest", String.class, org.bukkit.entity.Player.class, UUID.class, boolean.class)
+                    .invoke(null, group, player, witness, opening);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
     private static Class<?> axonNpcApi() throws ClassNotFoundException {
         org.bukkit.plugin.Plugin p = Bukkit.getPluginManager().getPlugin("AxonNPC");
         ClassLoader loader = p == null ? GuardService.class.getClassLoader() : p.getClass().getClassLoader();
@@ -550,10 +653,18 @@ public final class GuardService implements Listener {
         Kit kit = guard.kit;
         Map<String, Object> map = new HashMap<>();
         map.put("id", kit.id());
-        map.put("nazwa", kit.name());
-        map.put("skin-tekstura", kit.skinTexture());
-        map.put("skin-podpis", kit.skinSignature());
+        StructureInstance home = store.get(guard.instanceId);
+        if (home != null) {
+            Blueprint blueprint = library.get(home.structureId());
+            map.put("struktura", blueprint == null ? home.structureId() : blueprint.name());
+        }
+        map.put("nazwa", guard.displayName());
+        map.put("skin-tekstura", bundled(kit) ? scrapperSkin.value : kit.skinTexture());
+        map.put("skin-podpis", bundled(kit) ? scrapperSkin.signature : kit.skinSignature());
         map.put("skin-gracza", kit.skinName());
+        if (guard.area != null) {
+            map.put("teren", List.of(guard.area.minX(), guard.area.minZ(), guard.area.maxX(), guard.area.maxZ()));
+        }
         map.put("bron", kit.weapon());
         if (!Bukkit.getPluginManager().isPluginEnabled("AxonGuns") && kit.weapon().toLowerCase(Locale.ROOT).startsWith("qa:")) {
             // bez AxonGuns w ręce zostaje broń QualityArmory (strzela wtedy z kuszy)
@@ -568,7 +679,7 @@ public final class GuardService implements Listener {
         map.put("zasieg", kit.range());
         map.put("celnosc", kit.accuracy());
         map.put("cele", kit.targets());
-        map.put("chodzi", kit.walks());
+        map.put("chodzi", !guard.trader());
         map.put("promien-chodzenia", kit.walkRadius());
         map.put("uprawia", kit.farms());
         map.put("spi", kit.sleeps());
@@ -607,9 +718,11 @@ public final class GuardService implements Listener {
     private void skin(Object npc, Kit kit) throws ReflectiveOperationException {
         Object skin = trait(npc, "net.citizensnpcs.trait.SkinTrait");
         trySet(skin, "setFetchDefaultSkin", boolean.class, false);
-        if (!kit.skinTexture().isBlank() && !kit.skinSignature().isBlank()) {
+        String texture = bundled(kit) ? scrapperSkin.value : kit.skinTexture();
+        String signature = bundled(kit) ? scrapperSkin.signature : kit.skinSignature();
+        if (!texture.isBlank() && !signature.isBlank()) {
             call(skin, "setSkinPersistent", new Class<?>[]{String.class, String.class, String.class},
-                    kit.id(), kit.skinSignature(), kit.skinTexture());
+                    kit.id(), signature, texture);
         } else if (!kit.skinName().isBlank()) {
             call(skin, "setSkinName", new Class<?>[]{String.class}, kit.skinName());
         }

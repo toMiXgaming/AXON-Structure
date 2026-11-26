@@ -21,7 +21,7 @@ class TierConfigTest {
 
     private static CrateClass crate(String id, CrateClass.Kind kind) {
         CrateClass.ContainerSpec spec = kind == CrateClass.Kind.MODEL
-                ? new CrateClass.ContainerSpec("", 30, -1, "", 1, 0.9f, 1f, 0, 0) : null;
+                ? new CrateClass.ContainerSpec("", 30, -1, "", 1, 0.9f, 1f, 0) : null;
         return new CrateClass(id, id, kind, "", kind == CrateClass.Kind.MODEL ? "axon:x" : "", 1, List.of(), spec);
     }
 
@@ -130,7 +130,7 @@ class TierConfigTest {
             sum += scaled;
         }
         assertEquals(6.5, sum / (double) n, 0.01);
-        assertEquals(1, tier.scale(1, 64, random), "1 HQM, korpus, karta – bez mnożenia");
+        assertEquals(1, tier.scale(1, 64, random), "1 HQM, korpus – bez mnożenia");
         assertEquals(2, tier.scale(2, 1, random), "niestackowalne bez zmian");
         assertEquals(64, tier.scale(60, 64, random), "nie więcej niż maksymalny stos");
         assertEquals(5, TierConfig.Tier.NONE.scale(5, 64, random));
