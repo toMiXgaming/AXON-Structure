@@ -311,7 +311,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
                 Math.max(1, config.getLong("odswiezanie.co-ile-minut", 20)) * 60_000L,
                 config.getInt("odswiezanie.blokada-gdy-gracz-blizej-niz", 32),
                 config.getBoolean("odswiezanie.zastepuj-pelne", false),
-                config.getBoolean("loot.puste", true)));
+                config.getBoolean("loot.puste", false)));
 
         containers.configure(new ContainerService.Settings(
                 Math.max(1, config.getLong("pojemniki.odnowienie-minut", 10)) * 60_000L,

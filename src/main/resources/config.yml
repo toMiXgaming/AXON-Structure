@@ -415,10 +415,9 @@ gui:
   wymagaj-paczki: true
 
 loot:
-  # Loot jeszcze nieustalony: true = skrzynie i beczki stoją w strukturach, ale są puste, skrzynia zrzutu spada pusta
-  # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z łupem nie ma. Tabele (pule:, klasy:, loot
-  # w zestawach strażników) zostają niżej na później – gdy będą gotowe, ustaw false i /struktury przeladuj.
-  puste: true
+  # false = skrzynie, beczki, zrzuty i zabici strażnicy dają loot z tabel niżej (pule:, klasy:, loot w zestawach).
+  # true = wszystko stoi, ale jest puste (np. na czas testów) – po zmianie /struktury przeladuj.
+  puste: false
 
 # ------------------------------------------------------------
 #  POJEMNIKI – skrzynie i beczki bez prawdziwego bloku: model z paczki zasobów serwera (QualityArmory-texturepack,
