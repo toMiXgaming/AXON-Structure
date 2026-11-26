@@ -108,6 +108,14 @@ public final class PowerPlantStructure implements StructureDefinition {
             coalYard();
             conveyor();
             yardDetails();
+            // Portiernia, wejście do hali, środek hali, kotłownia i tylny plac.
+            MeliniarzMarkers.add(bp, 16, 1, 8, "west");
+            MeliniarzMarkers.add(bp, 24, 1, 31, "west");
+            MeliniarzMarkers.add(bp, 43, 1, 37, "west");
+            MeliniarzMarkers.add(bp, 52, 1, 34, "west");
+            MeliniarzMarkers.add(bp, 55, 1, 47, "north");
+            MeliniarzMarkers.add(bp, 35, 1, 15, "north");
+            MeliniarzMarkers.add(bp, 70, 1, 47, "south");
             return bp;
         }
 

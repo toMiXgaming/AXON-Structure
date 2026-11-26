@@ -154,6 +154,14 @@ public final class MineStructure implements StructureDefinition {
             weeds();
             lifeSigns();
             oreVeins();
+            // Brama, nadszybie, maszynownia, podszybie i chodnik pod ziemią.
+            MeliniarzMarkers.add(bp, 37, G + 1, 8, "north");
+            MeliniarzMarkers.add(bp, 31, G + 1, 33, "north");
+            MeliniarzMarkers.add(bp, 55, G + 1, 40, "west");
+            MeliniarzMarkers.add(bp, 44, G + UY, 35, "west");
+            MeliniarzMarkers.add(bp, 61, G + UY, 36, "west");
+            MeliniarzMarkers.add(bp, 21, G + 1, 24, "north");
+            MeliniarzMarkers.add(bp, 47, G + UY, 38, "west");
             return bp;
         }
 
