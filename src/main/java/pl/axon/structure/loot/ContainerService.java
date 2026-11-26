@@ -120,18 +120,12 @@ public final class ContainerService implements Listener {
             4000L);
     private BukkitTask task;
     private int commandCounter;
-    private AccessCardService cards;
 
     public ContainerService(JavaPlugin plugin, CrateService crates, StructureLibrary library, InstanceStore store) {
         this.plugin = plugin;
         this.crates = crates;
         this.library = library;
         this.store = store;
-    }
-
-    /** Karty dostępu zużywane przy pojemnikach z {@code karta-poziom}. */
-    public void cards(AccessCardService cards) {
-        this.cards = cards;
     }
 
     public void configure(Settings settings) {
@@ -1004,9 +998,6 @@ public final class ContainerService implements Listener {
             case INTACT -> actionBar(player, "§7Najpierw rozbij: §fLPM§7.");
             case CLOSED -> {
                 if (spot.inventory == null) {
-                    if (!useCard(player, spot)) {
-                        return;
-                    }
                     spot.inventory = newInventory(spot);
                     if (!crates.emptyLoot()) {
                         spot.crate.fill(spot.inventory, random); // przy pierwszym otwarciu, nie da się podejrzeć z daleka
@@ -1032,21 +1023,6 @@ public final class ContainerService implements Listener {
         }
         actionBar(player, "§c§lZABLOKOWANA §7jeszcze §f"
                 + CrateLockMath.countdown(CrateLockMath.remainingMillis(spot.lockedUntil, now)));
-        return true;
-    }
-
-    /** Pierwsze otwarcie pojemnika z {@code karta-poziom} zużywa jedną kartę; potem otwiera się już bez niej. */
-    private boolean useCard(Player player, ContainerSpot spot) {
-        int level = spot.crate.container().cardLevel();
-        if (level <= 0 || cards == null) {
-            return true;
-        }
-        if (!cards.consume(player, level)) {
-            actionBar(player, "§c§lBRAK KARTY §7potrzebna: " + LootConfig.color(AccessCardMath.displayName(AccessCardMath.idOf(level)))
-                    + " §7(masz poziom §f" + cards.bestLevel(player) + "§7)");
-            return false;
-        }
-        actionBar(player, "§a§lKARTA ZUŻYTA §7otwieram " + spot.crate.displayName());
         return true;
     }
 

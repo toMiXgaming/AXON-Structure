@@ -55,7 +55,7 @@ Każdy wiersz musi mieć dokładnie `szerokość` bloków. Wiersze z samym powie
 Wszystko idzie do sekcji `skrzynie:` w formacie `x y z kierunek pula` (kierunek `north/south/east/west`, w `ramki:` także `up/down`).
 
 - **Zwykła skrzynia albo beczka**: dowolna pula z `pule:` w `config.yml` (`plac`, `parter`, `lada`, `zaplecze`, `paliwo`, `magazyn`, ...). Blok pod punktem plugin zeruje, skrzynię stawia odświeżanie. Lepsze skrzynie chowamy za parkourem albo pod ziemią.
-- **Ramka z kartą**: sekcja `ramki:`, ten sam format, ramka wisi na bloku po przeciwnej stronie niż `kierunek`.
+- **Ramka z przedmiotem**: sekcja `ramki:`, ten sam format, ramka wisi na bloku po przeciwnej stronie niż `kierunek`.
 - **NPC**: pula `npc-<zestaw>`, gdzie zestaw jest w `straznicy.zestawy` (`szabrownik`, `zolnierz`, `ochroniarz`, `osadnik`, `ocalaly`, `spiacy`). Punkt to blok pod stopami NPC, dwie kratki powietrza nad nim.
 - **Zrzut zaopatrzenia**: pula `zrzut`, na otwartym placu lub dachu z czystym niebem (skrzynia spada z 60 bloków). Zwykłe odświeżanie go pomija.
 - **Stanowiska** (`punkt-*`) leżą w prawdziwym bloku, który zostaje (w Pythonie `s.point`): `punkt-sklep-<nazwa>` (sklep z `stanowiska.sklepy`), `punkt-automat`, `punkt-radio`, `punkt-ruda` (blok rudy w kopalni), `punkt-zwierze-<typ>` (`kura`, `krowa`, `cat`, ...). Oaza ma swoje: `punkt-handel`, `punkt-sklep`, `punkt-depozyt`, `punkt-zlecenia`, `punkt-tarcza`, `punkt-strzelnica`, `punkt-handlarz`, a czarny rynek `punkt-czarny-rynek` i `punkt-czarny-rynek-lada`.

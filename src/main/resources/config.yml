@@ -100,7 +100,7 @@ meble:
 
 ochrona:
   # Gracze nie mogą niszczyć ani budować w obrębie struktury (cała wysokość świata, też pod ziemią).
-  # Wolno: otwierać skrzynie, drzwi, przyciski i zabierać karty z ramek. PvP działa normalnie.
+  # Wolno: otwierać skrzynie, drzwi, przyciski i zabierać łup z ramek. PvP działa normalnie.
   # Admini z uprawnieniem axonstructure.bypass (domyślnie OP) mogą wszystko.
   wlaczona: true
   # Ile kratek wokół obrysu struktury też jest chronione.
@@ -416,7 +416,7 @@ gui:
 
 loot:
   # Loot jeszcze nieustalony: true = skrzynie i beczki stoją w strukturach, ale są puste, skrzynia zrzutu spada pusta
-  # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z kartami nie ma. Tabele (pule:, klasy:, loot
+  # (i znika po czasie), zabici strażnicy nic nie dają, a ramek z łupem nie ma. Tabele (pule:, klasy:, loot
   # w zestawach strażników) zostają niżej na później – gdy będą gotowe, ustaw false i /struktury przeladuj.
   puste: true
 
@@ -494,9 +494,7 @@ pojemniki:
   #   hp: punkty życia beczki (domyślnie niszczenie.hp-domyslne); obrażenia przedmiotów w niszczenie:
   #   odnowienie-minut: własny czas odnowienia klasy
   #   blokada-minut: ile minut po odnowieniu nie da się otworzyć (odliczanie nad modelem); 0 = bez blokady
-  #   karta-poziom: karta dostępu zużywana przy pierwszym otwarciu (1 niebieska, 2 czerwona, 3 zielona); 0 = bez
   #   od-dnia: przy pozycji lootu – wypada dopiero od tego dnia wipe'u (jak w loot.yml AxonItems)
-  #   loot "karta:<kolor>": prawdziwa karta dostępu (niebieska + czerwona w stole = zielona)
   #   ogloszenie: komunikat na czacie przy odnowieniu ({nazwa}, {miejsce}); "" = bez komunikatu
   #   dlugosc: ile bloków zajmuje (skrzynia wojskowa: 2); szerokosc / wysokosc: klikalny obszar w blokach
   klasy:
@@ -661,8 +659,6 @@ pojemniki:
         - {przedmiot: "axon:repair_kit", ilosc: "1", szansa: 15}
         - {przedmiot: "axon:body_smg", ilosc: "1", szansa: 3, od-dnia: 3}
         - {przedmiot: "axon:body_semi", ilosc: "1", szansa: 3, od-dnia: 3}
-        # Niebieska karta dostępu (poziom 1). Z czerwoną łączy się w stole w zieloną.
-        - {przedmiot: "karta:niebieska", szansa: 6}
 
     skrzynka-jedzenie:
       nazwa: "&aSkrzynka z jedzeniem"
@@ -708,8 +704,6 @@ pojemniki:
       loot:
         # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
         - {przedmiot: "tabela:skrzynia_wojskowa", szansa: 100}
-        # Czerwona karta dostępu (poziom 2). Z niebieską łączy się w stole w zieloną.
-        - {przedmiot: "karta:czerwona", szansa: 12}
 
     skrzynia-elitarna:
       nazwa: "&4Skrzynia elitarna"
@@ -720,8 +714,6 @@ pojemniki:
       ogloszenie: "&4{nazwa} &7odnowiła się: &f{miejsce}"
       # Po odnowieniu 15 minut kłódki (odliczanie nad modelem, ogłoszenie po odblokowaniu).
       blokada-minut: 15
-      # Pierwsze otwarcie zużywa zieloną kartę dostępu (poziom 3).
-      karta-poziom: 3
       min-przedmiotow: 3
       loot:
         # Cała tabela z loot.yml w AxonItems: tam są szanse i dni wipe'u (od-dnia).
@@ -891,9 +883,6 @@ pule:
   lada:
     skrzynka-jedzenie: 70
     brazowa: 15
-    brak: 15
-  karta:
-    zielona-karta: 85
     brak: 15
   sklep:
     skrzynka-jedzenie: 40
@@ -1214,7 +1203,7 @@ pule:
 
 # ------------------------------------------------------------
 #  KLASY SKRZYŃ
-#  blok: skrzynia | beczka | ramka (ramka = przedmiot w ramce, np. karta dostępu)
+#  blok: skrzynia | beczka | ramka (ramka = przedmiot w ramce)
 #  dekoracja: blok stawiany na wieku (np. czerwona świeczka na beczce paliwa), "" = brak
 #  model: model przedmiotu z paczki zasobów rysowany zamiast bloku (np. "axon:zrzut"), "" = zwykły blok
 #  min-przedmiotow: gdy nic nie wylosuje się z szans, dobierz tyle losowych pozycji
@@ -1240,7 +1229,7 @@ klasy:
       - {przedmiot: iron_nugget, szansa: 25, nazwa: "&7Śrubki"}
       - {przedmiot: potato, szansa: 12}
       - {przedmiot: bread, szansa: 8}
-  # Skrzynie, beczki i szafki są w pojemniki.klasy (modele bez bloku). Tutaj zostają zrzut i karta w ramce.
+  # Skrzynie, beczki i szafki są w pojemniki.klasy (modele bez bloku). Tutaj zostaje zrzut.
   # Klasa o tym samym id w pojemniki.klasy zastępuje tę stąd.
 
   # Model z paczki QualityArmory-texturepack (axon:zrzut); beczka w środku jest niewidoczna.
@@ -1259,13 +1248,6 @@ klasy:
       - {przedmiot: crossbow, ilosc: "1", szansa: 25}
       - {przedmiot: gunpowder, ilosc: "4-10", szansa: 50}
       - {przedmiot: cooked_beef, ilosc: "6-12", szansa: 70, nazwa: "&fRacja żywnościowa"}
-
-  zielona-karta:
-    nazwa: "&aZielona karta dostępu"
-    blok: ramka
-    loot:
-      # Prawdziwa karta (znacznik w przedmiocie, zwykły papier jej nie podrobi). Otwiera skrzynię elitarną.
-      - {przedmiot: "karta:zielona", szansa: 100}
 
 # ---------------------------------------------------------------------------
 # Wraki pojazdów PRL przy drogach

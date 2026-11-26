@@ -45,7 +45,7 @@ import java.util.UUID;
 
 /**
  * Gracze nie mogą niszczyć ani rozbudowywać struktur. Wolno otwierać skrzynie, drzwi i przyciski, zabierać
- * przedmioty z ramek (karty dostępu) i kopać rudy w żyłach kopalni ({@code punkt-ruda}). PvP nie jest tu w ogóle ruszane.
+ * przedmioty z ramek i kopać rudy w żyłach kopalni ({@code punkt-ruda}). PvP nie jest tu w ogóle ruszane.
  * Priorytet LOWEST: zdarzenie jest anulowane, zanim zobaczą je inne pluginy (np. rdzeń działki AxonPlot,
  * który z ignoreCancelled nie założy wtedy działki).
  */
