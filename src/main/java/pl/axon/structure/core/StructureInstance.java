@@ -10,6 +10,7 @@ public final class StructureInstance {
     private final int centerZ;
     private final boolean automatic;
     private long lastRefresh;
+    public long lastNpcRotation;
     // A farm is reset on the next 90-minute boundary after player activity.
     public java.util.List<String> farmNames = java.util.List.of();
     public java.util.List<String> previousFarmNames = java.util.List.of();

@@ -178,8 +178,13 @@ public final class ContainerService implements Listener {
         return owner != null && owner.farmCycle() ? owner : null;
     }
 
+    private boolean usesStructureRotation(ContainerSpot spot) {
+        return farm(spot) != null || (spot.owner != null && crates.usesNpcRotation(spot.owner));
+    }
+
     private void snapshot(ContainerSpot spot) {
-        StructureInstance owner = farm(spot);
+        StructureInstance owner = spot.owner == null ? null : store.get(spot.owner);
+        if (!usesStructureRotation(spot)) return;
         if (owner == null) return;
         var data = new org.bukkit.configuration.MemoryConfiguration();
         data.set("stan", spot.state.name());
@@ -195,7 +200,7 @@ public final class ContainerService implements Listener {
     }
 
     private void restore(ContainerSpot spot) {
-        StructureInstance owner = farm(spot);
+        StructureInstance owner = spot.owner == null ? null : store.get(spot.owner);
         if (owner == null) return;
         var data = owner.farmContainers.get(spot.key);
         if (data == null) return;
@@ -406,7 +411,7 @@ public final class ContainerService implements Listener {
         if (crate == null) {
             spot.state = ContainerSpot.State.WAITING;
             spot.crate = null;
-            spot.respawnAt = farm(spot) == null ? now + settings.respawnMillis() : Long.MAX_VALUE;
+            spot.respawnAt = usesStructureRotation(spot) ? Long.MAX_VALUE : now + settings.respawnMillis();
             snapshot(spot); // wypadło „brak”: spróbujemy przy następnym odnowieniu
             return;
         }
@@ -442,7 +447,11 @@ public final class ContainerService implements Listener {
             }
             switch (spot.state) {
                 case WAITING -> {
-                    if (now >= spot.respawnAt) {
+                    boolean sharedRotation = usesStructureRotation(spot);
+                    if (!sharedRotation && spot.respawnAt == Long.MAX_VALUE) {
+                        spot.respawnAt = now + settings.respawnMillis();
+                    }
+                    if (now >= spot.respawnAt && (!sharedRotation || spot.respawnAt == 0)) {
                         respawn(spot, now, spot.respawnAt == 0, spot.respawnAt != 0);
                     }
                 }
@@ -452,7 +461,7 @@ public final class ContainerService implements Listener {
                     }
                 }
                 case CLOSED -> {
-                    if (farm(spot) == null && spot.emptiedAt > 0 && now - spot.emptiedAt >= respawnOf(spot.crate) && !playerNearby(spot)) {
+                    if (!usesStructureRotation(spot) && spot.emptiedAt > 0 && now - spot.emptiedAt >= respawnOf(spot.crate) && !playerNearby(spot)) {
                         despawnEntities(spot);
                         spot.state = ContainerSpot.State.WAITING;
                         respawn(spot, now, true, true);
@@ -557,7 +566,7 @@ public final class ContainerService implements Listener {
     private void vanish(ContainerSpot spot) {
         closeViewers(spot);
         despawnEntities(spot);
-        spot.respawnAt = farm(spot) == null ? spot.brokenAt + respawnOf(spot.crate) : Long.MAX_VALUE;
+        spot.respawnAt = usesStructureRotation(spot) ? Long.MAX_VALUE : spot.brokenAt + respawnOf(spot.crate);
         spot.state = ContainerSpot.State.WAITING;
         spot.inventory = null;
         spot.crate = null;
@@ -1058,8 +1067,9 @@ public final class ContainerService implements Listener {
         ContainerSpot spot = inventory.getHolder() instanceof ContainerSpot model ? model : null;
         if (spot == null && !(inventory.getHolder() instanceof org.bukkit.block.Container)
                 && !(inventory.getHolder() instanceof org.bukkit.block.DoubleChest)) return;
-        StructureInstance owner = spot != null ? farm(spot) : crates.farmContainerAt(inventory.getLocation());
-        if (owner == null) return;
+        StructureInstance owner = spot != null && spot.owner != null
+                ? store.get(spot.owner) : crates.farmContainerAt(inventory.getLocation());
+        if (owner == null || (!owner.farmCycle() && !crates.usesNpcRotation(owner.id()))) return;
         Object containerKey = spot == null ? inventory.getLocation() : spot;
         if (containerKey == null) return;
         Runnable previous = pendingLoot.remove(containerKey);

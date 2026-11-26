@@ -56,6 +56,7 @@ public final class CrateService {
     private BukkitTask task;
     private String dropPool = "";
     private ContainerService containers;
+    private Set<String> npcRotationOwners = Set.of();
 
     public CrateService(JavaPlugin plugin, StructureLibrary library, InstanceStore store) {
         this.plugin = plugin;
@@ -105,10 +106,56 @@ public final class CrateService {
         }
     }
 
+    public void setNpcRotationOwners(Set<String> instanceIds) {
+        npcRotationOwners = Set.copyOf(instanceIds);
+    }
+
+    boolean usesNpcRotation(String instanceId) {
+        return npcRotationOwners.contains(instanceId);
+    }
+
+    /** Wątek serwera. Zwraca początek nowego Rzutu albo 0, gdy nie można go wykonać. */
+    public long refreshForNpcRotation(String id, long previousStart, long requestedStart) {
+        StructureInstance instance = store.get(id);
+        if (instance == null || !usesNpcRotation(id) || requestedStart <= previousStart) {
+            return 0;
+        }
+        if (instance.lastNpcRotation > previousStart) {
+            return instance.lastNpcRotation;
+        }
+        Blueprint blueprint = library.get(instance.structureId());
+        World world = Bukkit.getWorld(instance.world());
+        if (blueprint == null || world == null) {
+            return 0;
+        }
+        loadCrateChunks(instance, blueprint, world);
+        if (refresh(instance, true) < 0) {
+            return 0;
+        }
+        instance.lastNpcRotation = requestedStart;
+        store.save();
+        return requestedStart;
+    }
+
+    private void loadCrateChunks(StructureInstance instance, Blueprint blueprint, World world) {
+        Set<Long> loaded = new HashSet<>();
+        for (Blueprint.SpawnPoint point : blueprint.spawnPoints()) {
+            if (isMarker(point.pool())) continue;
+            int[] position = instance.placement().toWorld(point.pos().x(), point.pos().y(), point.pos().z());
+            int x = position[0] >> 4;
+            int z = position[2] >> 4;
+            long key = ((long) x << 32) | (z & 0xffffffffL);
+            if (loaded.add(key) && !world.isChunkLoaded(x, z)) {
+                world.getChunkAt(x, z);
+            }
+        }
+    }
+
     private void tick() {
         long now = System.currentTimeMillis();
         boolean changed = false;
         for (StructureInstance instance : store.all()) {
+            if (usesNpcRotation(instance.id())) continue;
             boolean farm = instance.farmCycle();
             if (farm ? instance.renewalDue == 0 || now < instance.renewalDue
                     : now - instance.lastRefresh() < settings.intervalMillis()) {

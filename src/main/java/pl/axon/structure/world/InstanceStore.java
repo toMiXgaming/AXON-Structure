@@ -46,6 +46,7 @@ public final class InstanceStore {
                     s.getInt("x"), s.getInt("y"), s.getInt("z"), s.getInt("obrot"));
             StructureInstance instance = new StructureInstance(id, s.getString("struktura", "?"), placement,
                     s.getInt("srodek-x"), s.getInt("srodek-z"), s.getBoolean("auto"), s.getLong("odswiezono"));
+            instance.lastNpcRotation = s.getLong("rzut-npc");
             List<Integer> area = s.getIntegerList("obrys");
             if (area.size() == 4) {
                 instance.footprint(new Box(area.get(0), area.get(1), area.get(2), area.get(3)));
@@ -83,15 +84,18 @@ public final class InstanceStore {
             yaml.set(path + "srodek-z", instance.centerZ());
             yaml.set(path + "auto", instance.automatic());
             yaml.set(path + "odswiezono", instance.lastRefresh());
+            if (instance.lastNpcRotation > 0) {
+                yaml.set(path + "rzut-npc", instance.lastNpcRotation);
+            }
             if (instance.farmCycle()) {
                 yaml.set(path + "cykl.obecni", instance.residentsPresent);
                 yaml.set(path + "cykl.imiona", instance.farmNames);
                 yaml.set(path + "cykl.poprzednie-imiona", instance.previousFarmNames);
                 yaml.set(path + "cykl.odnowienie", instance.renewalDue);
                 yaml.set(path + "cykl.zabici", List.copyOf(instance.missingGuards));
-                instance.farmContainers.forEach((key, data) ->
-                        yaml.createSection(path + "cykl.pojemniki." + key, data.getValues(false)));
             }
+            instance.farmContainers.forEach((key, data) ->
+                    yaml.createSection(path + "cykl.pojemniki." + key, data.getValues(false)));
             Box box = instance.footprint();
             if (box != null) {
                 yaml.set(path + "obrys", List.of(box.minX(), box.minZ(), box.maxX(), box.maxZ()));
