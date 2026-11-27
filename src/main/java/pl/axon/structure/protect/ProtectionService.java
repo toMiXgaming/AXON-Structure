@@ -90,9 +90,16 @@ public final class ProtectionService {
         if (!settings.enabled()) {
             return null;
         }
-        for (StructureInstance instance : store.inWorld(world.getName())) {
-            Box area = area(instance);
-            if (area != null && area.contains(x, z)) {
+        // wołane przy każdym przepływie wody, ruchu tłoka i budowaniu: bez listy pośredniej i bez nowych obiektów Box
+        String worldName = world.getName();
+        int margin = settings.margin();
+        for (StructureInstance instance : store.all()) {
+            Box footprint = instance.footprint();
+            if (footprint == null || !instance.world().equals(worldName)) {
+                continue;
+            }
+            if (x >= footprint.minX() - margin && x <= footprint.maxX() + margin
+                    && z >= footprint.minZ() - margin && z <= footprint.maxZ() + margin) {
                 return instance;
             }
         }

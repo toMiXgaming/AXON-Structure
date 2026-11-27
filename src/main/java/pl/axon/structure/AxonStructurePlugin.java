@@ -154,7 +154,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         safely("zrzuty", airdrops == null ? null : airdrops::stop);
         safely("skrzynie", crates == null ? null : crates::stop);
         safely("pojemniki", containers == null ? null : containers::stop);
-        safely("dane.yml", store == null ? null : store::save);
+        safely("dane.yml", store == null ? null : store::close);
     }
 
     private void safely(String what, Runnable action) {
