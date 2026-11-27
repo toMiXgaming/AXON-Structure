@@ -97,6 +97,7 @@ public final class ContainerService implements Listener {
     private final InstanceStore store;
     private final Random random = new Random();
     private final Map<String, ContainerSpot> spots = new LinkedHashMap<>();
+    private LootStats stats;
     private final Map<String, Map<Long, List<ContainerSpot>>> byChunk = new HashMap<>();
     private final Map<UUID, ContainerSpot> byEntity = new HashMap<>();
     private record WarnedContainer(Object key, UUID speaker) {}
@@ -146,6 +147,18 @@ public final class ContainerService implements Listener {
         this.crates = crates;
         this.library = library;
         this.store = store;
+    }
+
+    /** Statystyki lootu ({@code statystyki.yml}); null = nie liczymy. */
+    public void stats(LootStats stats) {
+        this.stats = stats;
+    }
+
+    private void record(Player player, ContainerSpot spot) {
+        if (stats != null && spot.fixedClass == null) {
+            stats.record(player, LootStats.source("pojemnik", tierOf(spot), spot.roadside),
+                    java.util.Arrays.asList(spot.inventory.getContents()));
+        }
     }
 
     public void configure(Settings settings) {
@@ -363,7 +376,9 @@ public final class ContainerService implements Listener {
     /** Linie do {@code /struktury pojemniki}. */
     public List<String> status() {
         int road = 0, structure = 0, intact = 0, closed = 0, broken = 0, waiting = 0, dead = 0, shown = 0;
+        Map<Integer, Integer> byTier = new java.util.TreeMap<>();
         for (ContainerSpot spot : spots.values()) {
+            byTier.merge(tierOf(spot).level(), 1, Integer::sum);
             if (spot.roadside) {
                 road++;
             } else if (spot.owner != null) {
@@ -391,6 +406,12 @@ public final class ContainerService implements Listener {
         lines.add("§7Stoi teraz we wczytanych chunkach: §f" + shown + "§7. Odnowienie co §f"
                 + settings.respawnMillis() / 60_000L + " min§7, rozbita znika po §f" + settings.brokenMillis() / 60_000L
                 + " min§7, pula przy drogach: §f" + settings.roadPool());
+        if (crates.loot().tiers().enabled() && !byTier.isEmpty()) {
+            StringBuilder tiers = new StringBuilder("§7Tiery miejsc: ");
+            byTier.forEach((level, n) -> tiers.append(level == 0 ? "bez" : crates.loot().tiers().level(level).label())
+                    .append(" §f").append(n).append("§7, "));
+            lines.add(tiers.substring(0, tiers.length() - 2));
+        }
         if (!AxonItemsBridge.available()) {
             lines.add("§cAxonItems nie działa: przedmioty axon:... w lootcie są pomijane.");
         }
@@ -401,9 +422,23 @@ public final class ContainerService implements Listener {
 
     private CrateClass roll(ContainerSpot spot) {
         CrateClass crate = spot.fixedClass != null ? crates.loot().crateClass(spot.fixedClass)
-                : crates.pickClass(spot.pool);
+                : crates.pickClass(spot.pool, tierOf(spot));
         // klasy z prawdziwym blokiem stawia tylko CrateService; tutaj liczą się jak „brak”
         return crate != null && crate.kind() == CrateClass.Kind.MODEL ? crate : null;
+    }
+
+    /**
+     * Tier miejsca: przy drodze – {@code tiery.przy-drogach}, w strukturze – tier tej struktury, z komendy – bez.
+     * Liczony przy każdym losowaniu, więc {@code /struktury przeladuj} od razu zmienia loot.
+     */
+    TierConfig.Tier tierOf(ContainerSpot spot) {
+        if (spot.fixedClass != null) {
+            return TierConfig.Tier.NONE; // pojemnik testowy z komendy: loot dokładnie jak w klasie
+        }
+        if (spot.roadside) {
+            return crates.loot().tiers().roadside();
+        }
+        return crates.tierOf(spot.owner);
     }
 
     private void activate(ContainerSpot spot, CrateClass crate) {
@@ -453,7 +488,8 @@ public final class ContainerService implements Listener {
             Blueprint bp = instance == null ? null : library.get(instance.structureId());
             place = bp == null ? "w strukturze" : bp.name();
         }
-        String text = crate.container().announce().replace("{nazwa}", crate.displayName()).replace("{miejsce}", place);
+        String text = crate.container().announce().replace("{nazwa}", crate.displayName()).replace("{miejsce}", place)
+                .replace("{tier}", tierOf(spot).label());
         for (Player player : world.getPlayers()) {
             player.sendMessage(text);
         }
@@ -907,7 +943,8 @@ public final class ContainerService implements Listener {
         removeHpBar(spot);
         spot.inventory = newInventory(spot);
         if (!crates.emptyLoot()) {
-            spot.crate.fill(spot.inventory, random); // loot losuje się w chwili rozbicia
+            spot.crate.fill(spot.inventory, random, tierOf(spot)); // loot losuje się w chwili rozbicia
+            record(player, spot);
         }
         snapshot(spot);
         Entity display = spot.display == null ? null : Bukkit.getEntity(spot.display);
@@ -1030,7 +1067,8 @@ public final class ContainerService implements Listener {
                 if (spot.inventory == null) {
                     spot.inventory = newInventory(spot);
                     if (!crates.emptyLoot()) {
-                        spot.crate.fill(spot.inventory, random); // przy pierwszym otwarciu, nie da się podejrzeć z daleka
+                        spot.crate.fill(spot.inventory, random, tierOf(spot)); // przy pierwszym otwarciu, nie da się podejrzeć z daleka
+                        record(player, spot);
                     }
                 }
                 snapshot(spot);

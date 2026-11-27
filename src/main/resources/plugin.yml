@@ -10,7 +10,7 @@ softdepend: [WorldGuard, AxonNPC, AxonGuns, Citizens, Sentinel, QualityArmory, V
 commands:
   struktury:
     description: Wklejanie struktur w stylu Rusta.
-    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|meble|najblizsza|usun|klasy|pojemniki|pojemnik|zrzut|straznicy|oaza|zycie|wrak|przeladuj]
+    usage: /struktury [lista|wklej|generuj|cofnij|odswiez|meble|najblizsza|usun|klasy|tiery|pojemniki|pojemnik|zrzut|straznicy|oaza|zycie|wrak|przeladuj]
     aliases: [axs]
     permission: axonstructure.use
   oaza:

@@ -85,7 +85,7 @@ final class JobScreen extends OasisScreen {
             boolean hover = row(c, x, y, w, first + i, done);
             c.text(x + 6, y + 6, GuiCanvas.fit(job.amount() + "x " + name(job.item()), COL_REWARD - 12),
                     done ? GuiCanvas.TEXT_DIM : GuiCanvas.TEXT);
-            c.text(x + COL_REWARD, y + 6, GuiCanvas.fit(oasis.vault().format(job.reward()), 60), GuiCanvas.GOLD);
+            c.text(x + COL_REWARD, y + 6, GuiCanvas.fit(board.rewardText(job), 60), GuiCanvas.GOLD);
             c.text(x + COL_HAVE, y + 6, done ? "-" : have + "/" + job.amount(),
                     done ? GuiCanvas.TEXT_MUTED : have >= job.amount() ? GuiCanvas.GREEN : GuiCanvas.TEXT_DIM);
             if (done) {

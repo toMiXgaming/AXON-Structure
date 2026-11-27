@@ -21,6 +21,8 @@ import pl.axon.structure.core.StructureInstance;
 import pl.axon.structure.loot.CrateClass;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
+import pl.axon.structure.loot.LootStats;
+import pl.axon.structure.loot.TierConfig;
 import pl.axon.structure.world.InstanceStore;
 
 import java.lang.reflect.Field;
@@ -111,6 +113,7 @@ public final class GuardService implements Listener {
     private final StructureLibrary library;
     private final InstanceStore store;
     private final CrateService crates;
+    private LootStats stats;
     private final Random random = new Random();
     private final Map<String, Guard> guards = new HashMap<>();
     private final Map<UUID, Guard> byEntity = new HashMap<>();
@@ -134,6 +137,11 @@ public final class GuardService implements Listener {
         this.library = library;
         this.store = store;
         this.crates = crates;
+    }
+
+    /** Statystyki lootu ({@code statystyki.yml}); null = nie liczymy. */
+    public void stats(LootStats stats) {
+        this.stats = stats;
     }
 
     public void configure(Settings settings) {
@@ -416,7 +424,13 @@ public final class GuardService implements Listener {
         CrateClass loot = guard.kit.lootClass().isBlank() || crates.emptyLoot() ? null
                 : crates.loot().crateClass(guard.kit.lootClass());
         if (loot != null) {
-            event.getDrops().addAll(loot.roll(random));
+            // tier struktury: więcej sztuk w stosach; dodatki tieru są tylko w pojemnikach
+            TierConfig.Tier tier = crates.tierOf(guard.instanceId);
+            List<ItemStack> drops = loot.roll(random, tier.withoutExtras());
+            event.getDrops().addAll(drops);
+            if (stats != null) {
+                stats.record(event.getEntity().getKiller(), LootStats.source("npc", tier, false), drops);
+            }
         }
         StructureInstance owner = store.get(guard.instanceId);
         if (owner != null && owner.farmCycle() && event.getEntity().getKiller() != null) {

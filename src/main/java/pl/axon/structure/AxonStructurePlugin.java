@@ -14,6 +14,7 @@ import pl.axon.structure.loot.AirdropService;
 import pl.axon.structure.loot.ContainerService;
 import pl.axon.structure.loot.CrateService;
 import pl.axon.structure.loot.LootConfig;
+import pl.axon.structure.loot.LootStats;
 import pl.axon.structure.npc.GuardService;
 import pl.axon.structure.oasis.OasisService;
 import pl.axon.structure.command.OazaCommand;
@@ -49,6 +50,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
     private ContainerService containers;
     private AirdropService airdrops;
     private GuardService guards;
+    private LootStats lootStats;
     private OasisService oasis;
     private ShaderGui gui;
     private PasteService paster;
@@ -71,6 +73,12 @@ public final class AxonStructurePlugin extends JavaPlugin {
         crates.containers(containers);
         airdrops = new AirdropService(this, library, store, crates);
         guards = new GuardService(this, library, store, crates);
+        lootStats = new LootStats(this);
+        lootStats.load();
+        containers.stats(lootStats);
+        guards.stats(lootStats);
+        // co 5 minut, tylko gdy coś się zmieniło
+        getServer().getScheduler().runTaskTimer(this, lootStats::save, 20L * 300, 20L * 300);
         oasis = new OasisService(this, library, store, guards, airdrops);
         gui = new ShaderGui(this);
         oasis.gui(gui);
@@ -155,6 +163,7 @@ public final class AxonStructurePlugin extends JavaPlugin {
         safely("skrzynie", crates == null ? null : crates::stop);
         safely("pojemniki", containers == null ? null : containers::stop);
         safely("dane.yml", store == null ? null : store::save);
+        safely("statystyki.yml", lootStats == null ? null : lootStats::save);
     }
 
     private void safely(String what, Runnable action) {
@@ -307,6 +316,9 @@ public final class AxonStructurePlugin extends JavaPlugin {
             protection.syncAll();
         }
 
+        if (lootStats != null) {
+            lootStats.enabled(config.getBoolean("statystyki.wlaczone", true));
+        }
         crates.configure(LootConfig.load(config, getLogger()), new CrateService.Settings(
                 Math.max(1, config.getLong("odswiezanie.co-ile-minut", 20)) * 60_000L,
                 config.getInt("odswiezanie.blokada-gdy-gracz-blizej-niz", 32),
