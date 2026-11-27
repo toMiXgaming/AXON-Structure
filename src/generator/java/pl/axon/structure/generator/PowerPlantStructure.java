@@ -108,14 +108,14 @@ public final class PowerPlantStructure implements StructureDefinition {
             coalYard();
             conveyor();
             yardDetails();
-            // Portiernia, wejście do hali, środek hali, kotłownia i tylny plac.
+            // Para na zmianę w portierni oraz obsada obiektów przemysłowych.
             MeliniarzMarkers.add(bp, 16, 1, 8, "west");
+            MeliniarzMarkers.add(bp, 15, 1, 9, "north");
             MeliniarzMarkers.add(bp, 24, 1, 31, "west");
             MeliniarzMarkers.add(bp, 43, 1, 37, "west");
             MeliniarzMarkers.add(bp, 52, 1, 34, "west");
             MeliniarzMarkers.add(bp, 55, 1, 47, "north");
             MeliniarzMarkers.add(bp, 35, 1, 15, "north");
-            MeliniarzMarkers.add(bp, 70, 1, 47, "south");
             return bp;
         }
 
@@ -307,7 +307,8 @@ public final class PowerPlantStructure implements StructureDefinition {
             door(15, 1, 10, "iron_door", "north", "left", true);
             // biurko portiera
             f.desk(13, 1, 7, 13, 9, "spruce");
-            f.chair(14, 1, 8, "east", "spruce");
+            f.chair(14, 1, 9, "east", "spruce");
+            f.bed(15, 1, 6, "south", "brown");
             set(13, 2, 9, "lantern[hanging=false,waterlogged=false]");
             crate(16, 1, 6, "west", "parter");
             sign(14, 2, 11, "south", "PORTIER", "WYSZEDŁ", "WRÓCI", "");

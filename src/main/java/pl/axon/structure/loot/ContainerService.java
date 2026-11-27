@@ -27,12 +27,14 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -42,10 +44,13 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import pl.axon.structure.StructureLibrary;
 import pl.axon.structure.api.RoadsideSpot;
+import pl.axon.structure.api.StructureContainerEvent;
+import pl.axon.structure.api.StructureContainerEvent.Phase;
 import pl.axon.structure.core.Blueprint;
 import pl.axon.structure.core.StructureInstance;
 import pl.axon.structure.world.InstanceStore;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -99,6 +104,15 @@ public final class ContainerService implements Listener {
 
     // Finish a player's transaction before another viewer can change this same chest.
     private final Map<Object, Runnable> pendingLoot = new HashMap<>();
+    private final Map<UUID, CursorLoot> cursorLoot = new HashMap<>();
+
+    private record CursorLoot(Object key, ItemStack type, ArrayDeque<Take> takes) {}
+
+    private record Take(StructureInstance owner, Player player, Location at, UUID transaction, int amount) {
+        void report(Phase phase, int quantity) {
+            publish(owner, player, at, phase, transaction, quantity);
+        }
+    }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void warnAtContainer(org.bukkit.event.inventory.InventoryOpenEvent event) {
@@ -107,8 +121,14 @@ public final class ContainerService implements Listener {
         Inventory top = event.getInventory();
         if (!(top.getHolder() instanceof ContainerSpot || top.getHolder() instanceof org.bukkit.block.Container
                 || top.getHolder() instanceof org.bukkit.block.DoubleChest)) return;
-        StructureInstance owner = top.getHolder() instanceof ContainerSpot spot ? farm(spot) : crates.farmContainerAt(top.getLocation());
-        if (owner == null || !owner.scrapSite()) return;
+        ContainerSpot spot = top.getHolder() instanceof ContainerSpot model ? model : null;
+        StructureInstance owner = ownerOf(top, spot);
+        if (owner == null) return;
+        if (crates.usesNpcRotation(owner.id())) {
+            publish(owner, player, locationOf(top, spot, player), Phase.OPEN, null, 0);
+            return;
+        }
+        if (!owner.farmCycle() || !owner.scrapSite()) return;
         UUID speaker = pl.axon.structure.npc.GuardService.scrapChest(owner.id(), player, null, true);
         Object key = top.getHolder() instanceof ContainerSpot model ? model : top.getLocation();
         if (speaker != null && key != null) warnedContainers.put(player.getUniqueId(), new WarnedContainer(key, speaker));
@@ -757,6 +777,7 @@ public final class ContainerService implements Listener {
     }
 
     private void closeViewers(ContainerSpot spot) {
+        discardPending(spot);
         if (spot.inventory != null) {
             for (HumanEntity viewer : List.copyOf(spot.inventory.getViewers())) {
                 viewer.closeInventory();
@@ -1067,39 +1088,136 @@ public final class ContainerService implements Listener {
         ContainerSpot spot = inventory.getHolder() instanceof ContainerSpot model ? model : null;
         if (spot == null && !(inventory.getHolder() instanceof org.bukkit.block.Container)
                 && !(inventory.getHolder() instanceof org.bukkit.block.DoubleChest)) return;
-        StructureInstance owner = spot != null && spot.owner != null
-                ? store.get(spot.owner) : crates.farmContainerAt(inventory.getLocation());
+        StructureInstance owner = ownerOf(inventory, spot);
         if (owner == null || (!owner.farmCycle() && !crates.usesNpcRotation(owner.id()))) return;
         Object containerKey = spot == null ? inventory.getLocation() : spot;
         if (containerKey == null) return;
-        Runnable previous = pendingLoot.remove(containerKey);
-        if (previous != null) previous.run();
-        boolean collect = event.getAction() == org.bukkit.event.inventory.InventoryAction.COLLECT_TO_CURSOR;
-        if (!collect && event.getClickedInventory() != inventory) return;
-        boolean canTake = switch (event.getAction()) {
+        finishPending(containerKey);
+        var action = event.getAction();
+        boolean collect = action == org.bukkit.event.inventory.InventoryAction.COLLECT_TO_CURSOR;
+        boolean canTake = switch (action) {
             case PICKUP_ALL, PICKUP_SOME, PICKUP_HALF, PICKUP_ONE, MOVE_TO_OTHER_INVENTORY,
                  DROP_ALL_SLOT, DROP_ONE_SLOT, SWAP_WITH_CURSOR, HOTBAR_SWAP, HOTBAR_MOVE_AND_READD,
-                 COLLECT_TO_CURSOR -> true;
+                 COLLECT_TO_CURSOR -> collect || event.getRawSlot() >= 0 && event.getRawSlot() < inventory.getSize();
             default -> false;
         };
         ItemStack clicked = collect ? event.getCursor() : event.getCurrentItem();
-        if (!canTake || clicked == null || clicked.getType().isAir()) return;
-        ItemStack type = clicked.clone();
-        type.setAmount(1);
+        ItemStack type = canTake && clicked != null && !clicked.getType().isAir() ? clicked.asOne() : null;
+        var view = event.getView();
+        var carried = cursorSettlement(view, player, containerKey, event.getCursor());
+        if (type == null && carried == null) return;
         WarnedContainer warning = warnedContainers.get(player.getUniqueId());
         UUID witness = warning != null && containerKey.equals(warning.key()) ? warning.speaker() : null;
-        int before = countSimilar(inventory, type);
-        Runnable finish = () -> {
-            if (store.get(owner.id()) != owner || countSimilar(inventory, type) >= before) return;
-            if (witness != null) pl.axon.structure.npc.GuardService.scrapChest(owner.id(), player, witness, false);
+        int before = type == null ? 0 : countSimilar(inventory, type);
+        boolean npcOwned = crates.usesNpcRotation(owner.id());
+        Location at = npcOwned ? locationOf(inventory, spot, player) : null;
+        UUID transaction = type != null && at != null && StructureContainerEvent.getHandlerList().getRegisteredListeners().length > 0
+                ? UUID.randomUUID() : null;
+        if (transaction != null) publish(owner, player, at, Phase.BEFORE_TAKE, transaction, 0);
+
+        boolean takesToCursor = switch (action) {
+            case PICKUP_ALL, PICKUP_SOME, PICKUP_HALF, PICKUP_ONE, SWAP_WITH_CURSOR, COLLECT_TO_CURSOR -> true;
+            default -> false;
+        };
+        scheduleLoot(containerKey, () -> {
+            if (carried != null) carried.run();
+            if (type == null) return;
+            boolean same = store.get(owner.id()) == owner && (spot == null || spot.inventory == inventory);
+            int removed = same ? Math.max(0, before - countSimilar(inventory, type)) : 0;
+            if (transaction != null) {
+                Take take = new Take(owner, player, at, transaction, removed);
+                if (removed > 0 && takesToCursor && type.isSimilar(view.getCursor())) {
+                    var cursor = cursorLoot.computeIfAbsent(player.getUniqueId(),
+                        ignored -> new CursorLoot(containerKey, type, new ArrayDeque<>()));
+                    cursor.takes().add(take);
+                    take.report(Phase.HELD, removed);
+                } else {
+                    take.report(Phase.AFTER_TAKE, removed);
+                }
+            }
+            if (removed == 0) return;
+            if (!npcOwned && witness != null) pl.axon.structure.npc.GuardService.scrapChest(owner.id(), player, witness, false);
             owner.disturbed(System.currentTimeMillis());
             if (spot != null && spot.inventory == inventory) snapshot(spot);
             saveSoon();
-        };
-        pendingLoot.put(containerKey, finish);
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (pendingLoot.remove(containerKey, finish)) finish.run();
         });
+    }
+
+    private Runnable cursorSettlement(InventoryView view, Player player, Object key, ItemStack cursorBefore) {
+        UUID playerId = player.getUniqueId();
+        var carried = cursorLoot.get(playerId);
+        if (carried == null || !carried.key().equals(key) || !carried.type().isSimilar(cursorBefore)) return null;
+        int cursorAmount = cursorBefore.getAmount();
+        int inCrate = countSimilar(view.getTopInventory(), carried.type());
+        return () -> {
+            ItemStack after = view.getCursor();
+            int stillHeld = carried.type().isSimilar(after) ? after.getAmount() : 0;
+            int spent = cursorAmount - stillHeld;
+            if (spent <= 0) return;
+            int returned = Math.clamp(countSimilar(view.getTopInventory(), carried.type()) - inCrate, 0, spent);
+            settleTakes(carried, returned, spent - returned);
+            if (carried.takes().isEmpty()) cursorLoot.remove(playerId, carried);
+        };
+    }
+
+    private static void settleTakes(CursorLoot cursor, int returned, int withdrawn) {
+        while ((returned > 0 || withdrawn > 0) && !cursor.takes().isEmpty()) {
+            var take = cursor.takes().removeFirst();
+            int putBack = Math.min(returned, take.amount());
+            int taken = Math.min(withdrawn, take.amount() - putBack);
+            returned -= putBack;
+            withdrawn -= taken;
+            int remains = take.amount() - putBack - taken;
+            if (taken > 0 || remains == 0) {
+                take.report(Phase.AFTER_TAKE, taken);
+            } else {
+                cursor.takes().addFirst(new Take(take.owner(), take.player(), take.at(), take.transaction(), remains));
+            }
+        }
+    }
+
+    private void scheduleLoot(Object key, Runnable finish) {
+        pendingLoot.put(key, finish);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (pendingLoot.remove(key, finish)) finish.run();
+        });
+    }
+
+    private StructureInstance ownerOf(Inventory inventory, ContainerSpot spot) {
+        if (spot != null) return spot.owner == null ? null : store.get(spot.owner);
+        return crates.trackedContainerAt(inventory.getLocation());
+    }
+
+    private static Location locationOf(Inventory inventory, ContainerSpot spot, Player player) {
+        return spot != null ? new Location(player.getWorld(), spot.x + 0.5, spot.y + 0.5, spot.z + 0.5)
+            : inventory.getLocation();
+    }
+
+    private static void publish(StructureInstance owner, Player player, Location at, Phase phase,
+                                UUID transaction, int removed) {
+        if (at != null && StructureContainerEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            Bukkit.getPluginManager().callEvent(new StructureContainerEvent(owner.id(), player, at, phase, transaction, removed));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onAutomatedTransfer(InventoryMoveItemEvent event) {
+        discardPending(event.getSource().getLocation());
+        discardPending(event.getDestination().getLocation());
+    }
+
+    void discardPending(Object key) {
+        pendingLoot.remove(key);
+        cursorLoot.values().removeIf(cursor -> {
+            if (!cursor.key().equals(key)) return false;
+            cursor.takes().forEach(take -> take.report(Phase.AFTER_TAKE, 0));
+            return true;
+        });
+    }
+
+    private void finishPending(Object key) {
+        Runnable previous = pendingLoot.remove(key);
+        if (previous != null) previous.run();
     }
 
     private static int countSimilar(Inventory inventory, ItemStack type) {
@@ -1112,7 +1230,9 @@ public final class ContainerService implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onDrag(InventoryDragEvent event) {
-        if (!(event.getView().getTopInventory().getHolder() instanceof ContainerSpot)) {
+        Inventory inventory = event.getView().getTopInventory();
+        finishPending(inventory.getHolder() instanceof ContainerSpot spot ? spot : inventory.getLocation());
+        if (!(inventory.getHolder() instanceof ContainerSpot)) {
             return;
         }
         int size = event.getView().getTopInventory().getSize();
@@ -1124,9 +1244,25 @@ public final class ContainerService implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void trackCursorDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        var view = event.getView();
+        var inventory = view.getTopInventory();
+        Object key = inventory.getHolder() instanceof ContainerSpot spot ? spot : inventory.getLocation();
+        if (key == null) return;
+        var settlement = cursorSettlement(view, player, key, event.getOldCursor());
+        if (settlement != null) scheduleLoot(key, settlement);
+    }
+
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        warnedContainers.remove(event.getPlayer().getUniqueId());
+        Inventory inventory = event.getInventory();
+        finishPending(inventory.getHolder() instanceof ContainerSpot spot ? spot : inventory.getLocation());
+        UUID player = event.getPlayer().getUniqueId();
+        warnedContainers.remove(player);
+        var remaining = cursorLoot.remove(player);
+        if (remaining != null) remaining.takes().forEach(take -> take.report(Phase.AFTER_TAKE, take.amount()));
         if (!(event.getInventory().getHolder() instanceof ContainerSpot spot) || spots.get(spot.key) != spot
                 || spot.inventory != event.getInventory() || !spot.inventory.isEmpty()) {
             return;

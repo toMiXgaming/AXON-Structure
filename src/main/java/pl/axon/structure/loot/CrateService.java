@@ -195,10 +195,19 @@ public final class CrateService {
         }
     }
 
-    StructureInstance farmContainerAt(Location at) {
+    /** Czy znacznik puli może dać otwierany pojemnik. */
+    public boolean hasOpenableCrates(String poolId) {
+        if (isMarker(poolId)) return false;
+        CratePool pool = loot.pool(poolId);
+        if (pool == null) return false;
+        return pool.weights().keySet().stream().map(loot::crateClass)
+                .anyMatch(crate -> crate != null && crate.kind() != CrateClass.Kind.FRAME);
+    }
+
+    StructureInstance trackedContainerAt(Location at) {
         if (at == null || at.getWorld() == null) return null;
         for (StructureInstance owner : store.inWorld(at.getWorld().getName())) {
-            if (!owner.farmCycle()) continue;
+            if (!owner.farmCycle() && !usesNpcRotation(owner.id())) continue;
             Blueprint bp = library.get(owner.structureId());
             if (bp == null || !pl.axon.structure.core.Box.of(bp, owner.placement()).contains(at.getBlockX(), at.getBlockZ())) continue;
             for (Blueprint.SpawnPoint point : bp.spawnPoints()) {
@@ -562,6 +571,7 @@ public final class CrateService {
     }
 
     private void removeCrate(Block block) {
+        if (containers != null) containers.discardPending(block.getLocation());
         if (block.getState() instanceof Container container) {
             container.getInventory().clear();
         }
