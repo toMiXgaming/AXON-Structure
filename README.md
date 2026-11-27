@@ -40,7 +40,7 @@ Dla graczy: `/oaza` (co jest w oazie), `/oaza ranking` (strzelnica) i `/oaza gui
 - **Model z paczki** (`model: "axon:zrzut"`) – nad skrzynią staje niewidoczny wyświetlacz z modelem z paczki serwera (QualityArmory-texturepack), odrobinę większym od bloku, więc samego bloku nie widać, a kliknięcie dalej go otwiera. Klasa `zrzut` (pula `zrzut`, rzadko też na dachu stacji) to skrzynia zrzutu ze spadochronem. Bez paczki gracz widzi fioletowo-czarny sześcian.
 - **Pula** (`pule:`) – dla danego miejsca losuje klasę według wag. Waga `brak` oznacza, że w tym miejscu nic się nie pojawi.
 - **Odświeżanie** – co `odswiezanie.co-ile-minut` minut. Pełne skrzynie zostają (chyba że `zastepuj-pelne: true`), puste i zniszczone losowane są od nowa. Nie odświeża, gdy gracz stoi bliżej niż `blokada-gdy-gracz-blizej-niz`.
-- **Pusty loot na razie** – `loot.puste: true` (domyślnie, dopisywane też do starego `config.yml`): skrzynie i beczki stoją, ale są puste, skrzynia zrzutu spada pusta i znika po czasie, zabici strażnicy nic nie dają, a ramek z łupem nie ma. Pule i klasy zostają w configu – gdy loot będzie ustalony, wystarczy `false` i `/struktury przeladuj`.
+- **Pusty loot (opcjonalnie)** – domyślnie `loot.puste: false`, więc pojemniki dają loot od razu, także po wygenerowaniu configu od nowa. Przy `loot.puste: true` skrzynie i beczki stoją, ale są puste, skrzynia zrzutu spada pusta i znika po czasie, zabici strażnicy nic nie dają, a ramek z łupem nie ma. Po zmianie wystarczy `/struktury przeladuj`.
 
 ## Pojemniki bez bloku (beczki i skrzynie-modele)
 
