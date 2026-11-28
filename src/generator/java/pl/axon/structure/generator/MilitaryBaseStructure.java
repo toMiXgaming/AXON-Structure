@@ -139,6 +139,7 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             bunker();
             lifeSigns();
             weeds();
+            residents.forEach(Runnable::run);
             return bp;
         }
 
@@ -178,7 +179,17 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             bp.fill(x1, y1 + G, z1, x2, y2 + G, z2, palette);
         }
 
+        /**
+         * Znaczniki mieszkańców AxonNPC2 ({@code npc-<rola>}) stawiane na końcu, żeby nie przesuwały losowania
+         * wystroju: struktura wygląda tak samo jak bez nich.
+         */
+        private final java.util.List<Runnable> residents = new java.util.ArrayList<>();
+
         private void crate(int x, int y, int z, String facing, String pool) {
+            if (pool.startsWith("npc-")) {
+                residents.add(() -> bp.crate(x, y + G, z, facing, pool));
+                return;
+            }
             bp.crate(x, y + G, z, facing, pool);
         }
 
@@ -524,6 +535,8 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             fill(57, 2, 24, 57, 15, 24, "iron_bars");
             set(57, 16, 24, "lightning_rod[facing=up]");
             // strażnicy na placu apelowym
+            crate(60, 1, 30, "south", "npc-zolnierz");
+            crate(64, 1, 36, "west", "npc-zolnierz");
             // pomnik T-34 na cokole (z trybuny da się wskoczyć na cokół)
             fill(46, 1, 38, 52, 2, 44, "polished_andesite");
             for (int x = 47; x <= 51; x++) {
@@ -1631,7 +1644,9 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             crate(66, 1, 94, "west", "plac");
             // miejsce zrzutu zaopatrzenia (losowane przez plugin, nie przy odświeżaniu skrzyń)
             crate(58, 1, 104, "north", "zrzut");
-            // strażnicy (NPC z pluginu Citizens/Sentinel, jeśli jest na serwerze)
+            // żołnierze (NPC z AxonNPC2)
+            crate(62, 1, 107, "north", "npc-zolnierz");
+            crate(54, 1, 100, "south", "npc-zolnierz");
             wreckModel();
         }
 

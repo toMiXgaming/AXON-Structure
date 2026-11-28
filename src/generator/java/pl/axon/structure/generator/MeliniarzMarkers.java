@@ -7,11 +7,16 @@ final class MeliniarzMarkers {
     private MeliniarzMarkers() {}
 
     static void add(Blueprint blueprint, int x, int y, int z, String facing) {
+        add(blueprint, x, y, z, facing, "npc-meliniarz");
+    }
+
+    /** To samo dla innej roli AxonNPC2 ({@code npc-<rola>}). */
+    static void add(Blueprint blueprint, int x, int y, int z, String facing, String pool) {
         for (int distance = 0; distance <= 3; distance++) {
             for (int dx = -distance; dx <= distance; dx++) {
                 for (int dz = -distance; dz <= distance; dz++) {
                     if (Math.abs(dx) + Math.abs(dz) != distance || !free(blueprint, x + dx, y, z + dz)) continue;
-                    blueprint.crate(x + dx, y, z + dz, facing, "npc-meliniarz");
+                    blueprint.crate(x + dx, y, z + dz, facing, pool);
                     return;
                 }
             }
