@@ -115,6 +115,9 @@ public final class HospitalStructure implements StructureDefinition {
             moreCrates();
             lifeSigns();
             weeds();
+            // mieszkańcy AxonNPC2 na końcu, żeby nie przesuwali losowania wystroju
+            residents.add(() -> MeliniarzMarkers.add(bp, 55, G + 1, 30, "north", "npc-sanitariusz"));
+            residents.forEach(Runnable::run);
             return bp;
         }
 
@@ -155,7 +158,17 @@ public final class HospitalStructure implements StructureDefinition {
             bp.fill(x1, y1 + G, z1, x2, y2 + G, z2, palette);
         }
 
+        /**
+         * Znaczniki mieszkańców AxonNPC2 ({@code npc-<rola>}) stawiane na końcu, żeby nie przesuwały losowania
+         * wystroju: struktura wygląda tak samo jak bez nich.
+         */
+        private final java.util.List<Runnable> residents = new java.util.ArrayList<>();
+
         private void crate(int x, int y, int z, String facing, String pool) {
+            if (pool.startsWith("npc-")) {
+                residents.add(() -> bp.crate(x, y + G, z, facing, pool));
+                return;
+            }
             bp.crate(x, y + G, z, facing, pool);
         }
 
@@ -1276,7 +1289,12 @@ public final class HospitalStructure implements StructureDefinition {
             crate(66, 26, 50, "north", "ladowisko");
             // miejsce zrzutu zaopatrzenia na środku litery H
             crate(66, 26, 47, "north", "zrzut");
-            // szabrownicy (NPC z pluginu Citizens/Sentinel, jeśli jest na serwerze)
+            // szabrownicy i ćpuni (NPC z AxonNPC2)
+            crate(44, 26, 46, "west", "npc-szabrownik");
+            crate(56, B, 46, "west", "npc-szabrownik");
+            crate(55, 1, 47, "south", "npc-szabrownik");
+            residents.add(() -> MeliniarzMarkers.add(bp, 88, 1 + G, 40, "west", "npc-cpun"));
+            residents.add(() -> MeliniarzMarkers.add(bp, 48, B + G, 46, "south", "npc-cpun"));
             // pawilon: apteka (kanał wentylacyjny z dachu), przychodnia, blok operacyjny (łącznik)
             crate(86, 1, 35, "south", "apteka");
             crate(92, 1, 36, "south", "izba-chorych");

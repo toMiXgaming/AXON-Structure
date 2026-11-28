@@ -232,10 +232,11 @@ public final class MallStructure implements StructureDefinition {
             roofTop();
             docks();
             crates();
-
             stories();
             lifeSigns();
             overgrowth();
+            // strażnicy na końcu, żeby nie przesuwali losowania wystroju
+            guards();
             return bp;
         }
 
@@ -406,7 +407,19 @@ public final class MallStructure implements StructureDefinition {
         }
 
         /** Strażnik: znacznik w podanym miejscu albo w najbliższej wolnej kratce obok. */
-
+        private void guard(int x, int y, int z, String facing, String kit) {
+            for (int r = 0; r <= 5; r++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    for (int dz = -r; dz <= r; dz++) {
+                        if (Math.max(Math.abs(dx), Math.abs(dz)) == r && freeFloor(x + dx, y, z + dz)) {
+                            crate(x + dx, y, z + dz, facing, "npc-" + kit);
+                            return;
+                        }
+                    }
+                }
+            }
+            throw new IllegalStateException("brak miejsca na strażnika przy " + x + " " + y + " " + z);
+        }
 
         private void cobwebs(int x1, int z1, int x2, int z2, int y, int count) {
             for (int i = 0; i < count; i++) {
@@ -2745,7 +2758,37 @@ public final class MallStructure implements StructureDefinition {
             crate(127, GB + 1, 75, "west", "paliwo");
         }
 
-
+        private void guards() {
+            String b = "bandyta";
+            // parter
+            guard(69, 1, 60, "north", b);
+            guard(40, 1, 70, "east", b);
+            guard(102, 1, 83, "west", b);
+            guard(19, 1, 76, "east", b);
+            guard(117, 1, 80, "west", b);
+            guard(126, 1, 94, "west", b);
+            // garaż
+            guard(60, GB + 1, 70, "north", b);
+            guard(106, GB + 1, 60, "west", b);
+            guard(16, GB + 1, 107, "north", "herszt");
+            // 1 piętro
+            guard(50, 7, 69, "south", b);
+            guard(90, 7, 84, "north", b);
+            guard(118, 7, 70, "west", b);
+            guard(18, 7, 95, "east", b);
+            // 2 piętro
+            guard(78, 13, 74, "south", b);
+            guard(118, 13, 77, "west", b);
+            guard(121, 13, 58, "south", b);
+            guard(24, 13, 96, "north", b);
+            guard(105, 13, 57, "south", "herszt");
+            guard(104, 13, 47, "south", b);
+            // dach i obejście
+            guard(56, ROOF + 1, 100, "north", b);
+            guard(112, ROOF + 1, 62, "west", b);
+            guard(86, 1, Z2 + 4, "south", b);
+            guard(40, 1, 22, "north", b);
+        }
 
         /** Tabliczki z anegdotami w miejscach, gdzie na pewno jest ściana. */
         private void stories() {

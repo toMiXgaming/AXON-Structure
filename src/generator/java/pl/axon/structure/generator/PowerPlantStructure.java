@@ -116,6 +116,10 @@ public final class PowerPlantStructure implements StructureDefinition {
             MeliniarzMarkers.add(bp, 52, 1, 34, "west");
             MeliniarzMarkers.add(bp, 55, 1, 47, "north");
             MeliniarzMarkers.add(bp, 35, 1, 15, "north");
+            // mieszkańcy AxonNPC2 na końcu, żeby nie przesuwali losowania wystroju
+            MeliniarzMarkers.add(bp, 60, 1, 10, "south", "npc-elektryk");
+            MeliniarzMarkers.add(bp, 35, 1, 30, "east", "npc-elektryk");
+            MeliniarzMarkers.add(bp, 56, 1, 25, "west", "npc-palacz");
             return bp;
         }
 

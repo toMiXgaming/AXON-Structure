@@ -152,6 +152,7 @@ public final class OasisStructure implements StructureDefinition {
             strays();
             weeds();
             connect();
+            residents.forEach(Runnable::run);
             return bp;
         }
 
@@ -178,7 +179,17 @@ public final class OasisStructure implements StructureDefinition {
         }
 
         /** Punkt dla pluginu (strażnik, stanowisko itp.) – to nie jest skrzynia. */
+        /**
+         * Znaczniki mieszkańców AxonNPC2 ({@code npc-<rola>}) stawiane na końcu, żeby nie przesuwały losowania
+         * wystroju: struktura wygląda tak samo jak bez nich.
+         */
+        private final java.util.List<Runnable> residents = new java.util.ArrayList<>();
+
         private void marker(int x, int y, int z, String facing, String pool) {
+            if (pool.startsWith("npc-")) {
+                residents.add(() -> bp.crate(x, y + G, z, facing, pool));
+                return;
+            }
             bp.crate(x, y + G, z, facing, pool);
         }
 
@@ -627,6 +638,8 @@ public final class OasisStructure implements StructureDefinition {
             wallStairs(3, 50);
             wallStairs(3, 110);
             // strażnicy na chodniku
+            marker(40, 4, 12, "north", "npc-ochroniarz");
+            marker(100, 4, 135, "south", "npc-ochroniarz");
             sign(60, 2, 15, "south", "NA MUR", "TYLKO Z", "LATARKĄ", "");
         }
 
@@ -692,6 +705,7 @@ public final class OasisStructure implements StructureDefinition {
             set(x1 + 4, 10, z1 + 4, lantern());
             // worki z piaskiem na cokole
             set(x1 + 3, 4, z1 + 3, slab("mud_brick", "bottom"));
+            marker(x1 + 3, 9, z1 + 3, z1 < 70 ? "north" : "south", "npc-ochroniarz");
         }
 
         // ------------------------------------------------------------------ bramy i dojazd
@@ -744,6 +758,8 @@ public final class OasisStructure implements StructureDefinition {
                 fill(80, 1, z, 80, 3, z, z % 2 == 0 ? "green_concrete" : "iron_block");
             }
             // strażnicy w bramie
+            marker(70, 1, 13, "north", "npc-ochroniarz");
+            marker(79, 1, 13, "north", "npc-ochroniarz");
         }
 
         private void checkpoint() {
@@ -778,6 +794,7 @@ public final class OasisStructure implements StructureDefinition {
             set(3, 1, 67, lantern());
             sandbags(0, 61, 1, 62, 1);
             sandbags(0, 68, 1, 69, 1);
+            marker(8, 1, 66, "west", "npc-ochroniarz");
             walls(5, 68, 8, 71, 1, 3, sandbag);
             fill(5, 4, 68, 8, 4, 71, slab("spruce", "bottom"));
             fill(6, 1, 68, 6, 2, 68, "air");
@@ -788,6 +805,7 @@ public final class OasisStructure implements StructureDefinition {
             set(146, 1, 85, lantern());
             sandbags(148, 80, 149, 80, 1);
             sandbags(148, 86, 149, 86, 1);
+            marker(141, 1, 82, "east", "npc-ochroniarz");
             walls(141, 87, 144, 90, 1, 3, sandbag);
             fill(141, 4, 87, 144, 4, 90, slab("spruce", "bottom"));
             fill(142, 1, 87, 142, 2, 87, "air");
@@ -1022,6 +1040,7 @@ public final class OasisStructure implements StructureDefinition {
                 set(x, 1, 28, slab("spruce", "top"));
             }
             counterMarker(116, 1, 28, "south", "punkt-sklep", slab("spruce", "top"));
+            marker(116, 1, 27, "south", "npc-handlarz");
             f.lamp(110, 2, 28);
             set(121, 2, 28, "decorated_pot[cracked=false,facing=south,waterlogged=false]");
             set(113, 2, 28, "lectern[facing=south,has_book=false,powered=false]");
@@ -1360,6 +1379,8 @@ public final class OasisStructure implements StructureDefinition {
             set(66, 2, 53, "spruce_fence");
             set(68, 2, 52, "spruce_fence");
             post(67, 1, 54, 0, "LEMONIADA", "Z MIĘTĄ", "ZA UŚMIECH", "");
+            marker(74, 1, 57, "north", "npc-ochroniarz");
+            marker(66, 1, 84, "south", "npc-ochroniarz");
             post(84, 1, 47, 8, "TARGOWISKO", "HANDLUJ", "UCZCIWIE", "");
         }
 
@@ -1569,6 +1590,12 @@ public final class OasisStructure implements StructureDefinition {
                 set(x, 1, z2 + 1, chance(0.7) ? flowerPot() : "air");
             }
             // ocalali: dwóch śpi w pokojach na parterze, jeden na piętrze; trzech chodzi po korytarzach
+            marker(14, 1, 48, "west", "npc-spiacy");
+            marker(31, 1, 60, "east", "npc-spiacy");
+            marker(24, 6, 48, "west", "npc-spiacy");
+            marker(25, 1, 54, "east", "npc-ocalaly");
+            marker(35, 1, 54, "west", "npc-ocalaly");
+            marker(30, 6, 54, "east", "npc-ocalaly");
         }
 
         /** Sznury z praniem przy noclegowni: płotek na słupkach z kolorowymi dywanami. */
@@ -1660,6 +1687,8 @@ public final class OasisStructure implements StructureDefinition {
             set(11, 1, 77, lantern());
             set(11, 1, 81, lantern());
             // osadnicy przy grządkach (na ścieżce środkiem ogrodu)
+            marker(21, 1, 72, "east", "npc-osadnik");
+            marker(21, 1, 85, "west", "npc-osadnik");
         }
 
         /** Szklarnia z drewnianą ramą i szklanym dachem. */
@@ -1721,6 +1750,8 @@ public final class OasisStructure implements StructureDefinition {
             set(38, 3, z2, "stripped_spruce_log[axis=x]");
             set(39, 3, z2, "stripped_spruce_log[axis=x]");
             sign(37, 3, z2 + 1, "south", "SZKLARNIA", "ZAMYKAJ", "DRZWI", "– CIEPŁO UCIEKA");
+            marker(38, 1, 72, "west", "npc-osadnik");
+            marker(39, 1, 77, "east", "npc-osadnik");
         }
 
         /** Zagrody: płoty, siano, koryta z wodą i wiata. */
@@ -2366,6 +2397,7 @@ public final class OasisStructure implements StructureDefinition {
             set(111, 5, 76, hanging());
             set(115, 5, 76, hanging());
             post(118, 1, 72, 4, "KUCHNIA", "POLOWA", "GROCHÓWKA", "PO 18:00");
+            marker(112, 1, 75, "south", "npc-ocalaly");
         }
 
         /** Plac z dużym ogniskiem, ławy z pni, huśtawki, zjeżdżalnia i piaskownica. */
@@ -2443,6 +2475,7 @@ public final class OasisStructure implements StructureDefinition {
             tent(134, 77, "light_gray");
             set(122, 1, 78, campfire("north").replace("lit=true", "lit=true"));
             post(121, 1, 84, 4, "NAMIOTY", "DLA GOŚCI", "PIERWSZA NOC", "ZA DARMO");
+            marker(127, 1, 79, "south", "npc-ocalaly");
         }
 
         /** Mały namiot (3 × 4 wzdłuż z) ze śpiworem w środku, wejście od północy. */

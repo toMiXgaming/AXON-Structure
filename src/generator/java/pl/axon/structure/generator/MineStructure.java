@@ -163,6 +163,10 @@ public final class MineStructure implements StructureDefinition {
             MeliniarzMarkers.add(bp, 44, G + UY, 35, "west");
             MeliniarzMarkers.add(bp, 61, G + UY, 36, "west");
             MeliniarzMarkers.add(bp, 47, G + UY, 38, "west");
+            // mieszkańcy AxonNPC2 na końcu, żeby nie przesuwali losowania wystroju
+            MeliniarzMarkers.add(bp, 10, G + 1, 20, "east", "npc-gornik");
+            MeliniarzMarkers.add(bp, 62, G + 1, 14, "north", "npc-gornik");
+            MeliniarzMarkers.add(bp, 60, G + 1, 37, "west", "npc-sztygar");
             return bp;
         }
 

@@ -388,8 +388,8 @@ public final class FarmStructure implements StructureDefinition {
         }
 
         private void yardBarrels() {
-            bp.crate(8, 1, 31, "south", "npc-powsinoga");
-            bp.crate(20, 1, 17, "west", "npc-powsinoga");
+            bp.crate(8, 1, 31, "south", "npc-parobek");
+            bp.crate(20, 1, 17, "west", "npc-gospodarz");
             bp.crate(17, 1, 13, "east", "plac");
             bp.crate(23, 1, 14, "west", "plac");
             bp.crate(17, 1, 18, "east", "plac");

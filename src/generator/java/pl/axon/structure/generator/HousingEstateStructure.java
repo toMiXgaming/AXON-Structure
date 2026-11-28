@@ -309,7 +309,7 @@ public final class HousingEstateStructure implements StructureDefinition {
             crate(36, 1, 19, "west", "paliwo");
             crate(24, 1, 28, "north", "plac");
             crate(3, 1, 12, "east", "plac");
-            crate(19, 1, 29, "north", "npc-zlomiarz");
+            crate(19, 1, 29, "north", "npc-dozorca");
         }
 
         /** Osobówka 2 × 4 na parkingu (osłona), wzdłuż z albo x; czasem z otwartym bagażnikiem i beczką w środku. */
@@ -1115,7 +1115,7 @@ public final class HousingEstateStructure implements StructureDefinition {
             crate(12, 13, 45, "south", "dach");
             crate(52, 17, 63, "south", "dach");
             // uliczka przy garażach
-            crate(30, 1, 62, "east", "npc-zlomiarz");
+            crate(30, 1, 62, "east", "npc-emeryt");
         }
 
         private void tree(int x, int z, boolean birch) {
