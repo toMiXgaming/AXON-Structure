@@ -115,6 +115,8 @@ public final class HospitalStructure implements StructureDefinition {
             moreCrates();
             lifeSigns();
             weeds();
+            // mieszkańcy AxonNPC2 na końcu, żeby nie przesuwali losowania wystroju
+            residents.add(() -> MeliniarzMarkers.add(bp, 55, G + 1, 30, "north", "npc-sanitariusz"));
             residents.forEach(Runnable::run);
             return bp;
         }

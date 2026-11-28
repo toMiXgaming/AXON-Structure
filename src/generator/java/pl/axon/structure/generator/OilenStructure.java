@@ -818,8 +818,8 @@ public final class OilenStructure implements StructureDefinition {
             bp.fill(11, 1, 43, 12, 1, 44, "spruce_slab[type=bottom]");
             bp.fill(13, 1, 43, 13, 2, 43, "spruce_fence");
             bp.sign(13, 3, 43, "oak_sign[rotation=8]", "KTO UKRADŁ", "MOJE KANISTRY?!", "oddaj, nic", "nie powiem. H.");
-            bp.crate(20, 1, 41, "south", "npc-zlomiarz");
-            bp.crate(22, 1, 41, "south", "npc-zlomiarz");
+            bp.crate(20, 1, 41, "south", "npc-mechanik");
+            bp.crate(22, 1, 41, "south", "npc-kierowca");
         }
 
         /** Cysterna przy tylnym placu: zbiornik x 15-29, kabina x 31-33, drabinka z tyłu na górę zbiornika. */

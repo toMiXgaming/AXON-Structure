@@ -139,6 +139,8 @@ public final class MilitaryBaseStructure implements StructureDefinition {
             bunker();
             lifeSigns();
             weeds();
+            // mieszkańcy AxonNPC2 na końcu, żeby nie przesuwali losowania wystroju
+            residents.add(() -> MeliniarzMarkers.add(bp, 84, G + 1, 78, "west", "npc-kwatermistrz"));
             residents.forEach(Runnable::run);
             return bp;
         }

@@ -81,6 +81,8 @@ public final class BlackMarketStructure implements StructureDefinition {
             shafts();
             shack();
             yardCover();
+            // mieszkańcy AxonNPC2 na końcu, żeby nie przesuwali losowania wystroju
+            MeliniarzMarkers.add(bp, 14, G + 1, 12, "north", "npc-czujka");
             return bp;
         }
 

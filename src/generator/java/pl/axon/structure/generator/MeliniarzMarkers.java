@@ -12,7 +12,8 @@ final class MeliniarzMarkers {
 
     /** To samo dla innej roli AxonNPC2 ({@code npc-<rola>}). */
     static void add(Blueprint blueprint, int x, int y, int z, String facing, String pool) {
-        for (int distance = 0; distance <= 3; distance++) {
+        int reach = pool.equals("npc-meliniarz") ? 3 : 6;
+        for (int distance = 0; distance <= reach; distance++) {
             for (int dx = -distance; dx <= distance; dx++) {
                 for (int dz = -distance; dz <= distance; dz++) {
                     if (Math.abs(dx) + Math.abs(dz) != distance || !free(blueprint, x + dx, y, z + dz)) continue;

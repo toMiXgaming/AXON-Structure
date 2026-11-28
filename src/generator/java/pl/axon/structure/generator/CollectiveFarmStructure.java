@@ -137,6 +137,8 @@ public final class CollectiveFarmStructure implements StructureDefinition {
             weathering();
             furnish();
             lifeSigns();
+            // mieszkańcy AxonNPC2 na końcu, żeby nie przesuwali losowania wystroju
+            MeliniarzMarkers.add(bp, 70, 1, 40, "west", "npc-traktorzysta");
             return bp;
         }
 
@@ -598,7 +600,7 @@ public final class CollectiveFarmStructure implements StructureDefinition {
             bp.set(64, 2, MZ1 + 1, "lantern[hanging=false]");
             bp.crate(MX1 + 1, 1, MZ1 + 2, "south", "klepisko");
             bp.crate(69, 1, 25, "south", "npc-powsinoga");
-            bp.crate(62, 1, 60, "west", "npc-powsinoga");
+            bp.crate(62, 1, 60, "west", "npc-brygadzista");
             bp.crate(70, 1, MZ1 + 2, "south", "klepisko");
             // kanał serwisowy: wykop do gruntu (y0), krawężnik y1 z barierką y2 – wejście i wyjście tylko od strony drabinki
             for (int z = 28; z <= 38; z++) {
